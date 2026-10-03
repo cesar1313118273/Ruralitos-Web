@@ -1,0 +1,1 @@
+"""Ruralitos Web API."""
