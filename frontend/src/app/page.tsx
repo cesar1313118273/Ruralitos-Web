@@ -9,6 +9,7 @@ import {
   Stethoscope,
   UsersRound,
 } from "lucide-react";
+import Link from "next/link";
 
 const modules = [
   {
@@ -16,24 +17,28 @@ const modules = [
     description: "Atenciones, antecedentes, diagnosticos, recetas y seguimiento.",
     icon: Stethoscope,
     color: "blue",
+    href: null,
   },
   {
     name: "Emergencia",
     description: "Triaje, evoluciones, procedimientos, observacion y egreso.",
     icon: HeartPulse,
     color: "red",
+    href: "/emergencia",
   },
   {
     name: "Estadisticas",
     description: "Importacion de Excel, validacion, indicadores y reportes.",
     icon: BarChart3,
     color: "violet",
+    href: null,
   },
   {
     name: "Administracion",
     description: "Centros, usuarios, roles, permisos y auditoria del sistema.",
     icon: ShieldCheck,
     color: "emerald",
+    href: null,
   },
 ] as const;
 
@@ -150,10 +155,19 @@ export default function Home() {
                 </div>
                 <h3 className="mt-6 text-xl font-bold text-[var(--ink)]">{module.name}</h3>
                 <p className="mt-2 leading-7 text-[var(--muted)]">{module.description}</p>
-                <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-[var(--primary-strong)]">
-                  Proximamente
-                  <ArrowRight aria-hidden="true" size={16} className="transition group-hover:translate-x-1" />
-                </span>
+                {module.href ? (
+                  <Link
+                    href={module.href}
+                    className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-red-700"
+                  >
+                    Abrir módulo
+                    <ArrowRight aria-hidden="true" size={16} className="transition group-hover:translate-x-1" />
+                  </Link>
+                ) : (
+                  <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-[var(--muted)]">
+                    Próximamente
+                  </span>
+                )}
               </article>
             );
           })}
