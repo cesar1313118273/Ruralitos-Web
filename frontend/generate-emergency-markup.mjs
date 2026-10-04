@@ -24,7 +24,9 @@ function clean(html) {
 const index = read("Index");
 const establishment = index.match(/<article class="section-card">[\s\S]*?<\/article>/);
 const auth = index.match(/<section id="auth"[\s\S]*?<\/section>/);
-if (!establishment || !auth) throw new Error("No se encontraron las secciones originales de Index.html");
+const toolbar = index.match(/<div class="draft-toolbar">[\s\S]*?<\/div>/);
+const steps = index.match(/<nav class="steps">[\s\S]*?<\/nav>/);
+if (!establishment || !auth || !toolbar || !steps) throw new Error("No se encontraron las secciones originales de Index.html");
 
 const files = {
   dashboard: "PanelPrincipal",
@@ -45,7 +47,7 @@ const files = {
   evolution: "EvolucionObservacion",
 };
 
-const markup = { establishment: clean(establishment[0]), auth: clean(auth[0]) };
+const markup = { establishment: clean(establishment[0]), auth: clean(auth[0]), toolbar: clean(toolbar[0]), steps: clean(steps[0]) };
 for (const [view, name] of Object.entries(files)) markup[view] = clean(read(name));
 writeFileSync(target, `${JSON.stringify(markup, null, 2)}\n`, "utf8");
 console.log(`Generated ${Object.keys(markup).length} exact source fragments from 19 archived HTML files.`);

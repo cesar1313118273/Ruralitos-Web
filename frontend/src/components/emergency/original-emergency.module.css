@@ -59,14 +59,14 @@
 .legacy :global(.menu-card h2){font-size:18px;margin:17px 0 7px}
 .legacy :global(.menu-card p){color:#68778a;min-height:42px;margin:0;line-height:1.5}
 .legacy :global(.menu-card b){display:block;margin-top:16px;color:#b91c1c;font-size:13px}
-.toolbar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:18px}
-.toolbar button{background:#fff;border:1px solid #cbd5e1;border-radius:9px;padding:10px 13px;color:#344256;font-size:13px;font-weight:700}
-.toolbar button:nth-child(3){background:#fff1f2;color:#b91c1c;border-color:#fecaca}
-.toolbar button:nth-child(4){background:#ecfdf5;color:#047857;border-color:#a7f3d0}
-.toolbar span{font-size:12px;color:#9a3412}
-.steps{display:flex;overflow-x:auto;gap:0;padding:8px;background:white;border:1px solid #dfe6ee;border-radius:12px;margin-bottom:22px}
-.steps button{flex:1;min-width:110px;padding:12px;border:0;background:transparent;border-radius:8px;color:#8a99aa;font-size:13px;font-weight:700}
-.steps .active{background:#fff1f2;color:#b91c1c}
+.legacy :global(.draft-toolbar){display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:18px}
+.legacy :global(.draft-toolbar .critical-toolbar){background:#fff1f2;color:#b91c1c;border-color:#fecaca}
+.legacy :global(.draft-toolbar .evolution-toolbar){background:#ecfdf5;color:#047857;border-color:#a7f3d0}
+.legacy :global(.draft-toolbar button:disabled){opacity:.48;cursor:not-allowed}
+.legacy :global(.draft-toolbar #draftStatus){font-size:12px;color:#9a3412}
+.legacy :global(.steps){display:flex;overflow-x:auto;gap:0;padding:8px;background:white;border:1px solid #dfe6ee;border-radius:12px;margin-bottom:22px}
+.legacy :global(.steps span){flex:1;min-width:110px;padding:12px;border-radius:8px;color:#8a99aa;font-size:13px;font-weight:700;text-align:center}
+.legacy :global(.steps span.active){background:#fff1f2;color:#b91c1c}
 .legacy :global(.triage-abc-grid){grid-template-columns:repeat(3,minmax(0,1fr))}
 .legacy :global(.triage-vitals-grid),.legacy :global(.vital-current-grid),.legacy :global(.critical-vitals),.legacy :global(.evolution-vitals){grid-template-columns:repeat(3,minmax(0,1fr))}
 .legacy :global(.triage-priorities){display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}

@@ -9,7 +9,6 @@ import styles from "./original-emergency.module.css";
 export type EmergencyView = "dashboard" | "care" | "pending" | "histories" | "epi" | "matrix" | "certificate" | "statistics" | "profile" | "admission" | "patients" | "access";
 type Mode = "normal" | "critical" | "evolution";
 
-const steps = ["Establecimiento", "Paciente", "Triaje", "Atención", "Finalizar"] as const;
 const pages: Array<Exclude<EmergencyView, "care">> = ["dashboard", "pending", "histories", "epi", "matrix", "certificate", "statistics", "profile", "admission", "patients", "access"];
 const pageMarkup: Record<Exclude<EmergencyView, "care">, string> = {
   dashboard: source.dashboard, pending: source.pending, histories: source.histories,
@@ -90,6 +89,7 @@ export function OriginalEmergency({ view, navigate }: { view: EmergencyView; nav
       return;
     }
     const label = button.textContent?.replace(/\s+/g, " ").trim() || "";
+    if (label === "Guardar como pendiente") { status(root, "#draftStatus", "El borrador aún no se guarda: falta conectar la base de datos."); return; }
     if (label === "Guardar y continuar") { go(1); return; }
     if (label === "Buscar paciente") {
       if (button.closest("#patientSection")) toggle(root, "#patientForm", true);
@@ -213,11 +213,16 @@ export function OriginalEmergency({ view, navigate }: { view: EmergencyView; nav
     return () => { root.removeEventListener("change", onNativeChange); root.removeEventListener("input", onNativeInput); };
   }, []);
 
+  useEffect(() => {
+    const root = rootRef.current;
+    root?.querySelectorAll<HTMLElement>(".steps span").forEach((item, index) => item.classList.toggle("active", index === step));
+  }, [step]);
+
   return <div ref={rootRef} className={styles.legacy} onClick={handleClick} onSubmit={handleSubmit}>
     {pages.map((page)=><div key={page} className={view===page?"":styles.concealed} dangerouslySetInnerHTML={{__html:pageMarkup[page]}} />)}
     <div className={view==="care"?"":styles.concealed}>
-      <div className={styles.toolbar}><button type="button" onClick={()=>navigate("dashboard")}>← Menú</button><button type="button" onClick={()=>{const root=rootRef.current;if(root)status(root,"#draftStatus","El borrador aún no se guarda: falta conectar la base de datos.");}}>Guardar como pendiente</button><button type="button" id="criticalModeButton" onClick={()=>setMode("critical")}>! MODO CRÍTICO</button><button type="button" id="evolutionButton" onClick={()=>setMode("evolution")}>↻ EVOLUCIÓN / OBSERVACIÓN</button><span id="draftStatus" /></div>
-      <nav className={styles.steps} aria-label="Etapas de la atención">{steps.map((name,index)=><button key={name} type="button" className={step===index&&mode==="normal"?styles.active:""} onClick={()=>go(index)}>{index+1}. {name}</button>)}</nav>
+      <div dangerouslySetInnerHTML={{__html:source.toolbar}} />
+      <div dangerouslySetInnerHTML={{__html:source.steps}} />
       {careMarkup.map((html,index)=><div key={index} className={mode==="normal"&&step===index?"":styles.concealed} dangerouslySetInnerHTML={{__html:html}} />)}
       <div className={mode==="critical"?"":styles.concealed} dangerouslySetInnerHTML={{__html:source.critical}} />
       <div className={mode==="evolution"?"":styles.concealed} dangerouslySetInnerHTML={{__html:source.evolution}} />

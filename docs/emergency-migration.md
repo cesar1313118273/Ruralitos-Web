@@ -2,7 +2,9 @@
 
 La referencia entregada es `FORM008_AppScript`. Los 19 HTML originales se conservan sin cambios en
 `docs/original-emergency/`. La pantalla web utiliza los campos, textos, opciones y orden de esos
-archivos; solo la barra lateral y la presentación visual corresponden a Next.js.
+archivos. La barra de acciones y las etapas de Nueva atención provienen directamente de
+`Index.html`: son indicadores, no botones para saltar etapas. Solo la barra lateral y la
+presentación visual corresponden a Next.js.
 
 ## Correspondencia de pantallas
 
