@@ -1,0 +1,387 @@
+<main id="epiPage" class="app-main hidden">
+  <article class="section-card epi-module-card">
+    <div class="section-head epi-head">
+      <i>☷</i>
+      <div>
+        <h2>Investigación epidemiológica</h2>
+        <p>Complete la EPI grupal o individual con datos recuperados de la atención.</p>
+      </div>
+    </div>
+    <div class="section-body">
+      <div class="epi-search">
+        <div class="epi-search-input">
+          <label>Número de identificación del paciente</label>
+          <input id="epiCedula" maxlength="17" autocomplete="off"
+            placeholder="Cédula, pasaporte, visa o carné">
+          <div id="epiSearchMini" class="mini-operation hidden"></div>
+        </div>
+        <button class="btn primary auto" type="button" onclick="buscarPacienteEpi_()">
+          Buscar paciente
+        </button>
+        <button class="btn soft" type="button" onclick="volverMenu_()">← Menú</button>
+      </div>
+
+      <div id="epiPatientResult" class="selected-place hidden"></div>
+
+      <form id="epiForm" class="hidden" onsubmit="generarEpiAvanzadaUI_(event)">
+        <input name="idRegistro008" type="hidden">
+
+        <div class="epi-mode-switch">
+          <label>
+            <input type="radio" name="tipoEpi" value="GRUPAL" checked
+              onchange="cambiarTipoEpiUI_()">
+            <span><b>EPI grupal</b><small>Notificación y cierre de caso</small></span>
+          </label>
+          <label>
+            <input type="radio" name="tipoEpi" value="INDIVIDUAL"
+              onchange="cambiarTipoEpiUI_()">
+            <span><b>EPI individual</b><small>Investigación clínico-epidemiológica</small></span>
+          </label>
+        </div>
+
+        <section class="epi-subsection epi-reused-patient">
+          <div class="epi-subsection-title">
+            <span>1</span><div><h3>Datos reutilizados de la paciente</h3>
+            <p>Solo se muestran los datos que alimentan la EPI. Se cargan desde BD_PACIENTES y la atención más reciente.</p></div>
+          </div>
+          <div class="epi-auto-note">
+            <b>Información recuperada automáticamente</b>
+            <span>Revise los datos antes de generar el documento. La edad se calcula desde la fecha de nacimiento.</span>
+          </div>
+          <div class="clinical-grid epi-essential-grid">
+            <div class="span2"><label>Nombre completo</label>
+              <input id="epiPatientFullName" readonly></div>
+            <div><label>Número de identificación</label>
+              <input data-epi-patient="cedula" readonly></div>
+            <div><label>Sexo</label><select data-epi-patient="sexo">
+              <option value="">SELECCIONE</option><option>MASCULINO</option><option>FEMENINO</option>
+            </select></div>
+            <div><label>Fecha de nacimiento</label>
+              <input data-epi-patient="fechaNacimiento" type="date"></div>
+            <div class="epi-age-pair">
+              <div><label>Edad calculada</label><input data-epi-patient="edad" readonly></div>
+              <div><label>Unidad</label><input data-epi-patient="condicionEdad" readonly></div>
+            </div>
+            <div><label>Nacionalidad</label><input data-epi-patient="nacionalidad"></div>
+            <div><label>Estado civil</label><input data-epi-patient="estadoCivil"></div>
+            <div><label>Autoidentificación étnica</label>
+              <input data-epi-patient="autoidentificacionEtnica"></div>
+            <div><label>Escolaridad</label><input data-epi-patient="nivelEducacion"></div>
+            <div><label>Ocupación</label><input data-epi-patient="ocupacion"></div>
+            <div><label>Teléfono de la paciente</label>
+              <input data-epi-patient="telefonoCelular"></div>
+            <div><label>Provincia de residencia</label><input data-epi-patient="provincia"></div>
+            <div><label>Cantón de residencia</label><input data-epi-patient="canton"></div>
+            <div><label>Parroquia de residencia</label><input data-epi-patient="parroquia"></div>
+            <div><label>Barrio/localidad</label><input data-epi-patient="barrio"></div>
+            <div class="span2"><label>Dirección consolidada</label>
+              <input id="epiPatientAddress" readonly></div>
+            <div class="span2"><label>Madre, responsable o contacto</label>
+              <input data-epi-patient="contactoEmergencia"></div>
+          </div>
+          <div class="epi-hidden-patient-fields" aria-hidden="true">
+            <input data-epi-patient="primerApellido" type="hidden">
+            <input data-epi-patient="segundoApellido" type="hidden">
+            <input data-epi-patient="primerNombre" type="hidden">
+            <input data-epi-patient="segundoNombre" type="hidden">
+            <input data-epi-patient="telefonoFijo" type="hidden">
+            <input data-epi-patient="callePrincipal" type="hidden">
+            <input data-epi-patient="calleSecundaria" type="hidden">
+            <input data-epi-patient="referenciaDomiciliaria" type="hidden">
+          </div>
+        </section>
+
+        <section class="epi-subsection">
+          <div class="epi-subsection-title">
+            <span>2</span><div><h3>Unidad y diagnóstico</h3>
+            <p>Seleccione un solo diagnóstico de la atención.</p></div>
+          </div>
+          <div class="clinical-grid">
+            <div class="span2"><label>Diagnóstico para la EPI *</label>
+              <select name="diagnostico" id="epiDiagnosis" required>
+                <option value="">SELECCIONE UN DIAGNÓSTICO</option>
+              </select>
+            </div>
+            <div><label>Fecha de atención</label><input name="fechaAtencion" type="date"></div>
+            <div><label>Hora de atención</label><input name="horaAtencion" type="time"></div>
+            <div><label>Fecha de investigación</label><input name="fechaInvestigacion" type="date"></div>
+            <div><label>Semana epidemiológica</label>
+              <input name="semanaEpidemiologica" type="number" min="1" max="53"></div>
+            <div class="span2"><label>Unidad que notifica/investiga</label>
+              <input name="unidadNotifica"></div>
+            <div><label>Institución</label><select name="institucion">
+              <option>MSP</option><option>IESS</option><option>FFAA</option>
+              <option>POLICÍA</option><option>JBGI</option><option>MEC</option>
+              <option>DRS</option><option>PRIVADO</option><option>ONG</option>
+            </select></div>
+            <div><label>Provincia de la unidad</label><input name="ubicacionUnidadProvincia"></div>
+            <div><label>Cantón de la unidad</label><input name="ubicacionUnidadCanton"></div>
+            <div><label>Parroquia de la unidad</label><input name="ubicacionUnidadParroquia"></div>
+            <div class="span2"><label>Nombre de quien notifica</label><input name="nombreNotifica"></div>
+          </div>
+        </section>
+
+        <div id="epiGroupFields">
+          <details class="epi-details" open>
+            <summary>III. Datos clínicos y embarazo</summary>
+            <div class="clinical-grid details-content">
+              <div><label>Fecha de inicio de síntomas</label>
+                <input name="fechaInicioSintomas" type="date"></div>
+              <div class="span2"><label>Lugar probable de infección</label>
+                <input name="lugarProbableInfeccion"></div>
+              <div><label>Embarazada</label><select name="embarazada">
+                <option>NO APLICA</option><option>SI</option><option>NO</option>
+              </select></div>
+              <div><label>Semanas de gestación</label>
+                <input name="semanasGestacion" type="number" min="0" step="0.1"></div>
+            </div>
+          </details>
+
+          <details class="epi-details">
+            <summary>IV–V. Muestras y laboratorio</summary>
+            <div class="clinical-grid details-content">
+              <div><label>Tomó muestra</label><select name="muestraLaboratorio">
+                <option>NO</option><option>SI</option>
+              </select></div>
+              <div><label>Fecha de toma</label><input name="fechaMuestra" type="date"></div>
+              <div><label>Tipo de muestra 1</label><input name="tipoMuestra"></div>
+              <div><label>Tipo de muestra 2</label><input name="tipoMuestra2"></div>
+              <div><label>Fecha muestra 2</label><input name="fechaMuestra2" type="date"></div>
+              <div><label>Tipo de muestra 3</label><input name="tipoMuestra3"></div>
+              <div><label>Fecha muestra 3</label><input name="fechaMuestra3" type="date"></div>
+              <div class="span2"><label>Nombre y ubicación del laboratorio</label>
+                <input name="laboratorio"></div>
+              <div><label>Resultado</label><select name="resultadoLaboratorio">
+                <option value="">SELECCIONE</option><option>POSITIVO</option>
+                <option>NEGATIVO</option><option>DUDOSO</option>
+              </select></div>
+              <div><label>Agente encontrado</label><input name="agenteResultado"></div>
+              <div><label>Segundo agente</label><input name="agenteResultado2"></div>
+              <div class="span2"><label>Observaciones del laboratorio</label>
+                <textarea name="observacionesLaboratorio" rows="4"></textarea></div>
+            </div>
+            <div class="details-content">
+              <h4>Procesamiento de hasta tres muestras</h4>
+              <div id="epiGroupSamples" class="epi-repeat-list"></div>
+              <button class="btn soft auto" type="button" onclick="agregarMuestraCierreEpi_()">
+                + Agregar muestra
+              </button>
+            </div>
+          </details>
+
+          <details class="epi-details">
+            <summary>VI–VIII. Investigación, evolución y cierre</summary>
+            <div class="clinical-grid details-content">
+              <div><label>Se realizó investigación</label><select name="investigacionRealizada">
+                <option>NO</option><option>SI</option>
+              </select></div>
+              <div><label>Fecha de investigación</label><input name="fechaInvestigacion" type="date"></div>
+              <div><label>N.º contactos sintomáticos</label>
+                <input name="contactosSintomaticos" type="number" min="0" step="1"></div>
+              <div><label>Evolución</label><select name="evolucion">
+                <option>AMBULATORIO</option><option>HOSPITALIZACIÓN</option><option>UCI</option>
+              </select></div>
+              <div><label>Condición final</label><select name="condicionFinal">
+                <option>VIVO</option><option>CON DISCAPACIDAD</option><option>MUERTO</option>
+              </select></div>
+              <div><label>Fecha de fallecimiento</label><input name="fechaFallecimiento" type="date"></div>
+              <div><label>Clasificación final</label><select name="clasificacionFinal">
+                <option>CONFIRMADO</option><option>DESCARTADO</option><option>NO CONCLUYENTE</option>
+              </select></div>
+              <div><label>Confirmado por</label><select name="confirmadoPor">
+                <option>LABORATORIO</option><option>CLÍNICO</option>
+                <option>NEXO EPIDEMIOLÓGICO</option>
+              </select></div>
+              <div class="span2"><label>Diagnóstico final</label><input name="diagnosticoFinal"></div>
+              <div><label>Fecha de cierre</label><input name="fechaCierre" type="date"></div>
+              <div class="span2"><label>Responsable epidemiológico</label><input name="responsable"></div>
+            </div>
+          </details>
+        </div>
+
+        <div id="epiIndividualFields" class="hidden">
+          <details class="epi-details" open>
+            <summary>III. Cuadro clínico, signos y síntomas</summary>
+            <div class="clinical-grid details-content">
+              <div><label>Fecha de inicio del cuadro</label><input name="fechaInicioCuadro" type="date"></div>
+              <div><label>Hora de inicio del cuadro</label><input name="horaInicioCuadro" type="time"></div>
+              <div><label>Fecha de síntoma relevante</label><input name="fechaInicioSintomas" type="date"></div>
+              <div><label>Hora del síntoma relevante</label><input name="horaInicioSintomas" type="time"></div>
+              <div><label>N.º de días</label><input name="diasSintomas" type="number" min="0"></div>
+            </div>
+            <div class="details-content">
+              <h4>Signos y síntomas</h4>
+              <div id="epiSymptoms" class="epi-check-grid" data-epi-list="sintomas"></div>
+              <label>Otros signos y síntomas</label><input name="otrosSintomas">
+              <label>Caracterización del cuadro clínico</label>
+              <textarea name="cuadroClinico" class="main-clinical-text" rows="10"
+                placeholder="El texto se distribuirá automáticamente en las filas 40 a 45."></textarea>
+            </div>
+          </details>
+
+          <details class="epi-details">
+            <summary>Tratamiento, controles y hospitalización</summary>
+            <div class="clinical-grid details-content">
+              <div><label>Recibió tratamiento</label><select name="recibioTratamiento">
+                <option>NO</option><option>SI</option>
+              </select></div>
+              <div><label>Tiempo de tratamiento</label><input name="tiempoTratamiento"></div>
+              <div class="span2"><label>Tratamiento recibido</label>
+                <textarea name="tratamiento" rows="4"></textarea></div>
+              <div class="span2 epi-check-section"><h4>Evolución</h4>
+                <div id="epiTreatmentEvolution" class="epi-check-grid" data-epi-list="evolucionTratamiento"></div></div>
+              <div class="span2 epi-check-section"><h4>Lugar donde recibió tratamiento</h4>
+                <div id="epiTreatmentPlace" class="epi-check-grid" data-epi-list="lugarTratamiento"></div></div>
+              <div><label>Tuvo controles</label><select name="tuvoControles">
+                <option>NO</option><option>SI</option>
+              </select></div>
+              <div><label>N.º de controles</label><input name="numeroControles" type="number" min="0"></div>
+              <div class="span2"><label>Quién recetó</label><input name="quienReceto"></div>
+              <div><label>Fue hospitalizado</label><select name="hospitalizado">
+                <option>NO</option><option>SI</option>
+              </select></div>
+              <div><label>Fecha de hospitalización</label><input name="fechaHospitalizacion" type="date"></div>
+              <div><label>N.º historia hospital</label><input name="numeroHistoriaHospital"></div>
+              <div><label>Servicio</label><input name="servicioHospital"></div>
+              <div class="span2"><label>Nombre del hospital</label><input name="nombreHospital"></div>
+              <div><label>Red privada</label><select name="redPrivada"><option>NO</option><option>SI</option></select></div>
+              <div><label>Ingresó a UCI</label><select name="ingresoUci"><option>NO</option><option>SI</option></select></div>
+              <div><label>Condición final</label><select name="condicionFinal">
+                <option>VIVO</option><option>MUERTO</option>
+              </select></div>
+              <div><label>Discapacidad</label><select name="discapacidad"><option>NO</option><option>SI</option></select></div>
+              <div><label>Fecha de fallecimiento</label><input name="fechaFallecimiento" type="date"></div>
+            </div>
+          </details>
+
+          <details class="epi-details">
+            <summary>IV. Antecedentes epidemiológicos</summary>
+            <div class="clinical-grid details-content">
+              <div><label>Antecedente vacunal</label><select name="antecedenteVacunal">
+                <option>DESCONOCE</option><option>SI</option><option>NO</option>
+              </select></div>
+              <div><label>Fecha de última dosis</label><input name="fechaUltimaDosis" type="date"></div>
+              <div><label>N.º dosis recibidas</label><input name="numeroDosis" type="number" min="0"></div>
+              <div class="span2 epi-check-section"><h4>Vacunas</h4>
+                <div id="epiVaccines" class="epi-check-grid" data-epi-list="vacunas"></div></div>
+              <div class="span2 epi-check-section"><h4>Fuente de información</h4>
+                <div id="epiSources" class="epi-check-grid" data-epi-list="fuentesInformacion"></div></div>
+              <div class="span2 epi-check-section"><h4>Antecedentes y origen de contacto</h4>
+                <div id="epiContactBackground" class="epi-check-grid" data-epi-list="antecedentesContacto"></div></div>
+              <div><label>Lugar geográfico del contacto</label><input name="lugarContacto"></div>
+              <div><label>Forma de contacto</label><input name="formaContacto"></div>
+              <div class="span2"><label>Origen/tipo/nombre del contacto</label><input name="origenContacto"></div>
+              <div><label>Fecha de contacto</label><input name="fechaContacto" type="date"></div>
+              <div><label>Hora de contacto</label><input name="horaContacto" type="time"></div>
+              <div class="span2 epi-check-section"><h4>Procedencia de agua/alimento</h4>
+                <div id="epiFoodOrigin" class="epi-check-grid" data-epi-list="procedenciaAlimento"></div></div>
+              <div class="span2"><label>Otra procedencia</label><input name="otraProcedencia"></div>
+              <div><label>Tipo de exposición</label><select name="tipoExposicion">
+                <option>ACCIDENTAL</option><option>OCUPACIONAL</option><option>DESCONOCIDA</option>
+                <option>INTENTO SUICIDA</option><option>REACCIÓN ADVERSA</option>
+              </select></div>
+              <div class="span2"><label>Otra exposición</label><input name="otraExposicion"></div>
+            </div>
+          </details>
+
+          <details class="epi-details">
+            <summary>Viajes, comorbilidades y factores de riesgo</summary>
+            <div class="clinical-grid details-content">
+              <div><label>Transfusión sanguínea</label><select name="transfusion"><option>NO</option><option>SI</option></select></div>
+              <div><label>Embarazada</label><select name="embarazada"><option>NO</option><option>SI</option></select></div>
+              <div><label>Semanas de gestación</label><input name="semanasGestacion" type="number" min="0" step="0.1"></div>
+              <div><label>Quimioterapia</label><select name="quimioterapia"><option>NO</option><option>SI</option></select></div>
+              <div><label>Antecedente de viaje</label><select name="viaje"><option>NO</option><option>SI</option></select></div>
+              <div><label>Lugar del viaje</label><input name="lugarViaje"></div>
+              <div><label>Viaje desde</label><input name="viajeDesde" type="date"></div>
+              <div><label>Viaje hasta</label><input name="viajeHasta" type="date"></div>
+              <div><label>Otros enfermos con iguales síntomas</label><select name="otrosEnfermos"><option>NO</option><option>SI</option></select></div>
+              <div class="span2 epi-check-section"><h4>Dónde están los otros enfermos</h4>
+                <div id="epiOtherSickPlace" class="epi-check-grid" data-epi-list="dondeOtrosEnfermos"></div></div>
+              <div><label>Origen del caso</label><select name="origenCaso">
+                <option>NO APLICA</option><option>AUTÓCTONO</option><option>IMPORTADO</option>
+                <option>INTRODUCIDO</option><option>INDICATIVO</option><option>INDUCIDO</option>
+              </select></div>
+              <div><label>Comorbilidades</label><select name="comorbilidades"><option>NO</option><option>SI</option></select></div>
+              <div class="span2"><label>Detalle de comorbilidades</label><input name="detalleComorbilidades"></div>
+              <div class="span2 epi-check-section"><h4>Factores de riesgo y transmisión</h4>
+                <div id="epiRiskFactors" class="epi-check-grid" data-epi-list="factoresRiesgo"></div></div>
+              <div class="span2"><label>Caracterización de factores de riesgo</label>
+                <textarea name="caracterizacionRiesgos" rows="7"></textarea></div>
+            </div>
+          </details>
+
+          <details class="epi-details">
+            <summary>Contactos durante incubación/transmisibilidad</summary>
+            <div class="details-content">
+              <div id="epiContacts" class="epi-repeat-list"></div>
+              <button class="btn soft auto" type="button" onclick="agregarContactoEpi_()">
+                + Agregar contacto
+              </button>
+            </div>
+          </details>
+
+          <details class="epi-details">
+            <summary>V. Laboratorio y clasificación final</summary>
+            <div class="clinical-grid details-content">
+              <div><label>Se tomó muestra</label><select name="muestraLaboratorio"><option>NO</option><option>SI</option></select></div>
+              <div><label>Fecha de muestra</label><input name="fechaMuestra" type="date"></div>
+              <div><label>Muestra antes del tratamiento</label><select name="muestraAntesTratamiento"><option>NO</option><option>SI</option></select></div>
+              <div><label>Tipo de muestra</label><input name="tipoMuestra"></div>
+              <div><label>Agente encontrado</label><input name="agenteResultado"></div>
+              <div><label>Técnica utilizada</label><input name="tecnicaLaboratorio"></div>
+              <div class="span2"><label>Resultado de laboratorio</label><textarea name="resultadoLaboratorio" rows="3"></textarea></div>
+              <div><label>Lugar de atención</label><select name="lugarAtencion">
+                <option>AMBULATORIA</option><option>HOSPITALIZACIÓN</option><option>UCI</option><option>NO APLICA</option>
+              </select></div>
+              <div><label>Cumple definición de caso</label><select name="cumpleDefinicion"><option>SI</option><option>NO</option></select></div>
+              <div><label>Condición final</label><select name="condicionFinal">
+                <option>VIVO</option><option>CON DISCAPACIDAD</option><option>MUERTO</option>
+              </select></div>
+              <div class="span2 epi-check-section"><h4>Clasificación final</h4>
+                <div id="epiFinalClassification" class="epi-check-grid" data-epi-list="clasificacionFinalLista"></div></div>
+              <div class="span2"><label>Diagnóstico definitivo</label><input name="diagnosticoFinal"></div>
+              <div class="span2 epi-check-section"><h4>Confirmado por</h4>
+                <div id="epiConfirmedBy" class="epi-check-grid" data-epi-list="confirmadoPorLista"></div></div>
+            </div>
+          </details>
+
+          <details class="epi-details">
+            <summary>VI. Actividades de control y responsable</summary>
+            <div class="details-content">
+              <h4>Actividades generales</h4>
+              <div id="epiGeneralActivities" class="epi-activity-list"></div>
+              <h4>Actividades específicas</h4>
+              <div id="epiSpecificActivities" class="epi-activity-list"></div>
+              <label>Otras actividades de control</label>
+              <textarea name="otrasActividades" rows="6"></textarea>
+            </div>
+            <div class="clinical-grid details-content">
+              <div class="span2"><label>Responsable</label><input name="responsable"></div>
+              <div><label>Fecha del responsable</label><input name="fechaResponsable" type="date"></div>
+            </div>
+          </details>
+        </div>
+
+        <section class="epi-export-panel">
+          <div>
+            <h3>Formatos de descarga</h3>
+            <p>Puede seleccionar uno o ambos formatos.</p>
+          </div>
+          <label class="document-choice">
+            <input id="epiOutputPdf" type="checkbox" checked>
+            <span><b>PDF</b><small>Documento listo para imprimir</small></span>
+          </label>
+          <label class="document-choice">
+            <input id="epiOutputExcel" type="checkbox">
+            <span><b>Excel</b><small>Archivo editable</small></span>
+          </label>
+          <button id="epiGenerate" class="btn primary auto" type="submit">
+            Generar EPI seleccionada
+          </button>
+        </section>
+        <div id="epiStatus" class="selected-place hidden"></div>
+      </form>
+    </div>
+  </article>
+</main>

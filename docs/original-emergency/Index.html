@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>.hidden{display:none!important}#app.hidden{display:none!important}</style>
+  <?!= incluir('Estilos'); ?>
+</head>
+<body>
+  <section id="auth" class="auth-page">
+    <div class="medical-bg" aria-hidden="true">
+      <span class="pulse-line"></span><span class="float-icon i1">✚</span>
+      <span class="float-icon i2">⚕</span><span class="float-icon i3">♡</span>
+      <span class="float-icon i4">⌂</span><span class="hill h1"></span><span class="hill h2"></span>
+    </div>
+    <aside class="welcome">
+      <div class="brand-icon">✚</div>
+      <h1>RURALITOS</h1>
+      <p>Historias clínicas de emergencia para establecimientos de salud urbanos y rurales.</p>
+      <div class="feature"><b>⚕</b><span><strong>Atención segura</strong><small>Información organizada y protegida</small></span></div>
+      <div class="feature"><b>⌂</b><span><strong>Salud en territorio</strong><small>Centros identificados por ubicación y unicódigo</small></span></div>
+    </aside>
+
+    <div class="auth-panel">
+      <div class="auth-card">
+        <div class="tabs-auth">
+          <button type="button" class="active" data-auth="login">Ingresar</button>
+          <button type="button" data-auth="registro">Crear cuenta</button>
+        </div>
+
+        <form id="login" class="auth-form">
+          <h2>Bienvenido</h2><p>Ingrese para comenzar una nueva atención.</p>
+          <label>Cédula</label><input name="cedula" inputmode="numeric" maxlength="10" required>
+          <label>Clave</label><input name="clave" type="password" required>
+          <button class="btn primary" type="submit">Ingresar a mi cuenta</button>
+          <button class="btn link" type="button" onclick="mostrarRecuperacion()">¿Olvidó su clave?</button>
+        </form>
+
+        <form id="registro" class="auth-form hidden">
+          <h2>Crear una cuenta</h2><p>Complete sus datos profesionales.</p>
+          <div class="form-grid">
+            <div><label>Cédula</label><input name="cedula" inputmode="numeric" maxlength="10" required></div>
+            <div><label>Cargo</label><select id="regCargo" name="cargo" onchange="ajustarRegistroPorCargo_()"><option>MÉDICO</option><option>ADMISIONISTA</option></select></div>
+            <div><label>Primer nombre</label><input name="primerNombre" required></div>
+            <div><label>Segundo nombre</label><input name="segundoNombre"></div>
+            <div><label>Primer apellido</label><input name="primerApellido" required></div>
+            <div><label>Segundo apellido</label><input name="segundoApellido"></div>
+            <div class="full"><label>Correo</label><input name="correo" type="email" required></div>
+            <div class="full">
+              <label>Establecimiento solicitado</label>
+              <div class="picker" data-picker="registro">
+                <input id="regSearch" type="search" autocomplete="off" placeholder="Buscar por establecimiento, unicódigo, provincia, cantón o parroquia">
+                <input id="regCodigo" name="unicodigo" type="hidden" required>
+                <div id="regResults" class="picker-results hidden"></div>
+              </div>
+              <div id="regSelected" class="selected-place hidden"></div><small>La unidad seleccionada quedará pendiente de autorización. Elegirla aquí no concede acceso automático.</small>
+            </div>
+            <div class="full signature-register">
+              <h3>Firma y sello</h3>
+              <p>Seleccione un solo método para registrar la firma. El sello se carga únicamente como imagen.</p>
+              <div class="signature-grid">
+                <div>
+                  <label>Firma profesional</label>
+                  <div class="signature-method-choice">
+                    <label><input type="radio" name="registerSignatureMethod" value="IMAGE" checked onchange="seleccionarMetodoFirma_('register','IMAGE')"><span>▣</span><b>Subir imagen</b></label>
+                    <label><input type="radio" name="registerSignatureMethod" value="DRAW" onchange="seleccionarMetodoFirma_('register','DRAW')"><span>✎</span><b>Dibujar firma</b></label>
+                  </div>
+                  <div id="registerSignatureImage" class="signature-method-panel">
+                    <input id="firmaFile" type="file" accept="image/png,image/jpeg">
+                    <canvas id="firmaCanvas" class="signature-preview"></canvas>
+                  </div>
+                  <div id="registerSignatureDraw" class="signature-draw-panel hidden">
+                    <p>Dibuje lentamente dentro del recuadro usando el mouse, lápiz o dedo.</p>
+                    <canvas id="registerSignaturePad" class="signature-pad"></canvas>
+                    <div>
+                      <button class="btn soft" type="button" onclick="limpiarLienzoFirma_('registerSignaturePad')">Limpiar</button>
+                      <button class="btn primary auto" type="button" onclick="usarFirmaDibujada_('registerSignaturePad','firmaCanvas')">Usar esta firma</button>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label>Sello profesional</label>
+                  <input id="selloFile" type="file" accept="image/png,image/jpeg">
+                  <canvas id="selloCanvas" class="signature-preview"></canvas>
+                </div>
+              </div>
+              <div class="background-control">
+                <label>Quitar fondo de las imágenes: <b id="thresholdValue">0</b></label>
+                <input id="backgroundThreshold" type="range" min="0" max="255" value="0" step="1">
+                <small>Este control se aplica a la firma subida como imagen y al sello.</small>
+              </div>
+            </div>
+            <div><label>Clave</label><input name="clave" type="password" minlength="6" required></div>
+            <div><label>Confirmar clave</label><input name="confirmar" type="password" minlength="6" required></div>
+          </div>
+          <button class="btn primary" type="submit">Crear cuenta</button>
+        </form>
+
+        <form id="recuperar" class="auth-form hidden">
+          <h2>Recuperar clave</h2><p>Enviaremos un código al correo registrado.</p>
+          <label>Correo</label><input name="correo" type="email" required>
+          <button class="btn primary" type="submit">Enviar código</button>
+          <div id="resetBox" class="hidden">
+            <label>Código de 6 dígitos</label><input name="codigo" inputmode="numeric" maxlength="6">
+            <label>Nueva clave</label><input name="nueva" type="password" minlength="6">
+            <button class="btn primary" type="button" onclick="cambiarClave()">Cambiar clave</button>
+          </div>
+          <button class="btn link" type="button" onclick="verAuth('login')">Volver al ingreso</button>
+        </form>
+        <div id="msg" class="message hidden"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="app" class="hidden">
+    <header class="app-header">
+      <div class="header-brand"><b>✚ RURALITOS</b><small id="userText"></small></div>
+      <nav class="top-menu">
+        <button type="button" onclick="volverMenu_()"><span>⌂</span>Inicio</button>
+        <button type="button" onclick="abrirEstadisticas_()"><span>⌁</span>Estadísticas</button>
+        <button type="button" onclick="abrirPerfil_()"><span>♙</span>Mi perfil</button>
+        <button class="logout-top" type="button" onclick="salir()"><span>↪</span>Cerrar sesión</button>
+      </nav>
+    </header>
+
+    <?!= incluir('PanelPrincipal'); ?>
+    <?!= incluir('ListaPendientes'); ?>
+    <?!= incluir('CatalogoHistorias'); ?>
+    <?!= incluir('EpiInterfaz'); ?>
+    <?!= incluir('MatrizGuardiaInterfaz'); ?>
+    <?!= incluir('CertificadoMedicoInterfaz'); ?>
+    <?!= incluir('EstadisticasInterfaz'); ?>
+    <?!= incluir('PerfilInterfaz'); ?>
+    <?!= incluir('RolesInterfaz'); ?>
+    <?!= incluir('EstadisticoInterfaz'); ?>
+
+    <main id="attentionWorkspace" class="app-main hidden">
+      <div class="draft-toolbar">
+        <button class="btn soft" type="button" onclick="volverMenu_()">← Menú</button>
+        <button class="btn draft-save" type="button" onclick="guardarPendienteUI_()">Guardar como pendiente</button>
+        <button id="criticalModeButton" class="btn critical-toolbar" type="button" onclick="abrirModoCritico_()" disabled>! MODO CRÍTICO</button>
+        <button id="evolutionButton" class="btn evolution-toolbar" type="button" onclick="abrirEvolucionObservacion_()" disabled>↻ EVOLUCIÓN / OBSERVACIÓN</button>
+        <span id="draftStatus"></span>
+      </div>
+      <nav class="steps">
+        <span class="active">1. Establecimiento</span><span>2. Paciente</span>
+        <span>3. Triaje</span><span>4. Atención</span><span>5. Finalizar</span>
+      </nav>
+      <article class="section-card">
+        <div class="section-head">
+          <i>⌂</i><div><h2>Datos del establecimiento</h2>
+          <p>Seleccione uno de los establecimientos asociados a su cuenta.</p></div>
+        </div>
+        <div class="section-body">
+          <label>Establecimiento de esta atención</label>
+          <select id="appEstablishmentSelect" onchange="seleccionarEstablecimientoCuentaUI_(this.value)"></select>
+          <input id="appCodigo" type="hidden">
+          <div id="appSelected" class="selected-place hidden"></div>
+          <div id="details" class="details"></div>
+          <h3>Destino de los documentos</h3>
+          <div class="clinical-grid">
+            <div><label>Guardar en</label><select id="modoGuardado" onchange="cambiarDestino_()"><option value="DRIVE">CARPETA DE GOOGLE DRIVE</option><option value="LAPTOP">CARPETA DE LA LAPTOP (DESCARGA DEL NAVEGADOR)</option></select></div>
+            <div id="driveFolderBox" class="span2"><label>Enlace o ID de la carpeta de Drive</label><input id="carpetaDestino" placeholder="Opcional: vacío usa FORM008_GENERADOS"></div>
+            <div id="driveOpenBox" class="align-end"><button class="btn soft" type="button" onclick="window.open('https://drive.google.com/drive/my-drive','_blank')">Abrir Google Drive</button></div>
+            <div id="laptopHelp" class="span2 help-box hidden">Los archivos se descargarán en la carpeta configurada en su navegador. Active “Preguntar dónde guardar cada archivo” en Chrome si desea escogerla en cada atención.</div>
+          </div>
+          <div class="actions"><button class="btn primary auto" onclick="guardarEst()">Guardar y continuar</button></div>
+        </div>
+      </article>
+      <?!= incluir('Paciente'); ?>
+      <?!= incluir('Triage'); ?>
+      <?!= incluir('ModoCritico'); ?>
+      <?!= incluir('EvolucionObservacion'); ?>
+      <?!= incluir('Atencion'); ?>
+      <?!= incluir('Finalizacion'); ?>
+    </main>
+  </section>
+  <?!= incluir('Scripts'); ?>
+</body>
+</html>

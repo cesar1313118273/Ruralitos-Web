@@ -1,0 +1,102 @@
+.legacy{color:#172033;min-width:0}
+.concealed{display:none!important}
+.legacy :global(.hidden){display:none!important}
+.legacy :global(.app-main){min-width:0}
+.legacy :global(.section-card){background:#fff;border:1px solid #dfe6ee;border-radius:18px;box-shadow:0 8px 30px #1720330a;overflow:hidden;margin-bottom:22px}
+.legacy :global(.section-head){display:flex;align-items:center;gap:15px;border-bottom:1px solid #e8edf2;padding:22px 26px}
+.legacy :global(.section-head i){width:42px;height:42px;flex:none;display:grid;place-items:center;border-radius:12px;background:#fff1f2;color:#be123c;font-style:normal;font-size:21px;font-weight:800}
+.legacy :global(.section-head h2){font-size:21px;margin:0}
+.legacy :global(.section-head p){font-size:14px;color:#68778a;margin:4px 0 0}
+.legacy :global(.section-body){padding:26px}
+.legacy :global(h3){font-size:15px;color:#344256;margin:25px 0 14px}
+.legacy :global(h4){font-size:13px;margin:15px 0 9px}
+.legacy :global(label){font-size:13px;font-weight:700;color:#344256}
+.legacy :global(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"])),.legacy :global(select),.legacy :global(textarea){display:block;width:100%;max-width:100%;min-width:0;min-height:42px;border:1px solid #cfd8e3;border-radius:9px;background:#fff;color:#172033;padding:9px 11px;font:inherit;margin-top:6px}
+.legacy :global(textarea){min-height:90px;resize:vertical}
+.legacy :global(input:focus),.legacy :global(select:focus),.legacy :global(textarea:focus){outline:2px solid #fecaca;border-color:#b91c1c}
+.legacy :global(input[readonly]){background:#f7f9fb;color:#59697a}
+.legacy :global(input[type="checkbox"]),.legacy :global(input[type="radio"]){accent-color:#b91c1c;vertical-align:middle}
+.legacy :global(.clinical-grid),.legacy :global(.form-grid){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px 20px;align-items:start}
+.legacy :global(.clinical-grid>div),.legacy :global(.form-grid>div){min-width:0}
+.legacy :global(.clinical-grid .span2),.legacy :global(.form-grid .full){grid-column:1/-1}
+.legacy :global(.align-end){align-self:end}
+.legacy :global(.actions){display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:25px}
+.legacy :global(button){cursor:pointer;font:inherit}
+.legacy :global(.btn),.legacy :global(.remove-btn){border:1px solid #cbd5e1;border-radius:9px;padding:10px 15px;background:#fff;color:#344256;font-weight:700;min-height:42px}
+.legacy :global(.btn.primary),.legacy :global(.btn.critical-primary){background:#b91c1c;border-color:#b91c1c;color:#fff}
+.legacy :global(.btn.link){border:0;color:#b91c1c;background:none}
+.legacy :global(.remove-btn){color:#b91c1c;border-color:#fecaca;min-height:36px}
+.legacy :global(.selected-place),.legacy :global(.help-box),.legacy :global(.triage-note),.legacy :global(.critical-warning),.legacy :global(.evolution-note),.legacy :global(.epi-auto-note){padding:14px 16px;border-radius:10px;background:#eff6ff;color:#1e40af;margin:12px 0;font-size:13px}
+.legacy :global(.triage-note),.legacy :global(.critical-warning){background:#fff7ed;color:#9a3412}
+.legacy :global(.selected-place b),.legacy :global(.selected-place span){display:block}
+.legacy :global(.check-line){display:flex;align-items:center;gap:8px;padding:12px 0;font-size:13px}
+.legacy :global(.check-line input){flex:none}
+.legacy :global(.check-grid),.legacy :global(.epi-check-grid){display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:15px 0}
+.legacy :global(.check-item),.legacy :global(.epi-check-option){border:1px solid #dfe6ee;border-radius:9px;padding:10px;min-width:0;background:#fff}
+.legacy :global(.check-item label),.legacy :global(.epi-check-option){display:block}
+.legacy :global(.check-item .check-detail){margin-top:8px}
+.legacy :global(.clinical-tabs),.legacy :global(.tabs-auth){display:flex;gap:6px;overflow-x:auto;border-bottom:1px solid #e2e8f0;margin-bottom:22px;padding-bottom:13px}
+.legacy :global(.clinical-tabs button),.legacy :global(.tabs-auth button){border:0;border-radius:8px;background:#f2f5f8;color:#526175;padding:9px 13px;font-weight:700;white-space:nowrap}
+.legacy :global(.clinical-tabs button.active),.legacy :global(.tabs-auth button.active){background:#10233b;color:white}
+.legacy :global(.panel-banner){padding:13px 15px;background:#eff6ff;color:#1e40af;border-radius:10px;margin-bottom:15px}
+.legacy :global(.panel-banner b),.legacy :global(.panel-banner span){display:block}
+.legacy :global(.panel-banner span){font-size:12px;margin-top:4px}
+.legacy :global(.panel-banner.red){background:#fff1f2;color:#9f1239}
+.legacy :global(.panel-banner.purple){background:#f5f3ff;color:#6d28d9}
+.legacy :global(.panel-banner.green){background:#ecfdf5;color:#047857}
+.legacy :global(.panel-banner.orange){background:#fff7ed;color:#9a3412}
+.legacy :global(.clinical-panel.section-disabled>:not(.check-line:first-child)){display:none}
+.legacy :global(.patient-search),.legacy :global(.epi-search),.legacy :global(.pending-tools),.legacy :global(.certificate-search){display:flex;align-items:end;gap:10px;flex-wrap:wrap;margin-bottom:19px}
+.legacy :global(.patient-search>div),.legacy :global(.epi-search-input){flex:1;min-width:220px}
+.legacy :global(.history-filters){display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}
+.legacy :global(.history-toolbar),.legacy :global(.stats-footer){display:flex;gap:10px;align-items:center;margin:20px 0}
+.legacy :global(.no-results){padding:25px;border:1px dashed #cbd5e1;border-radius:10px;color:#718096;text-align:center}
+.legacy :global(.menu-title h1){font-size:30px;margin:0 0 5px}
+.legacy :global(.menu-title p){margin:0;color:#66768a}
+.legacy :global(.menu-grid){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:26px}
+.legacy :global(.menu-card){border:1px solid #dfe6ee;border-radius:16px;padding:23px;text-align:left;background:white;color:#172033;min-width:0}
+.legacy :global(.menu-card>span){font-size:25px;color:#b91c1c}
+.legacy :global(.menu-card h2){font-size:18px;margin:17px 0 7px}
+.legacy :global(.menu-card p){color:#68778a;min-height:42px;margin:0;line-height:1.5}
+.legacy :global(.menu-card b){display:block;margin-top:16px;color:#b91c1c;font-size:13px}
+.toolbar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:18px}
+.toolbar button{background:#fff;border:1px solid #cbd5e1;border-radius:9px;padding:10px 13px;color:#344256;font-size:13px;font-weight:700}
+.toolbar button:nth-child(3){background:#fff1f2;color:#b91c1c;border-color:#fecaca}
+.toolbar button:nth-child(4){background:#ecfdf5;color:#047857;border-color:#a7f3d0}
+.toolbar span{font-size:12px;color:#9a3412}
+.steps{display:flex;overflow-x:auto;gap:0;padding:8px;background:white;border:1px solid #dfe6ee;border-radius:12px;margin-bottom:22px}
+.steps button{flex:1;min-width:110px;padding:12px;border:0;background:transparent;border-radius:8px;color:#8a99aa;font-size:13px;font-weight:700}
+.steps .active{background:#fff1f2;color:#b91c1c}
+.legacy :global(.triage-abc-grid){grid-template-columns:repeat(3,minmax(0,1fr))}
+.legacy :global(.triage-vitals-grid),.legacy :global(.vital-current-grid),.legacy :global(.critical-vitals),.legacy :global(.evolution-vitals){grid-template-columns:repeat(3,minmax(0,1fr))}
+.legacy :global(.triage-priorities){display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.legacy :global(.triage-priority){display:block;border:1px solid #dfe6ee;border-top:4px solid #dc2626;border-radius:9px;padding:10px;font-size:12px}
+.legacy :global(.triage-p2){border-top-color:#f97316}.legacy :global(.triage-p3){border-top-color:#eab308}.legacy :global(.triage-p4){border-top-color:#16a34a}.legacy :global(.triage-p5){border-top-color:#2563eb}
+.legacy :global(.triage-priority span),.legacy :global(.triage-priority small){display:block;margin-top:6px}
+.legacy :global(.vital-series-box),.legacy :global(.triage-history-box),.legacy :global(.critical-history),.legacy :global(.evolution-history),.legacy :global(.profile-security),.legacy :global(.profile-establishments),.legacy :global(.danger-zone){border:1px solid #dfe6ee;border-radius:12px;padding:18px;margin-top:22px;background:#f8fafc}
+.legacy :global(.trauma-grid),.legacy :global(.critical-xabcde),.legacy :global(.critical-zero-grid),.legacy :global(.evolution-top-grid){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
+.legacy :global(.trauma-grid>div),.legacy :global(.critical-xabcde>article){padding:14px;border:1px solid #dfe6ee;border-radius:10px}
+.legacy :global(.repeat-row),.legacy :global(.epi-repeat-row){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;padding:14px;margin:10px 0;border:1px solid #dfe6ee;border-radius:10px;align-items:end}
+.legacy :global(.repeat-row.diagnosis-row){grid-template-columns:1fr 2fr auto}
+.legacy :global(.medicine-inventory-control){grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.legacy :global(.medicine-stock-summary){grid-column:1/-1;display:grid;gap:4px;color:#718096}
+.legacy :global(.numeric-calculator){max-width:340px;background:#10233b;padding:13px;border-radius:10px}
+.legacy :global(.calculator-keys){display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.legacy :global(.calculator-keys button){border:0;border-radius:6px;background:white;padding:9px;font-weight:800}
+.legacy :global(.epi-details){border:1px solid #dfe6ee;border-radius:10px;margin:13px 0;overflow:hidden}
+.legacy :global(.epi-details summary){cursor:pointer;background:#f8fafc;padding:14px 16px;font-weight:700}
+.legacy :global(.epi-details .details-content){padding:17px}
+.legacy :global(.epi-subsection){border:1px solid #dfe6ee;border-radius:12px;padding:20px;margin:18px 0}
+.legacy :global(.epi-subsection-title){display:flex;gap:10px;align-items:center;border-bottom:1px solid #e2e8f0;margin-bottom:15px}
+.legacy :global(.epi-subsection-title h3){margin:0}.legacy :global(.epi-subsection-title p){color:#718096;font-size:12px}
+.legacy :global(.epi-mode-switch){display:flex;gap:12px}.legacy :global(.epi-mode-switch label){flex:1;padding:12px;border:1px solid #dfe6ee;border-radius:10px}.legacy :global(.epi-mode-switch span){display:inline-grid;margin-left:7px}.legacy :global(.epi-mode-switch small){color:#718096}
+.legacy :global(.epi-activity-row){display:grid;grid-template-columns:2fr .7fr 1fr 2fr;gap:10px;align-items:center;border-bottom:1px solid #e2e8f0;padding:9px 0}
+.legacy :global(.epi-export-panel){display:flex;gap:15px;align-items:center;flex-wrap:wrap;background:#f8fafc;border:1px solid #dfe6ee;border-radius:12px;padding:16px;margin-top:20px}
+.legacy :global(.epi-export-panel>div:first-child){margin-right:auto}.legacy :global(.epi-export-panel h3){margin:0}.legacy :global(.epi-export-panel p){margin:3px 0;color:#718096;font-size:12px}
+.legacy :global(.document-choice){display:flex;align-items:center;gap:8px}
+.legacy :global(.stats-grid){display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.legacy :global(.stat-box){padding:15px;border:1px solid #dfe6ee;border-radius:10px}.legacy :global(.stat-box small),.legacy :global(.stat-box strong){display:block}.legacy :global(.stat-box strong){font-size:28px}
+.legacy :global(.signature-grid),.legacy :global(.profile-images){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}.legacy :global(.signature-preview),.legacy :global(.signature-pad){display:block;width:100%;height:130px;border:1px dashed #cbd5e1;background:#fff;margin-top:8px}
+.legacy :global(.auth-page){background:#fff;border:1px solid #dfe6ee;border-radius:16px;padding:24px}.legacy :global(.medical-bg),.legacy :global(.welcome){display:none}.legacy :global(.auth-card){max-width:650px;margin:auto}.legacy :global(.auth-form){display:grid;gap:8px}
+@media(max-width:1050px){.legacy :global(.triage-priorities){grid-template-columns:repeat(3,1fr)}.legacy :global(.stats-grid){grid-template-columns:repeat(2,1fr)}}
+@media(max-width:760px){.legacy :global(.section-body),.legacy :global(.section-head){padding:18px}.legacy :global(.clinical-grid),.legacy :global(.form-grid),.legacy :global(.menu-grid),.legacy :global(.history-filters),.legacy :global(.trauma-grid),.legacy :global(.critical-xabcde),.legacy :global(.critical-zero-grid),.legacy :global(.evolution-top-grid),.legacy :global(.triage-abc-grid),.legacy :global(.triage-vitals-grid),.legacy :global(.vital-current-grid),.legacy :global(.critical-vitals),.legacy :global(.evolution-vitals),.legacy :global(.signature-grid),.legacy :global(.profile-images),.legacy :global(.medicine-inventory-control),.legacy :global(.stats-grid){grid-template-columns:1fr}.legacy :global(.clinical-grid .span2),.legacy :global(.form-grid .full){grid-column:auto}.legacy :global(.check-grid),.legacy :global(.epi-check-grid),.legacy :global(.triage-priorities){grid-template-columns:repeat(2,minmax(0,1fr))}.legacy :global(.repeat-row),.legacy :global(.repeat-row.diagnosis-row),.legacy :global(.epi-repeat-row),.legacy :global(.epi-activity-row){grid-template-columns:1fr}.legacy :global(.epi-mode-switch){flex-direction:column}}
+@media(max-width:430px){.legacy :global(.check-grid),.legacy :global(.epi-check-grid),.legacy :global(.triage-priorities){grid-template-columns:1fr}}

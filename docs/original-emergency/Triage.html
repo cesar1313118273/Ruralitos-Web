@@ -1,0 +1,54 @@
+<article id="triageSection" class="section-card hidden triage-card">
+  <div class="section-head triage-head"><i>◆</i><div><h2>Triaje de emergencia</h2><p>Clasificación clínica inicial y reevaluaciones del mismo episodio.</p></div></div>
+  <div class="section-body">
+    <div class="triage-note"><b>Clasificación profesional</b><span>Seleccione la prioridad según su valoración clínica. El sistema estandariza nivel, color y tiempo máximo; no reemplaza el juicio del médico.</span></div>
+    <div class="critical-triage-shortcut"><div><b>Paciente inestable o trauma grave</b><span>Puede documentar la estabilización inmediatamente y completar el triaje después.</span></div><button class="btn critical-primary auto" type="button" onclick="abrirModoCritico_()">! Abrir Modo Crítico</button></div>
+    <form id="triageForm">
+      <input id="triageId" name="idTriage" type="hidden">
+      <div class="clinical-grid triage-time-grid"><div><label>Fecha *</label><input id="triageDate" name="fechaTriage" type="date" required></div><div><label>Hora *</label><input id="triageTime" name="horaTriage" type="time" required></div></div>
+
+      <h3>1. Evaluación rápida ABC</h3>
+      <div class="clinical-grid triage-abc-grid">
+        <div><label>Vía aérea *</label><select name="viaAerea" required><option value="">Seleccione</option><option>PERMEABLE</option><option>COMPROMETIDA</option><option>NO EVALUABLE</option></select></div>
+        <div><label>Ventilación *</label><select name="ventilacion" required><option value="">Seleccione</option><option>ADECUADA</option><option>COMPROMETIDA</option><option>NO EVALUABLE</option></select></div>
+        <div><label>Circulación *</label><select name="circulacion" required><option value="">Seleccione</option><option>ADECUADA</option><option>COMPROMETIDA</option><option>NO EVALUABLE</option></select></div>
+      </div>
+
+      <h3>2. Motivo dirigido</h3>
+      <textarea name="motivoTriage" class="main-clinical-text triage-motive" rows="5" required placeholder="Motivo principal, inicio, síntomas dominantes y hallazgos relevantes del primer contacto..."></textarea>
+
+      <h3>3. Signos vitales del triaje</h3>
+      <label class="check-line"><input id="triageNoVitals" name="sinSignosVitales" type="checkbox" value="SI"> No fue posible completar signos vitales antes de priorizar</label>
+      <div id="triageVitals" class="clinical-grid triage-vitals-grid">
+        <div><label>Temperatura °C</label><input name="temperatura" type="number" step="0.1" min="10" max="50"></div>
+        <div><label>PAS</label><input name="pas" type="number" min="0" max="400"></div>
+        <div><label>PAD</label><input name="pad" type="number" min="0" max="300"></div>
+        <div><label>FC/min</label><input name="pulso" type="number" min="0" max="400"></div>
+        <div><label>FR/min</label><input name="frecuenciaRespiratoria" type="number" min="0" max="150"></div>
+        <div><label>SatO₂ %</label><input name="pulsioximetria" type="number" min="0" max="100"></div>
+        <div><label>Glicemia mg/dL</label><input name="glicemia" type="number" min="0" max="3000"></div>
+        <div><label>Glasgow</label><input name="glasgow" type="number" min="3" max="15"></div>
+        <div><label>Dolor 0–10</label><input name="dolor" type="number" min="0" max="10"></div>
+      </div>
+      <small class="vital-validation-help">Los límites de captura detectan errores evidentes. Los valores extremos plausibles pueden confirmarse y conservarse si corresponden a la medición real.</small>
+
+      <h3>4. Prioridad</h3>
+      <div class="triage-priorities">
+        <label class="triage-priority triage-p1"><input type="radio" name="nivelPrioridad" value="1" required><span><b>Nivel 1 · Crítico</b><small>Rojo · atención inmediata</small></span></label>
+        <label class="triage-priority triage-p2"><input type="radio" name="nivelPrioridad" value="2"><span><b>Nivel 2 · Emergencia</b><small>Naranja · máximo 10 min</small></span></label>
+        <label class="triage-priority triage-p3"><input type="radio" name="nivelPrioridad" value="3"><span><b>Nivel 3 · Emergencia</b><small>Amarillo · máximo 60 min</small></span></label>
+        <label class="triage-priority triage-p4"><input type="radio" name="nivelPrioridad" value="4"><span><b>Nivel 4 · Estándar</b><small>Verde · máximo 120 min</small></span></label>
+        <label class="triage-priority triage-p5"><input type="radio" name="nivelPrioridad" value="5"><span><b>Nivel 5 · No urgente</b><small>Azul · máximo 240 min</small></span></label>
+      </div>
+      <div id="triagePrioritySummary" class="triage-priority-summary hidden"></div>
+
+      <h3>5. Área inicial y observaciones</h3>
+      <div class="clinical-grid"><div><label>Área / destino inicial *</label><select name="areaAtencion" required><option value="">Seleccione</option><option>REANIMACIÓN / CRÍTICOS</option><option>EMERGENCIA</option><option>URGENCIAS</option><option>OBSERVACIÓN</option><option>PRIMER CONTACTO / CONSULTORIO</option><option>REFERENCIA / DERIVACIÓN</option><option>OTRA</option></select></div><div><label>Factores de riesgo / vulnerabilidad</label><input name="factoresRiesgo" placeholder="Embarazo, edad extrema, discapacidad, violencia, etc."></div><div class="span2"><label>Observaciones</label><textarea name="observaciones" rows="4"></textarea></div></div>
+
+      <div class="actions triage-actions"><button id="saveTriageButton" class="btn primary auto" type="submit">Registrar triaje</button><button id="cancelTriageEdit" class="btn soft auto hidden" type="button" onclick="cancelarEdicionTriage_()">Cancelar edición</button></div>
+      <div id="triageStatus" class="selected-place hidden"></div>
+    </form>
+
+    <div class="triage-history-box"><div class="triage-history-head"><div><h3>Clasificaciones de este episodio</h3><p>Las reevaluaciones se conservan como registros independientes.</p></div><span id="triageCount">0 registros</span></div><div id="triageList" class="triage-list"><div class="no-results">Todavía no hay triaje registrado para este episodio.</div></div></div>
+  </div>
+</article>

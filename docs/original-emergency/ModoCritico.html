@@ -1,0 +1,61 @@
+<article id="criticalModeSection" class="section-card hidden critical-mode-card">
+  <div class="section-head critical-mode-head"><i>!</i><div><h2>Modo Crítico</h2><p>Registro rápido de reanimación y estabilización vinculado al episodio.</p></div><button class="btn soft auto critical-close" type="button" onclick="cerrarModoCritico_()">Cerrar</button></div>
+  <div class="section-body">
+    <div class="critical-warning"><b>Ruta rápida de documentación</b><span>No sustituye el triaje ni determina tratamientos. Registre lo realizado durante la estabilización y complete posteriormente el FORM.008.</span></div>
+    <form id="criticalModeForm">
+      <div class="critical-zero-grid">
+        <div><label>Fecha *</label><input name="fechaRegistro" id="criticalDate" type="date" required></div>
+        <div><label>Hora cero *</label><input name="horaRegistro" id="criticalTime" type="time" required></div>
+        <div class="critical-motive"><label>Motivo de activación *</label><input name="motivoActivacion" required placeholder="Trauma grave, compromiso respiratorio, choque, deterioro neurológico…"></div>
+      </div>
+
+      <h3>XABCDE rápido</h3>
+      <div class="critical-xabcde">
+        <article class="critical-x"><b>X · Hemorragia exanguinante</b><select name="xEstado" required><option value="">Seleccione</option><option>SIN HEMORRAGIA MASIVA</option><option>HEMORRAGIA MASIVA ACTIVA</option><option>HEMORRAGIA CONTROLADA</option><option>NO EVALUABLE</option></select><textarea name="xNotas" rows="3" placeholder="Hallazgos y control realizado"></textarea></article>
+        <article><b>A · Vía aérea</b><select name="aEstado" required><option value="">Seleccione</option><option>PERMEABLE</option><option>AMENAZADA</option><option>OBSTRUIDA</option><option>VÍA AÉREA PROTEGIDA</option><option>NO EVALUABLE</option></select><textarea name="aNotas" rows="3" placeholder="Hallazgos / protección cervical / intervención"></textarea></article>
+        <article><b>B · Respiración</b><select name="bEstado" required><option value="">Seleccione</option><option>ADECUADA</option><option>COMPROMETIDA</option><option>VENTILACIÓN ASISTIDA</option><option>NO EVALUABLE</option></select><textarea name="bNotas" rows="3" placeholder="Ventilación, tórax, soporte realizado"></textarea></article>
+        <article><b>C · Circulación</b><select name="cEstado" required><option value="">Seleccione</option><option>ADECUADA</option><option>COMPROMETIDA</option><option>SIGNOS DE CHOQUE</option><option>NO EVALUABLE</option></select><textarea name="cNotas" rows="3" placeholder="Perfusión, hemorragia, fluidos / hemoderivados"></textarea></article>
+        <article><b>D · Neurológico</b><textarea name="dNotas" rows="5" placeholder="Estado neurológico, focalidad, convulsiones, etc."></textarea></article>
+        <article><b>E · Exposición</b><textarea name="eNotas" rows="5" placeholder="Exposición, lesiones, control térmico y hallazgos relevantes"></textarea></article>
+      </div>
+
+      <h3>Signos y Glasgow</h3>
+      <div class="clinical-grid critical-vitals">
+        <div><label>Temperatura °C</label><input name="temperatura" type="number" step="0.1" min="10" max="50"></div>
+        <div><label>PAS</label><input name="pas" type="number" min="0" max="400"></div>
+        <div><label>PAD</label><input name="pad" type="number" min="0" max="300"></div>
+        <div><label>FC/min</label><input name="pulso" type="number" min="0" max="400"></div>
+        <div><label>FR/min</label><input name="frecuenciaRespiratoria" type="number" min="0" max="150"></div>
+        <div><label>SatO₂ %</label><input name="pulsioximetria" type="number" min="0" max="100"></div>
+        <div><label>Glicemia mg/dL</label><input name="glicemia" type="number" min="0" max="3000"></div>
+        <div><label>Llenado capilar s</label><input name="llenadoCapilar" type="number" min="0" max="120" step="0.1"></div>
+      </div>
+      <div class="clinical-grid critical-glasgow">
+        <div><label>Glasgow ocular</label><select name="glasgowOcular"><option value="">—</option><option>1</option><option>2</option><option>3</option><option>4</option></select></div>
+        <div><label>Glasgow verbal</label><select name="glasgowVerbal"><option value="">—</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+        <div><label>Glasgow motora</label><select name="glasgowMotora"><option value="">—</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></div>
+        <div class="score-box critical-score">Total<strong id="criticalGlasgowTotal">—</strong></div>
+        <div class="span2"><label>Pupilas</label><input name="pupilas" placeholder="Isocóricas, anisocoria, reacción, tamaño u observaciones"></div>
+      </div>
+      <small class="vital-validation-help">Los valores extremos requieren confirmación; los límites de captura no sustituyen la valoración clínica.</small>
+
+      <h3>Intervenciones inmediatas</h3>
+      <div class="clinical-grid critical-interventions">
+        <div><label>Oxígeno / soporte ventilatorio</label><select name="soporteOxigeno"><option value="">Seleccione / no registrado</option><option>AIRE AMBIENTE</option><option>CÁNULA NASAL</option><option>MASCARILLA SIMPLE</option><option>MASCARILLA CON RESERVORIO</option><option>VENTILACIÓN CON BVM</option><option>VENTILACIÓN MECÁNICA</option><option>OTRO</option></select></div>
+        <div><label>Flujo / FiO₂</label><input name="flujoFio2" placeholder="Ej.: 10 L/min · FiO₂ 0,60"></div>
+        <div class="span2"><label>Intervención de vía aérea</label><textarea name="intervencionViaAerea" rows="3" placeholder="Aspiración, dispositivo, intubación, fijación cervical u otra intervención realizada"></textarea></div>
+        <div class="span2"><label>Acceso vascular / reposición</label><textarea name="accesoVascular" rows="3" placeholder="Tipo, calibre, sitio, líquidos o hemoderivados administrados"></textarea></div>
+        <div class="span2"><label>Medicamentos administrados durante la estabilización</label><textarea name="medicamentosAdministrados" rows="4" placeholder="Medicamento, dosis, vía y hora. Complete luego el tratamiento estructurado para el control de inventario."></textarea></div>
+        <div class="span2"><label>Procedimientos</label><textarea name="procedimientos" rows="4" placeholder="Procedimientos efectuados durante la estabilización"></textarea></div>
+        <div class="span2"><label>Respuesta clínica</label><textarea name="respuestaClinica" rows="4" placeholder="Cambios posteriores a las intervenciones"></textarea></div>
+        <div><label>Destino inmediato</label><select name="destinoInmediato"><option value="">Seleccione</option><option>CONTINÚA EN REANIMACIÓN / CRÍTICOS</option><option>OBSERVACIÓN</option><option>REFERENCIA / TRANSFERENCIA</option><option>QUIRÓFANO</option><option>HOSPITALIZACIÓN</option><option>ALTA</option><option>OTRO</option></select></div>
+        <div><label>Observaciones</label><input name="observaciones" placeholder="Información adicional breve"></div>
+      </div>
+
+      <div class="actions critical-actions"><button id="saveCriticalMode" class="btn critical-primary auto" type="submit">Registrar hora cero crítica</button><button class="btn soft auto" type="button" onclick="limpiarModoCriticoForm_()">Limpiar para reevaluación</button><button class="btn primary auto" type="button" onclick="irAtencionDesdeCritico_()">Continuar al FORM.008 →</button></div>
+      <div id="criticalModeStatus" class="selected-place hidden"></div>
+    </form>
+
+    <div class="critical-history"><div class="critical-history-head"><div><h3>Cronología crítica del episodio</h3><p>Los registros son acumulativos y no eliminan los anteriores.</p></div><span id="criticalModeCount">0 registros</span></div><div id="criticalModeList"><div class="no-results">Todavía no hay registros de modo crítico.</div></div></div>
+  </div>
+</article>

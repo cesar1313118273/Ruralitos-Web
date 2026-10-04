@@ -1,41 +1,35 @@
-# Adaptación del módulo de Emergencia
+# Adaptación fiel del módulo de Emergencia
 
-Fuente funcional: proyecto Google Apps Script `FORM008_AppScript` proporcionado por el usuario.
+La referencia entregada es `FORM008_AppScript`. Los 19 HTML originales se conservan sin cambios en
+`docs/original-emergency/`. La pantalla web utiliza los campos, textos, opciones y orden de esos
+archivos; solo la barra lateral y la presentación visual corresponden a Next.js.
 
-## Disponible en la adaptación integral de interfaz
+## Correspondencia de pantallas
 
-- Flujo guiado: establecimiento, paciente, triaje, atención y finalización.
-- Admisión con paciente identificado o sin documento.
-- Evaluación ABC, cinco prioridades y destino inicial.
-- Signos vitales y validación de límites de captura en FastAPI.
-- Motivo, antecedentes, enfermedad actual, examen físico y XABCDE.
-- Modo crítico para registrar estabilización antes de completar el formulario.
-- Evolución y observación dentro del episodio.
-- Diagnóstico, plan, egreso y selección de documentos finales.
-- SCORE MAMÁ conforme a la lógica existente del proyecto, recalculado en FastAPI.
-- Interfaz adaptable a escritorio, tableta y teléfono.
-- Menú principal con accesos a atención, pendientes, historias, EPI, matriz y certificados.
-- Catálogo de historias con filtros y panel de auditoría.
-- EPI grupal e individual con secciones clínicas, epidemiológicas, laboratorio, contactos y actividades.
-- Matriz de entrega de guardia con ámbito y formatos de salida.
-- Certificado médico con diagnósticos, reposo, firma y formatos.
-- Panel estadístico del profesional.
-- Perfil, ingreso, registro, recuperación de clave, firma, sello y eliminación de cuenta.
-- Paneles de admisión y gestión completa de pacientes.
-- Campos repetibles para diagnósticos, medicamentos, muestras y contactos.
+| Pantalla web | HTML original |
+| --- | --- |
+| Panel principal | `PanelPrincipal.html` |
+| Nueva atención: establecimiento y acceso | `Index.html` |
+| Nueva atención: paciente, triaje y atención clínica | `Paciente.html`, `Triage.html`, `Atencion.html` |
+| Nueva atención: embarazo, exámenes, diagnóstico, tratamiento, egreso y documentos | `Finalizacion.html` |
+| Modo Crítico y Evolución/Observación | `ModoCritico.html`, `EvolucionObservacion.html` |
+| Pendientes e historias clínicas | `ListaPendientes.html`, `CatalogoHistorias.html` |
+| EPI, matriz y certificado | `EpiInterfaz.html`, `MatrizGuardiaInterfaz.html`, `CertificadoMedicoInterfaz.html` |
+| Estadísticas y perfil | `EstadisticasInterfaz.html`, `PerfilInterfaz.html` |
+| Admisión y gestión de pacientes | `RolesInterfaz.html`, `EstadisticoInterfaz.html` |
 
-## Preparado, pendiente de persistencia
+`Estilos.html` y `Scripts.html` también se conservan como referencia. Las listas que `Scripts.html`
+creaba en tiempo de ejecución (eventos, antecedentes, examen físico, exámenes, síntomas, vacunas,
+riesgos, actividades y filas repetibles) están trasladadas a `original-dynamics.ts`.
 
-Las pantallas y controles ya están adaptados. Estas operaciones necesitan la conexión con
-Supabase para conservar y consultar datos reales:
+`frontend/generate-emergency-markup.mjs` vuelve a generar `original-markup.json` desde los HTML
+archivados. El generador solo retira los manejadores de eventos de Apps Script y la clase `hidden`
+de la sección raíz para poder mostrarla en Next.js; conserva los controles y las opciones originales.
 
-- Inicio de sesión, roles y establecimientos autorizados.
-- Búsqueda, creación y vinculación definitiva de pacientes.
-- Episodios, controles seriados, triajes, evoluciones y auditoría.
-- Bandeja de pendientes e historias clínicas.
-- Catálogo CIE-10 e inventario de medicamentos.
-- Generación y descarga de FORM.008, Excel y certificado médico.
-- Firmas, sellos, EPI, matriz de guardia y estadísticas.
+## Estado de la integración
 
-Hasta completar esa integración, el navegador no guarda información clínica de pacientes en
-almacenamiento local. Esto evita crear una persistencia temporal insegura.
+La navegación, las pestañas, los campos condicionales y las filas repetibles pueden inspeccionarse
+y utilizarse en la interfaz. Todavía no hay base de datos conectada a estas pantallas. Buscar,
+guardar, finalizar, autenticar, consultar catálogos y generar documentos requiere adaptar los
+servicios `.gs` al backend y conectar Supabase. La web no afirma que esas operaciones se hayan
+completado: muestra un aviso cuando se intentan. No se guarda información clínica en el navegador.

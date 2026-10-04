@@ -1,0 +1,38 @@
+<main id="mainMenu" class="app-main menu-page">
+  <div class="menu-title">
+    <h1>¿Qué desea realizar?</h1>
+    <p>Seleccione una opción para registrar, continuar, consultar o consolidar atenciones.</p>
+  </div>
+  <div class="menu-grid">
+    <button class="menu-card medical" type="button" onclick="abrirNuevaAtencion_()">
+      <span>⚕</span><h2>Atención médica</h2>
+      <p>Crear una nueva historia clínica utilizando el FORM.008 de primer nivel.</p>
+      <b>Comenzar atención →</b>
+    </button>
+    <button class="menu-card pending" type="button" onclick="abrirPendientes_()">
+      <span>◷</span><h2>FORM.008 pendientes</h2>
+      <p>Continuar historias clínicas guardadas que todavía no han sido finalizadas.</p>
+      <b><i id="pendingCount">0</i> pendientes · Ver documentos →</b>
+    </button>
+    <button class="menu-card histories" type="button" onclick="abrirHistorias_()">
+      <span>▤</span><h2>Historias clínicas</h2>
+      <p>Buscar por fecha, identificación, nombres, enfermedad, CIE-10 o edad.</p>
+      <b>Consultar historias →</b>
+    </button>
+    <button class="menu-card epi" type="button" onclick="abrirEpi_()">
+      <span>☷</span><h2>EPI epidemiológica</h2>
+      <p>Crear fichas grupales o individuales recuperando datos de la atención.</p>
+      <b>Crear documento EPI →</b>
+    </button>
+    <button class="menu-card matrix" type="button" onclick="abrirMatrizGuardia_()">
+      <span>▦</span><h2>Matriz de guardia</h2>
+      <p>Consolidar enfermedades por rango de fecha, edad, sexo y condición final.</p>
+      <b>Generar matriz →</b>
+    </button>
+    <button class="menu-card certificate" type="button" onclick="abrirCertificado_()">
+      <span>✚</span><h2>Certificado médico</h2>
+      <p>Generar certificados de atención o reposo reutilizando los datos clínicos.</p>
+      <b>Crear certificado →</b>
+    </button>
+  </div>
+</main>

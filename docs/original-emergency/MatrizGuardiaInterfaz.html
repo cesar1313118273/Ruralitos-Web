@@ -1,0 +1,63 @@
+<main id="matrixPage" class="app-main hidden">
+  <article class="section-card matrix-module-card">
+    <div class="section-head matrix-head">
+      <i>▦</i>
+      <div>
+        <h2>Matriz de entrega de guardia</h2>
+        <p>Consolide automáticamente las atenciones por enfermedad, edad, sexo y condición final.</p>
+      </div>
+    </div>
+    <div class="section-body">
+      <form id="matrixForm" onsubmit="generarMatrizGuardiaUI_(event)">
+        <section class="matrix-filter-card">
+          <div class="clinical-grid">
+            <div><label>Fecha inicial *</label><input id="matrixFrom" name="desde" type="date" required></div>
+            <div><label>Fecha final *</label><input id="matrixTo" name="hasta" type="date" required></div>
+            <div><label>Atenciones que se incluirán</label>
+              <select id="matrixScope" name="ambito" onchange="actualizarAmbitoMatriz_()">
+                <option value="MIS ATENCIONES">MIS ATENCIONES</option>
+                <option value="ESTABLECIMIENTO">TODO EL ESTABLECIMIENTO SELECCIONADO</option>
+              </select>
+            </div>
+            <div id="matrixEstablishmentBox" class="hidden">
+              <label>Establecimiento</label>
+              <select id="matrixEstablishment" name="unicodigo"></select>
+            </div>
+          </div>
+          <div class="matrix-explanation">
+            <b>Cómo se consolida</b>
+            <span>Se registra un solo diagnóstico principal por atención: primero el diagnóstico definitivo y, si no existe, el primer presuntivo.</span>
+            <span>Cada atención se cuenta una sola vez por enfermedad y se distribuye en su grupo etario. La columna de fallecidos se determina únicamente por la condición vital de egreso registrada como FALLECIDO.</span>
+          </div>
+        </section>
+
+        <section class="epi-export-panel matrix-export-panel">
+          <div>
+            <h3>Formatos de descarga</h3>
+            <p>Seleccione PDF, Excel o ambos.</p>
+          </div>
+          <label class="document-choice">
+            <input id="matrixOutputPdf" type="checkbox" checked>
+            <span><b>PDF</b><small>Matriz horizontal en A4</small></span>
+          </label>
+          <label class="document-choice">
+            <input id="matrixOutputExcel" type="checkbox">
+            <span><b>Excel</b><small>Matriz editable</small></span>
+          </label>
+          <button id="matrixGenerate" class="btn primary auto" type="submit">
+            Generar matriz
+          </button>
+        </section>
+      </form>
+
+      <div id="matrixStatus" class="selected-place hidden"></div>
+      <div id="matrixSummary" class="matrix-summary hidden">
+        <article><span>⚕</span><b id="matrixAttentionCount">0</b><small>atenciones incluidas</small></article>
+        <article><span>▤</span><b id="matrixDiseaseCount">0</b><small>enfermedades consolidadas</small></article>
+      </div>
+      <div class="actions matrix-back">
+        <button class="btn soft" type="button" onclick="volverMenu_()">← Menú principal</button>
+      </div>
+    </div>
+  </article>
+</main>

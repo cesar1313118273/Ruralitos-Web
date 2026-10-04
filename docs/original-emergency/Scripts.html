@@ -1,0 +1,1216 @@
+<script>
+let token='',usuario=null,establecimientos=[],establecimientoCuenta=null,seleccionRegistro=null,seleccionApp=null,admisionActual=null,idPendienteActual='',idEpisodioActual='',idRegistroActual='',idEpisodioAdmisionRolActual='',clinicalIndex=0,finalIndex=0,firmaProcesada='',selloProcesado='',firmaOriginal=null,selloOriginal=null,epiPacienteActual=null,cargaEstablecimientosPromise=null,controlesSignosEpisodio_=[],triajesEpisodio_=[],registrosCriticosEpisodio_=[],evolucionesEpisodio_=[],triajeObligatorioActual_=false,episodioFinalizadoActual_=false,motivoModificacionHistoria_='';
+const $=s=>document.querySelector(s);
+let procesosActivos_=0,temporizadorCarga_=0;
+function prepararAvisosGlobales_(){
+  if(!document.querySelector('#globalLoader'))document.body.insertAdjacentHTML('beforeend','<div id="globalLoader" class="global-loader hidden" aria-live="polite"><div class="global-loader-card"><i></i><b>Procesando…</b><small>Espere un momento</small></div></div><div id="toastContainer" class="toast-container" aria-live="polite"></div>');
+}
+function iniciarCargaGlobal_(){
+  procesosActivos_++;
+  clearTimeout(temporizadorCarga_);
+  temporizadorCarga_=setTimeout(()=>{prepararAvisosGlobales_();const e=document.querySelector('#globalLoader');if(e&&procesosActivos_>0)e.classList.remove('hidden')},180);
+}
+function terminarCargaGlobal_(){
+  procesosActivos_=Math.max(0,procesosActivos_-1);
+  if(procesosActivos_===0){clearTimeout(temporizadorCarga_);const e=document.querySelector('#globalLoader');if(e)e.classList.add('hidden')}
+}
+function mostrarCargaTarjeta_(){
+  prepararAvisosGlobales_();
+  procesosActivos_++;
+  clearTimeout(temporizadorCarga_);
+  const cargador=document.querySelector('#globalLoader');
+  if(cargador)cargador.classList.remove('hidden');
+}
+function mostrarAviso_(mensaje,tipo='info'){
+  prepararAvisosGlobales_();const caja=document.querySelector('#toastContainer'),aviso=document.createElement('div');aviso.className='app-toast '+tipo;aviso.innerHTML='<span>'+(tipo==='error'?'!':'✓')+'</span><p></p><button type="button" aria-label="Cerrar">×</button>';aviso.querySelector('p').textContent=mensaje==null?'':String(mensaje);aviso.querySelector('button').onclick=()=>aviso.remove();caja.appendChild(aviso);requestAnimationFrame(()=>aviso.classList.add('show'));setTimeout(()=>{aviso.classList.remove('show');setTimeout(()=>aviso.remove(),250)},4200);
+}
+window.alert=mensaje=>mostrarAviso_(mensaje,/error|incorrect|no se pudo|obligatori|falta|inv[aá]lid/i.test(String(mensaje))?'error':'info');
+function cargaLista_(texto='Buscando…'){return '<div class="inline-search-loading"><i></i><span>'+texto+'</span></div>'}
+function esBusquedaSilenciosa_(fn,args){return fn==='buscarCie10'||fn==='buscarPaciente'||fn==='buscarPacienteCertificado'||fn==='guardarPacienteYAdmision'||fn==='buscarSignosPacienteFecha'||fn==='listarControlesSignosEpisodio'||fn==='listarTriageEpisodio'||fn==='obtenerEstadoTriageEpisodio'||fn==='listarModoCriticoEpisodio'||fn==='listarEvolucionObservacion'||fn==='buscarHistorialMedicamentosUnidad'||fn==='obtenerEstablecimientos'||fn==='obtenerEstablecimientosCuenta'||fn==='listarPendientes'||fn==='buscarPacienteEpi'||fn==='listarHistoriasClinicas'||fn==='listarSignosEnfermeria'||fn==='listarMedicamentosUnidadContexto'||fn==='obtenerEstadisticas'||fn==='obtenerEstadisticasAdmision'||fn==='obtenerEstadisticasEnfermeria'}
+const run=(fn,...args)=>{const silenciosa=esBusquedaSilenciosa_(fn,args);if(fn==='buscarHistorialMedicamentosUnidad'){const caja=document.querySelector('#nurseMedicineForm .medicine-results');if(caja){caja.innerHTML=cargaLista_('Buscando medicamentos…');caja.classList.remove('hidden')}}const fnReal=fn==='obtenerEstadisticas'&&normalCliente_(usuario&&usuario.cargo)==='ADMISIONISTA'?'obtenerEstadisticasAdmisionUnicos':fn;if(!silenciosa)iniciarCargaGlobal_();return new Promise((ok,no)=>google.script.run.withSuccessHandler(r=>{if(!silenciosa)terminarCargaGlobal_();ok(r)}).withFailureHandler(e=>{if(!silenciosa)terminarCargaGlobal_();no(e)})[fnReal](...args))};
+async function descargarArchivoSeguro_(ticket,nombre,ventana){
+  if(!ticket)return false;
+  const r=await run('obtenerArchivoSeguro',token,ticket);
+  if(!r||!r.base64)throw new Error('No se recibió el contenido del archivo.');
+  const binario=atob(r.base64),bytes=new Uint8Array(binario.length);
+  for(let i=0;i<binario.length;i++)bytes[i]=binario.charCodeAt(i);
+  const url=URL.createObjectURL(new Blob([bytes],{type:r.mime||'application/octet-stream'}));
+  const destino=(ventana&&!ventana.closed)?ventana.document:document;
+  const cuerpo=destino.body||document.body,enlace=destino.createElement('a');
+  enlace.href=url;enlace.download=r.nombre||nombre||'documento';enlace.style.display='none';cuerpo.appendChild(enlace);enlace.click();enlace.remove();
+  if(ventana&&!ventana.closed){try{ventana.document.body.innerHTML='<p style="font:16px Arial;padding:25px">Descarga segura iniciada. Puede cerrar esta ventana.</p>'}catch(e){}}
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+  return true;
+}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  $('#app').classList.add('hidden'); $('#auth').classList.remove('hidden');
+  document.querySelectorAll('[data-auth]').forEach(b=>b.addEventListener('click',()=>verAuth(b.dataset.auth)));
+  configurarPicker('regSearch','regResults',seleccionarRegistro);
+  configurarPicker('appSearch','appResults',seleccionarApp);
+  await cargarEstablecimientos_();
+  prepararClinica_();
+  prepararTriageUI_();
+  prepararModoCriticoUI_();
+  prepararEvolucionObservacionUI_();
+  const activarEvento=$('#enableAccident');if(activarEvento){activarEvento.addEventListener('change',()=>{$('#accidente').querySelectorAll('input,select,textarea').forEach(e=>{if(e!==activarEvento)e.disabled=!activarEvento.checked})});activarEvento.dispatchEvent(new Event('change'))}
+  prepararFinal_();
+  if(!$('#idPendienteFinal')){const campo=document.createElement('input');campo.type='hidden';campo.id='idPendienteFinal';campo.name='idPendiente';$('#finalForm').appendChild(campo)}
+  $('#finalForm').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.tagName!=='TEXTAREA'){e.preventDefault();e.stopPropagation()}});
+  prepararScoreMama_();
+  const estadoGenerado=$('#generateStatus');if(estadoGenerado)new MutationObserver(()=>{const nuevo=$('#newPatientArea');if(nuevo&&estadoGenerado.querySelector('a'))nuevo.classList.remove('hidden')}).observe(estadoGenerado,{childList:true,subtree:true});
+  const eh=$('#enableHistory'),hf=$('#historyFields');if(eh&&hf){eh.onchange=()=>{hf.classList.toggle('hidden',!eh.checked);const noAplica=$('#historyChecklist .check-item:first-child input[type=checkbox]');if(!eh.checked){limpiarContenedor_(hf);if(noAplica){noAplica.checked=true;noAplica.dispatchEvent(new Event('change'))}}else if(noAplica){noAplica.checked=false;noAplica.dispatchEvent(new Event('change'))}};eh.dispatchEvent(new Event('change'))}
+  const carpetaUI=$('#carpetaDestino');if(carpetaUI)carpetaUI.addEventListener('input',cambiarDestino_);cambiarDestino_();
+  const pf=$('#patientForm'),fn=pf&&pf.elements.fechaNacimiento;if(fn&&!pf.elements.horaNacimiento){const caja=document.createElement('div');caja.id='birthTimeBox';caja.className='hidden';caja.innerHTML='<label>Hora de nacimiento</label><input name="horaNacimiento" type="time">';fn.parentElement.insertAdjacentElement('afterend',caja)}if(fn)fn.addEventListener('change',()=>calcularEdadUI_(true));if(pf&&pf.elements.condicionEdad)pf.elements.condicionEdad.addEventListener('change',()=>calcularEdadUI_(false));if(pf&&pf.elements.horaNacimiento)pf.elements.horaNacimiento.addEventListener('change',()=>calcularEdadUI_(false));
+  prepararCalculadoraDosis_();
+  const motivoAnterior=$('#patientForm')&&$('#patientForm').elements.motivoAtencion;if(motivoAnterior&&motivoAnterior.parentElement)motivoAnterior.parentElement.classList.add('hidden');
+  prepararImagenPerfil_('firmaFile','firmaCanvas','firma');prepararImagenPerfil_('selloFile','selloCanvas','sello');prepararImagenPerfil_('profileFirmaFile','profileFirmaCanvas','firma');prepararImagenPerfil_('profileSelloFile','profileSelloCanvas','sello');prepararLienzoFirma_('registerSignaturePad');prepararLienzoFirma_('profileSignaturePad');const th=$('#backgroundThreshold');if(th)th.oninput=()=>{$('#thresholdValue').textContent=th.value;if(firmaOriginal)procesarImagen_(firmaOriginal,'firmaCanvas','firma');if(selloOriginal)procesarImagen_(selloOriginal,'selloCanvas','sello')};const pth=$('#profileBackgroundThreshold');if(pth)pth.oninput=()=>{$('#profileThresholdValue').textContent=pth.value;if(firmaOriginal)procesarImagen_(firmaOriginal,'profileFirmaCanvas','firma');if(selloOriginal)procesarImagen_(selloOriginal,'profileSelloCanvas','sello')};
+  ajustarRegistroPorCargo_();prepararPanelesRoles_();prepararFormularioAdmisionCompleto_();
+});
+
+function verAuth(id){document.querySelectorAll('.auth-form').forEach(f=>f.classList.toggle('hidden',f.id!==id));document.querySelectorAll('[data-auth]').forEach(b=>b.classList.toggle('active',b.dataset.auth===id));$('#msg').classList.add('hidden');if(id==='registro')cargarEstablecimientos_().then(()=>{if($('#regSearch')===document.activeElement||$('#regSearch').value)mostrarResultados('regSearch','regResults',seleccionarRegistro)})}
+function mostrarRecuperacion(){verAuth('recuperar')}
+function configurarPicker(inputId,resultsId,onSelect){const input=$('#'+inputId),results=$('#'+resultsId);if(!input||!results)return;input.addEventListener('input',()=>{if(inputId==='regSearch'){seleccionRegistro=null;const codigo=$('#regCodigo');if(codigo)codigo.value='';const seleccionado=$('#regSelected');if(seleccionado)seleccionado.classList.add('hidden')}if(!establecimientos.length)cargarEstablecimientos_().then(()=>mostrarResultados(inputId,resultsId,onSelect));else mostrarResultados(inputId,resultsId,onSelect)});input.addEventListener('focus',()=>{if(!establecimientos.length)cargarEstablecimientos_().then(()=>mostrarResultados(inputId,resultsId,onSelect));else mostrarResultados(inputId,resultsId,onSelect)});document.addEventListener('click',e=>{if(!e.target.closest('#'+inputId)&&!e.target.closest('#'+resultsId))results.classList.add('hidden')})}
+async function cargarEstablecimientos_(forzar){
+  if(establecimientos.length&&!forzar)return establecimientos;
+  if(cargaEstablecimientosPromise)return cargaEstablecimientosPromise;
+  const cajas=['regResults','appResults','profileEstResults'].map(id=>$('#'+id)).filter(Boolean);cajas.forEach(c=>{c.innerHTML=cargaLista_('Buscando centros de salud…');c.classList.remove('hidden')});
+  cargaEstablecimientosPromise=run('obtenerEstablecimientos').then(lista=>{establecimientos=Array.isArray(lista)?lista:[];if(!establecimientos.length)throw new Error('No se encontraron establecimientos en la base de datos.');return establecimientos}).catch(e=>{establecimientos=[];const texto=e&&e.message?e.message:String(e);cajas.forEach(c=>{c.innerHTML='<div class="no-results">No se pudieron cargar los centros: '+esc(texto)+'</div>';c.classList.remove('hidden')});mensaje(texto,true);return[]}).finally(()=>{cargaEstablecimientosPromise=null});
+  return cargaEstablecimientosPromise;
+}
+function normalizar(v){return String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim()}
+function mostrarResultados(inputId,resultsId,onSelect){const input=$('#'+inputId),box=$('#'+resultsId);if(!input||!box)return;const q=normalizar(input.value);const items=establecimientos.filter(e=>normalizar([e.nombre,e.unicodigo,e.institucion,e.provincia,e.canton,e.parroquia].join(' ')).includes(q)).slice(0,60);box.innerHTML='';box.classList.remove('hidden');if(!items.length){box.innerHTML='<div class="no-results">No se encontraron centros de salud.</div>';return}items.forEach(e=>{const b=document.createElement('button');b.type='button';b.className='picker-item';b.innerHTML=`<span><strong>${esc(e.nombre)}</strong><small>${esc([e.institucion,e.provincia,e.canton,e.parroquia].filter(Boolean).join(' · '))}</small></span><span class="picker-code">${esc(e.unicodigo)}</span>`;b.onclick=()=>{onSelect(e);box.classList.add('hidden')};box.appendChild(b)})}
+function esc(v){const d=document.createElement('div');d.textContent=v||'';return d.innerHTML}
+function seleccionarRegistro(e){seleccionRegistro=e;$('#regCodigo').value=e.unicodigo;$('#regSearch').value=e.nombre+' · '+e.unicodigo;$('#regSelected').textContent=[e.provincia,e.canton,e.parroquia].filter(Boolean).join(' · ');$('#regSelected').classList.remove('hidden')}
+function seleccionarApp(e){seleccionApp=e;const codigo=$('#appCodigo'),busqueda=$('#appSearch'),seleccionado=$('#appSelected');if(codigo)codigo.value=e.unicodigo;if(busqueda)busqueda.value=e.nombre+' · '+e.unicodigo;if(seleccionado){seleccionado.textContent='Unicódigo '+e.unicodigo+' · '+[e.provincia,e.canton,e.parroquia].filter(Boolean).join(' · ');seleccionado.classList.remove('hidden')}pintar(e)}
+
+$('#login').onsubmit=async e=>{e.preventDefault();try{const d=Object.fromEntries(new FormData(e.target));const r=await run('iniciarSesion',d.cedula,d.clave);token=r.token;usuario=r.usuario;establecimientos=r.establecimientos;establecimientoCuenta=r.establecimiento||null;abrirApp()}catch(x){mensaje(x.message,true)}};
+$('#registro').onsubmit=async e=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.target));if(!seleccionRegistro)return mensaje('Seleccione un establecimiento desde los resultados de búsqueda.',true);if(d.clave!==d.confirmar)return mensaje('Las claves no coinciden.',true);d.firmaPng=firmaProcesada;d.selloPng=selloProcesado;try{const r=await run('registrarUsuario',d);mensaje(r.mensaje);e.target.reset();firmaProcesada='';selloProcesado='';firmaOriginal=null;selloOriginal=null;['firmaCanvas','selloCanvas','registerSignaturePad'].forEach(id=>{const c=$('#'+id);c.getContext('2d').clearRect(0,0,c.width,c.height)});$('#registerSignatureImage').classList.remove('hidden');$('#registerSignatureDraw').classList.add('hidden');$('#thresholdValue').textContent='0';seleccionRegistro=null;$('#regSelected').classList.add('hidden')}catch(x){mensaje(x.message,true)}};
+
+function prepararImagenPerfil_(fileId,canvasId,tipo){const input=$('#'+fileId);if(!input)return;input.onchange=()=>{const file=input.files[0];if(!file)return;if(file.size>5000000)return mensaje('La imagen no debe superar 5 MB.',true);const reader=new FileReader();reader.onload=()=>{const img=new Image();img.onload=()=>{if(tipo==='firma')firmaOriginal=img;else selloOriginal=img;procesarImagen_(img,canvasId,tipo)};img.src=reader.result};reader.readAsDataURL(file)}}
+function procesarImagen_(img,canvasId,tipo){const maxW=tipo==='firma'?1600:1200,maxH=800,scale=Math.min(1,maxW/img.width,maxH/img.height),w=Math.max(1,Math.round(img.width*scale)),h=Math.max(1,Math.round(img.height*scale)),tmp=document.createElement('canvas');tmp.width=w;tmp.height=h;const x=tmp.getContext('2d');x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';x.drawImage(img,0,0,w,h);const data=x.getImageData(0,0,w,h),p=data.data,control=canvasId.indexOf('profile')===0?$('#profileBackgroundThreshold'):$('#backgroundThreshold'),sensibilidad=Number(control&&control.value||0),transicion=18;for(let i=0;i<p.length;i+=4){const distanciaBlanco=255-(p[i]+p[i+1]+p[i+2])/3;if(distanciaBlanco<=sensibilidad)p[i+3]=0;else if(distanciaBlanco<sensibilidad+transicion)p[i+3]=Math.round(255*(distanciaBlanco-sensibilidad)/transicion)}x.putImageData(data,0,0);const box=recorte_(data,w,h),objetivoW=tipo==='firma'?1400:900,objetivoH=tipo==='firma'?500:900,ampliacion=Math.max(1,Math.min(3,objetivoW/box.w,objetivoH/box.h)),salidaW=Math.max(1,Math.round(box.w*ampliacion)),salidaH=Math.max(1,Math.round(box.h*ampliacion)),c=$('#'+canvasId);c.width=salidaW;c.height=salidaH;const ctx=c.getContext('2d');ctx.clearRect(0,0,salidaW,salidaH);ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';ctx.drawImage(tmp,box.x,box.y,box.w,box.h,0,0,salidaW,salidaH);const seguro=limitarCanvasPng_(c),url=seguro.toDataURL('image/png');if(tipo==='firma')firmaProcesada=url;else selloProcesado=url}
+function recorte_(data,w,h){const p=data.data;let minX=w,minY=h,maxX=-1,maxY=-1;for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(p[(y*w+x)*4+3]>20){minX=Math.min(minX,x);minY=Math.min(minY,y);maxX=Math.max(maxX,x);maxY=Math.max(maxY,y)}if(maxX<0)return{x:0,y:0,w,h};const pad=8;minX=Math.max(0,minX-pad);minY=Math.max(0,minY-pad);maxX=Math.min(w-1,maxX+pad);maxY=Math.min(h-1,maxY+pad);return{x:minX,y:minY,w:maxX-minX+1,h:maxY-minY+1}}
+$('#recuperar').onsubmit=async e=>{e.preventDefault();try{const d=Object.fromEntries(new FormData(e.target));const r=await run('solicitarRecuperacion',d.correo);mensaje(r.mensaje);$('#resetBox').classList.remove('hidden')}catch(x){mensaje(x.message,true)}};
+async function cambiarClave(){const d=Object.fromEntries(new FormData($('#recuperar')));try{const r=await run('restablecerClave',d.correo,d.codigo,d.nueva);mensaje(r.mensaje);setTimeout(()=>verAuth('login'),1300)}catch(x){mensaje(x.message,true)}}
+function codigoNormal(v){return String(v||'').toUpperCase().replace(/[^A-Z0-9]/g,'')}
+function abrirApp(){reiniciarAtencion_();$('#auth').classList.add('hidden');$('#app').classList.remove('hidden');actualizarSaludo_();if(!window.saludoTimer)window.saludoTimer=setInterval(actualizarSaludo_,60000);volverMenu_();if(esMedico_())actualizarConteoPendientes_()}
+
+function reiniciarAtencion_(){
+  admisionActual=null;idPendienteActual='';idEpisodioActual='';idRegistroActual='';motivoModificacionHistoria_='';clinicalIndex=0;finalIndex=0;seleccionApp=null;registrosCriticosEpisodio_=[];
+  ['patientForm','triageForm','clinicalForm','finalForm'].forEach(id=>{const f=$('#'+id);if(f)f.reset()});
+  ['patientSection','triageSection','criticalModeSection','clinicalSection','finalSection'].forEach(id=>{const e=$('#'+id);if(e)e.classList.add('hidden')});
+  ['patientMessage','admissionContinueStatus','generateStatus','appSelected','newPatientArea'].forEach(id=>{const e=$('#'+id);if(e){e.classList.add('hidden');if(id!=='newPatientArea')e.textContent=''}});
+  const buscar=$('#buscarCedula');if(buscar)buscar.value='';
+  const detalles=$('#details');if(detalles)detalles.innerHTML='';
+  document.querySelectorAll('.steps span').forEach((s,i)=>s.classList.toggle('active',i===0));
+  document.querySelectorAll('.check-item').forEach(d=>{const c=d.querySelector('[type=checkbox]'),t=d.querySelector('.check-detail');if(c)c.checked=false;if(t){t.value='';t.classList.add('hidden')}});
+  ['eventSummary','historySummary','physicalSummary','observacionesExamenes'].forEach(id=>{const e=$('#'+id);if(e)e.value=''});
+  ['presuntivos','definitivos','medicamentos'].forEach(id=>{const e=$('#'+id);if(e)e.innerHTML=''});
+  agregarDiagnostico('presuntivos');agregarDiagnostico('definitivos');agregarMedicamento();
+  const accidente=$('#enableAccident');if(accidente)accidente.dispatchEvent(new Event('change'));
+  const examenes=$('#finalForm')&&$('#finalForm').elements.examenesNoAplica;if(examenes)examenes.dispatchEvent(new Event('change'));
+  const embarazo=$('#finalForm')&&$('#finalForm').elements.embarazoNoAplica;if(embarazo)embarazo.dispatchEvent(new Event('change'));
+  mostrarClinical_(0);mostrarFinal_(0);reiniciarControlesSignosUI_();reiniciarTriageUI_();
+  const b=$('#generateButton');if(b){b.disabled=false;b.textContent='Guardar y descargar PDF + Excel'}
+}
+function pintar(e){const details=$('#details');if(!details||!e)return;details.innerHTML=[['Institución',e.institucion],['Unicódigo',e.unicodigo],['Centro de salud',e.nombre],['Provincia',e.provincia],['Cantón',e.canton],['Parroquia',e.parroquia]].map(x=>`<div><small>${x[0]}</small><b>${esc(x[1]||'—')}</b></div>`).join('')}
+async function buscarPacienteUI(){const c=$('#buscarCedula').value.replace(/\D/g,'');if(!c)return alert('Ingrese la cédula.');try{const r=await run('buscarPaciente',token,c);const f=$('#patientForm');f.reset();rellenarForm_(f,r.paciente||{});f.elements.cedula.value=c;f.classList.remove('hidden');$('#patientMessage').textContent=r.encontrado?'Paciente encontrado. Revise y modifique los datos necesarios.':'Paciente nuevo. Complete los datos de admisión.';$('#patientMessage').classList.remove('hidden');fechaHoraActual_()}catch(x){alert(x.message)}}
+function rellenarForm_(f,o){Object.keys(o).forEach(k=>{const e=f.elements[k];if(!e)return;let v=o[k];if(k==='tipoDocumento'&&v)v=tipoDocumentoCanonicoCliente_(v)||v;if(e.type==='checkbox'||e.type==='radio'){e.checked=v===true||v==='true'||v==='SI';e.dispatchEvent(new Event('change'));return}if(e.type==='date'&&v)v=String(v).slice(0,10);if(e.tagName==='SELECT'&&v!=null&&v!==''){const buscado=normalCliente_(v),opcion=[...e.options].find(x=>normalCliente_(x.value)===buscado||normalCliente_(x.textContent)===buscado);e.value=opcion?opcion.value:''}else e.value=v==null?'':v;e.dispatchEvent(new Event('change'))})}
+function fechaHoraActual_(){const f=$('#patientForm');if(!f)return;const d=new Date(),pad=n=>String(n).padStart(2,'0');if(!f.elements.fechaAdmision.value)f.elements.fechaAdmision.value=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());if(!f.elements.horaAdmision.value)f.elements.horaAdmision.value=pad(d.getHours())+':'+pad(d.getMinutes())}
+function calcularEdadFormulario_(f,caja,elegirUnidad=false){if(!f||!f.elements.fechaNacimiento||!f.elements.edad||!f.elements.condicionEdad)return;const v=f.elements.fechaNacimiento.value;if(!v){f.elements.edad.value='';if(caja)caja.classList.add('hidden');return}const hora=f.elements.horaNacimiento&&f.elements.horaNacimiento.value?f.elements.horaNacimiento.value:'00:00',n=new Date(v+'T'+hora+':00'),h=new Date(),ms=Math.max(0,h-n),horas=Math.floor(ms/3600000),dias=Math.floor(ms/86400000),meses=Math.floor(dias/30.4375),anos=Math.floor(dias/365.25);if(elegirUnidad)f.elements.condicionEdad.value=dias<1?'HORAS':dias<30?'DÍAS':meses<12?'MESES':'AÑOS';const unidad=f.elements.condicionEdad.value;if(caja)caja.classList.toggle('hidden',unidad!=='HORAS');f.elements.edad.value=unidad==='HORAS'?horas:unidad==='DÍAS'?dias:unidad==='MESES'?meses:anos}
+function calcularEdadUI_(elegirUnidad=false){calcularEdadFormulario_($('#patientForm'),$('#birthTimeBox'),elegirUnidad)}
+function prepararFormularioAdmisionCompleto_(){const origen=$('#patientForm'),f=$('#statPatientForm');if(!origen||!f||f.dataset.completo==='1')return;['tipoDocumento','estadoCivil','sexo','condicionEdad','grupoPrioritario','nivelEducacion','seguroSalud'].forEach(nombre=>{const base=origen.elements[nombre],actual=f.elements[nombre];if(!base||!actual)return;const copia=base.cloneNode(true);copia.name=nombre;actual.replaceWith(copia)});const edad=f.elements.edad;if(edad){edad.readOnly=true;edad.classList.add('readonly-field')}const hora=f.elements.horaNacimiento,caja=hora&&hora.parentElement;if(caja){caja.id='admissionBirthTimeBox';caja.classList.add('hidden')}const recalcular=elegir=>calcularEdadFormulario_(f,caja,elegir);f.elements.fechaNacimiento.addEventListener('change',()=>recalcular(true));f.elements.condicionEdad.addEventListener('change',()=>recalcular(false));if(hora)hora.addEventListener('change',()=>recalcular(false));f.dataset.completo='1'}
+function prepararCalculadoraDosis_(){const activar=$('#enableDoseCalculator'),caja=$('#doseCalculator'),pantalla=$('#calculatorDisplay');if(!activar||!caja||!pantalla)return;activar.onchange=()=>caja.classList.toggle('hidden',!activar.checked);caja.querySelectorAll('[data-calc]').forEach(boton=>boton.onclick=()=>pulsarCalculadora_(boton.dataset.calc))}
+function pulsarCalculadora_(valor){const pantalla=$('#calculatorDisplay');if(!pantalla)return;if(valor==='CLEAR'){pantalla.value='0';return}if(valor==='BACK'){pantalla.value=pantalla.value.length>1?pantalla.value.slice(0,-1):'0';return}if(valor==='EQUAL'){try{const expresion=pantalla.value;if(!/^[0-9+\-*/().\s]+$/.test(expresion))throw new Error('Expresión inválida');const resultado=Function('"use strict";return ('+expresion+')')();pantalla.value=Number.isFinite(resultado)?String(Math.round((resultado+Number.EPSILON)*100000000)/100000000):'ERROR'}catch(e){pantalla.value='ERROR'}return}if(pantalla.value==='0'||pantalla.value==='ERROR')pantalla.value='';pantalla.value+=valor}
+$('#patientForm').addEventListener('submit',async e=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.target));const admision={fechaAdmision:d.fechaAdmision,horaAdmision:d.horaAdmision,historiaEnEstablecimiento:d.historiaEnEstablecimiento,condicionLlegada:d.condicionLlegada,motivoAtencion:d.motivoAtencion,idEpisodio:idEpisodioActual||''};['fechaAdmision','horaAdmision','historiaEnEstablecimiento','condicionLlegada','motivoAtencion'].forEach(k=>delete d[k]);try{const r=await run('guardarPacienteYAdmision',token,{idEpisodio:idEpisodioActual||'',paciente:d,admision,establecimiento:seleccionApp});if(!r||r.ok!==true)throw new Error('Apps Script no confirmó el guardado de la admisión. Verifique Pacientes.gs y vuelva a intentar.');if(r.paciente){Object.assign(d,r.paciente);rellenarForm_(e.target,r.paciente)}if(r.identificacion){d.cedula=r.identificacion;e.target.elements.cedula.value=r.identificacion}idEpisodioActual=r.idEpisodio||idEpisodioActual;admision.idEpisodio=idEpisodioActual;admision.idAdmision=r.idAdmision||admision.idAdmision||'';admisionActual={idEpisodio:idEpisodioActual,paciente:d,admision};episodioFinalizadoActual_=false;actualizarPanelVinculoIdentidad_();triajeObligatorioActual_=String(r.triajeRequerido||'SI').toUpperCase()==='SI';await cargarControlesSignosEpisodio_();await cargarTriajesEpisodio_();await cargarModoCriticoEpisodio_();await cargarEvolucionObservacion_();actualizarBotonModoCritico_();actualizarBotonEvolucion_();$('#triageSection').classList.remove('hidden');$('#clinicalSection').classList.add('hidden');$('#finalSection').classList.add('hidden');document.querySelectorAll('.steps span').forEach((s,i)=>s.classList.toggle('active',i===2));fechaHoraTriage_();$('#triageSection').scrollIntoView({behavior:'smooth'})}catch(x){alert(x.message||String(x))}});
+
+const EVENTOS=[['Accidente de tránsito','1!G38'],['Caída','1!O38'],['Quemadura','1!W38'],['Mordedura','1!AE38'],['Ahogamiento','1!AM38'],['Cuerpo extraño','1!AU38'],['Aplastamiento','1!BD38'],['Otro accidente','1!BL38'],['Violencia por arma de fuego','1!G39'],['Violencia por arma cortopunzante','1!O39'],['Violencia por riña','1!W39'],['Violencia familiar','1!AE39'],['Presunta violencia física','1!AM39'],['Presunta violencia psicológica','1!AU39'],['Presunta violencia sexual','1!BD39'],['Intoxicación alcohólica','1!G41'],['Intoxicación alimentaria','1!O41'],['Intoxicación por drogas','1!W41'],['Inhalación de gases','1!AE41'],['Otra intoxicación','1!AM41'],['Picadura','1!AU41'],['Envenenamiento','1!BD41'],['Anafilaxia','1!BL41']];
+const ANTECEDENTES=[['No aplica','1!BL49'],['Alérgicos','1!J50'],['Ginecológicos','1!V50'],['Pediátricos','1!AJ50'],['Farmacológicos','1!AY50'],['Familiares','1!BL50'],['Clínicos','1!J51'],['Traumatológicos','1!V51'],['Quirúrgicos','1!AJ51'],['Hábitos','1!AY51'],['Otros','1!BL51']];
+function cambiarDestino_(){const modo=$('#modoGuardado');if(!modo)return;const laptop=modo.value==='LAPTOP',folder=$('#driveFolderBox'),open=$('#driveOpenBox'),help=$('#laptopHelp'),modoFinal=$('#modoGuardadoFinal'),carpetaFinal=$('#carpetaDestinoFinal'),carpeta=$('#carpetaDestino');if(folder)folder.classList.toggle('hidden',laptop);if(open)open.classList.toggle('hidden',laptop);if(help)help.classList.toggle('hidden',!laptop);if(modoFinal)modoFinal.value=laptop?'LAPTOP':'DRIVE';if(carpetaFinal)carpetaFinal.value=laptop?'':(carpeta?carpeta.value.trim():'')}
+function nuevoPaciente_(){const est=seleccionApp;reiniciarAtencion_();seleccionApp=est;if(est)seleccionarApp(est);cambiarDestino_();$('#patientSection').classList.remove('hidden');document.querySelectorAll('.steps span').forEach((s,i)=>s.classList.toggle('active',i===1));fechaHoraActual_();$('#patientSection').scrollIntoView({behavior:'smooth'})}
+const FISICO=[['Piel y faneras','2!K7'],['Oídos','2!W7'],['Orofaringe','2!AJ7'],['Tórax','2!AW7'],['Ingle-periné','2!BL7'],['Cabeza','2!K8'],['Nariz','2!W8'],['Cuello','2!AJ8'],['Abdomen','2!AW8'],['Miembros superiores','2!BL8'],['Ojos','2!K9'],['Boca','2!W9'],['Axilas-mamas','2!AJ9'],['Columna vertebral','2!AW9'],['Miembros inferiores','2!BL9']];
+const PUPILAS={'4+':'Respuesta rápida y amplia; reacción normal e inmediata.','3+':'Respuesta moderada, visible pero menos amplia.','2+':'Respuesta pequeña y lenta; requiere valoración clínica.','1+':'Respuesta mínima o apenas visible; hallazgo importante.','0':'Sin respuesta pupilar; hallazgo grave.'};
+function prepararClinica_(){crearChecklist_('eventChecklist',EVENTOS,'eventSummary');crearChecklist_('historyChecklist',ANTECEDENTES,'historySummary');crearChecklist_('physicalChecklist',FISICO,'physicalSummary');document.querySelectorAll('[data-clinical]').forEach((b,i)=>b.onclick=()=>mostrarClinical_(i));document.querySelectorAll('.pupil-select').forEach(s=>{s.innerHTML='<option value="">Seleccione</option>'+Object.keys(PUPILAS).map(k=>`<option value="${k}">${k} — ${PUPILAS[k].split(';')[0]}</option>`).join('');s.onchange=()=>{$('#pupilHelp').textContent=PUPILAS[s.value]||'Seleccione una respuesta para ver su interpretación.'}});['gOcular','gVerbal','gMotora'].forEach(id=>$('#'+id).onchange=totalGlasgow_);const ea=$('#enableAccident');ea.onchange=()=>{const sec=$('#accidente');sec.classList.toggle('section-disabled',!ea.checked);if(!ea.checked)limpiarSeccion_(sec,ea)};ea.dispatchEvent(new Event('change'));const sc=$('#clinicalForm').elements.sinConstantes,vg=$('#vitales .clinical-grid');sc.onchange=()=>{vg.classList.toggle('hidden',sc.checked);if(sc.checked)vg.querySelectorAll('input,select').forEach(e=>e.value='')};const et=$('#enableTrauma'),tf=$('#traumaFields');et.onchange=()=>{tf.classList.toggle('hidden',!et.checked);if(!et.checked){tf.querySelectorAll('textarea').forEach(e=>e.value='');$('#clinicalForm').elements.traumaTexto.value=''}};tf.addEventListener('input',()=>{$('#clinicalForm').elements.traumaTexto.value=[...tf.querySelectorAll('[data-trauma]')].filter(e=>e.value.trim()).map(e=>e.dataset.trauma+': '+e.value.trim()).concat($('#traumaSecondary').value.trim()?['ALTS/SECUNDARIO: '+$('#traumaSecondary').value.trim()]:[]).join('\n')});prepararControlesSignosUI_()}
+function limpiarContenedor_(sec,excepto){sec.querySelectorAll('input,select,textarea').forEach(e=>{if(e===excepto)return;if(e.type==='checkbox'||e.type==='radio')e.checked=false;else e.value='';e.dispatchEvent(new Event('change',{bubbles:true}));e.dispatchEvent(new Event('input',{bubbles:true}))})}
+function limpiarSeccion_(sec,excepto){limpiarContenedor_(sec,excepto);if(sec.id==='accidente'){$('#eventSummary').value='';$('#eventChecklist').querySelectorAll('.check-detail').forEach(e=>e.classList.add('hidden'))}}
+function crearChecklist_(id,items,summary){const c=$('#'+id);if(!c)return;items.forEach(([n,celda])=>{const d=document.createElement('div');d.className='check-item';d.dataset.name=n;d.dataset.cell=celda;d.innerHTML=`<label><input type="checkbox"> ${n}</label><input class="check-detail hidden" placeholder="Describa ${n.toLowerCase()}">`;const ch=d.querySelector('input[type=checkbox]'),tx=d.querySelector('.check-detail');ch.onchange=()=>{tx.classList.toggle('hidden',!ch.checked);if(!ch.checked)tx.value='';resumir_(id,summary)};tx.oninput=()=>resumir_(id,summary);c.appendChild(d)})}
+function resumir_(id,summary){$('#'+summary).value=[...$('#'+id).children].filter(d=>d.querySelector('[type=checkbox]').checked).map(d=>d.dataset.name.toUpperCase()+': '+(d.querySelector('.check-detail').value||'SELECCIONADO')).join(', ')}
+function edadPaciente_(){const v=$('#patientForm').elements.fechaNacimiento.value;if(!v)return 18;return Math.max(0,(Date.now()-new Date(v).getTime())/31557600000)}
+function actualizarGlasgow_(){const e=edadPaciente_(),grupo=e<2?'Menor de 2 años':e<=5?'De 2 a 5 años':'Mayor de 5 años';$('#glasgowAge').textContent='— '+grupo;const ocular=['Sin respuesta','Abre al dolor',e<=5?'Abre al sonido':'Abre a la orden','Espontánea'],verbal=e<2?['Sin respuesta','Gemidos al dolor','Llanto al dolor','Irritable/llora','Arrullos y balbuceos']:e<=5?['Sin respuesta','Sonidos incomprensibles','Palabras incomprensibles','Confundido','Orientado/apropiado']:['Sin respuesta','Sonidos incomprensibles','Palabras inapropiadas','Confundido','Orientado'],motora=e<2?['Sin respuesta','Extensión anormal','Flexión anormal','Retirada al dolor','Se retira al tacto','Movimiento espontáneo intencionado']:['Sin respuesta','Extensión anormal','Flexión anormal','Retirada al dolor','Localiza dolor','Obedece órdenes'];llenarEscala_('gOcular',ocular);llenarEscala_('gVerbal',verbal);llenarEscala_('gMotora',motora);totalGlasgow_()}
+function llenarEscala_(id,a){$('#'+id).innerHTML='<option value="">Seleccione</option>'+a.map((x,i)=>`<option value="${i+1}">${i+1}. ${x}</option>`).join('')}
+function totalGlasgow_(){$('#glasgowTotal').textContent=['gOcular','gVerbal','gMotora'].reduce((s,id)=>s+(Number($('#'+id).value)||0),0)}
+function mostrarClinical_(i){clinicalIndex=i;document.querySelectorAll('.clinical-panel').forEach((p,j)=>p.classList.toggle('hidden',j!==i));document.querySelectorAll('[data-clinical]').forEach((b,j)=>b.classList.toggle('active',j===i))}
+function clinicalNext(){const total=document.querySelectorAll('.clinical-panel').length;if(clinicalIndex<total-1)mostrarClinical_(clinicalIndex+1);else{$('#finalSection').classList.remove('hidden');document.querySelectorAll('.steps span').forEach((s,i)=>s.classList.toggle('active',i===4));$('#finalSection').scrollIntoView({behavior:'smooth'})}}
+function clinicalPrev(){if(clinicalIndex>0)mostrarClinical_(clinicalIndex-1);else $('#triageSection').scrollIntoView({behavior:'smooth'})}
+
+const EXAMENES=[['Biometría','2!G36'],['Uroanálisis','2!G37'],['Química sanguínea','2!O36'],['Electrolitos','2!O37'],['Gasometría','2!W36'],['Electrocardiograma','2!W37'],['Endoscopia','2!AE36'],['Radiografía de tórax','2!AE37'],['Radiografía de abdomen','2!AL36'],['Radiografía ósea','2!AL37'],['Ecografía de abdomen','2!AT36'],['Ecografía pélvica','2!AT37'],['Tomografía','2!BC36'],['Resonancia','2!BC37'],['Interconsulta','2!BL36'],['Otros','2!BL37']];
+function prepararScoreMama_(){const activar=$('#enableScoreMama'),campos=$('#scoreMamaFields');if(!activar||!campos)return;activar.onchange=()=>{campos.classList.toggle('hidden',!activar.checked);const f=$('#finalForm').elements;if(f.scoreMamaActivo)f.scoreMamaActivo.value=activar.checked?'SI':'NO';if(!activar.checked){limpiarContenedor_(campos);if(f.scoreMamaActivo)f.scoreMamaActivo.value='NO';if(f.scoreMama)f.scoreMama.value='';if(f.scoreMamaEstado)f.scoreMamaEstado.value='NO APLICA';$('#scoreMamaTotal').textContent='—';$('#scoreMamaStatus').textContent='SCORE MAMÁ desactivado.';$('#scoreMamaBreakdown').innerHTML='';$('#scoreMamaGuidance').textContent='El sistema muestra una referencia operativa del puntaje; la valoración clínica y la conducta corresponden al profesional tratante.'}else{if(f.scoreMamaActivo)f.scoreMamaActivo.value='SI';copiarVitalesMama_(true);calcularScoreMama_()}};campos.addEventListener('input',calcularScoreMama_);campos.addEventListener('change',calcularScoreMama_);activar.dispatchEvent(new Event('change'))}
+function copiarVitalesMama_(inicializarSaturacion){const c=$('#clinicalForm').elements,f=$('#finalForm').elements;if(f.mamaTemperatura&&!f.mamaTemperatura.value)f.mamaTemperatura.value=c.temperatura&&c.temperatura.value||'';f.mamaPas.value=c.pas.value||'';f.mamaPad.value=c.pad.value||'';f.mamaFrecuenciaCardiaca.value=c.pulso.value||'';f.mamaFrecuenciaRespiratoria.value=c.frecuenciaRespiratoria.value||'';if(inicializarSaturacion&&!f.mamaSaturacion.value)f.mamaSaturacion.value=c.pulsioximetria.value||''}
+function normalScoreMamaCliente_(v){return String(v==null?'':v).trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
+function numeroScoreMamaCliente_(v){if(v==null||String(v).trim()==='')return null;const n=Number(v);return Number.isFinite(n)?n:null}
+function puntosFcMama_(v){return v<=50?3:v<60?1:v<=100?0:v<=110?1:v<120?2:3}
+function puntosPasMama_(v){return v<=70?3:v<90?2:v<140?0:v<160?2:3}
+function puntosPadMama_(v){return v<=50?3:v<60?2:v<=85?0:v<90?1:v<110?2:3}
+function puntosFrMama_(v){return v<=11?3:v<=22?0:v<30?2:3}
+function puntosTempMama_(v){return v<=35.5?2:v<37.3?0:v<38.5?1:3}
+function puntosSatMama_(v,altura){return v<=85?3:v<90?2:v<=93?(altura?0:1):0}
+function puntosConcienciaMama_(v){const n=normalScoreMamaCliente_(v);if(!n)return null;if(n==='ALERTA')return 0;if(n.includes('CONFUSA')||n.includes('AGITADA'))return 2;if(n.includes('VOZ')||n.includes('SOMNOL'))return 1;if(n.includes('DOLOR')||n.includes('ESTUPOR'))return 2;if(n.includes('NO RESPONDE'))return 3;return null}
+function puntosProteinuriaMama_(v){const n=normalScoreMamaCliente_(v);if(!n)return null;if(n==='NEGATIVA'||n==='NEGATIVO'||n==='-'||n==='0')return 0;if(n.includes('POSITIV')||/^\++$/.test(n))return 1;return null}
+function recomendacionMamaCliente_(t){return t===0?'Evaluar factores de riesgo, bienestar materno-fetal y signos de alarma.':t===1?'Reevaluar signos vitales y factores de riesgo. Repetir SCORE MAMÁ cada 4 horas y registrar.':t<=4?'Tratar y referir según el caso. Reevaluar y repetir SCORE MAMÁ cada hora.':'Tratar y referir según el caso. Reevaluar y repetir SCORE MAMÁ cada 30 minutos.'}
+function categoriaMamaCliente_(t){return t===0?'PUNTAJE 0':t===1?'PUNTAJE 1':t<=4?'PUNTAJE 2-4':'PUNTAJE ≥5'}
+function calcularScoreMamaCliente_(){const f=$('#finalForm').elements,n=numeroScoreMamaCliente_,vals={temperatura:n(f.mamaTemperatura.value),pas:n(f.mamaPas.value),pad:n(f.mamaPad.value),fc:n(f.mamaFrecuenciaCardiaca.value),fr:n(f.mamaFrecuenciaRespiratoria.value),saturacion:n(f.mamaSaturacion.value)},faltan=[];Object.entries(vals).forEach(([k,v])=>{if(v===null)faltan.push(k)});if(!f.mamaCondicionObstetrica.value)faltan.push('condición obstétrica');const conciencia=puntosConcienciaMama_(f.mamaConciencia.value),proteinuria=puntosProteinuriaMama_(f.mamaProteinuria.value);if(conciencia===null)faltan.push('conciencia');if(proteinuria===null)faltan.push('proteinuria');const invalidos=[];if(vals.temperatura!==null&&(vals.temperatura<25||vals.temperatura>45))invalidos.push('temperatura');if(vals.pas!==null&&(vals.pas<20||vals.pas>300))invalidos.push('PAS');if(vals.pad!==null&&(vals.pad<10||vals.pad>200))invalidos.push('PAD');if(vals.fc!==null&&(vals.fc<10||vals.fc>300))invalidos.push('FC');if(vals.fr!==null&&(vals.fr<1||vals.fr>100))invalidos.push('FR');if(vals.saturacion!==null&&(vals.saturacion<0||vals.saturacion>100))invalidos.push('SpO₂');if(faltan.length||invalidos.length)return{completo:false,total:null,faltan,invalidos,detalle:{},categoria:'INCOMPLETO',recomendacion:'Complete y verifique las variables antes de interpretar el SCORE MAMÁ.'};const detalle={FC:puntosFcMama_(vals.fc),PAS:puntosPasMama_(vals.pas),PAD:puntosPadMama_(vals.pad),FR:puntosFrMama_(vals.fr),Temperatura:puntosTempMama_(vals.temperatura),SpO2:puntosSatMama_(vals.saturacion,!!f.mamaAltitud2500.checked),Conciencia:conciencia,Proteinuria:proteinuria},total=Object.values(detalle).reduce((a,b)=>a+b,0);return{completo:true,total,detalle,categoria:categoriaMamaCliente_(total),recomendacion:recomendacionMamaCliente_(total)}}
+function calcularScoreMama_(){if(!$('#enableScoreMama').checked)return;copiarVitalesMama_(false);const f=$('#finalForm').elements,r=calcularScoreMamaCliente_(),status=$('#scoreMamaStatus'),breakdown=$('#scoreMamaBreakdown'),guide=$('#scoreMamaGuidance');if(!r.completo){$('#scoreMamaTotal').textContent='—';f.scoreMama.value='';f.scoreMamaEstado.value='INCOMPLETO';f.scoreMamaCategoria.value='INCOMPLETO';f.scoreMamaRecomendacion.value=r.recomendacion;const partes=[];if(r.faltan.length)partes.push('Faltan: '+r.faltan.join(', '));if(r.invalidos.length)partes.push('Revise: '+r.invalidos.join(', '));status.textContent='SCORE MAMÁ INCOMPLETO. '+partes.join('. ');breakdown.innerHTML='';guide.textContent=r.recomendacion;return}$('#scoreMamaTotal').textContent=String(r.total);f.scoreMama.value=String(r.total);f.scoreMamaEstado.value='COMPLETO';f.scoreMamaCategoria.value=r.categoria;f.scoreMamaRecomendacion.value=r.recomendacion;status.textContent=r.categoria+' · cálculo completo';breakdown.innerHTML=Object.entries(r.detalle).map(([k,v])=>'<span><b>'+esc(k)+'</b> '+v+' pt</span>').join('');guide.textContent=r.recomendacion+' Referencia operativa MSP; la conducta final corresponde al profesional.'}
+function exigirScoreMamaCompletoCliente_(){if(!$('#enableScoreMama').checked)return true;const r=calcularScoreMamaCliente_();if(r.completo)return true;calcularScoreMama_();const faltan=[].concat(r.faltan||[],r.invalidos||[]).join(', ');throw new Error('SCORE MAMÁ incompleto o inválido'+(faltan?': '+faltan:'')+'. Complete o corrija las variables antes de finalizar.')}
+function prepararFinal_(){document.querySelectorAll('[data-final]').forEach((b,i)=>b.onclick=()=>mostrarFinal_(i));crearChecklist_('examChecklist',EXAMENES,'observacionesExamenes');const na=$('#finalForm').elements.embarazoNoAplica;na.onchange=()=>{const campos=$('#pregnancyFields');campos.classList.toggle('hidden',na.checked);if(na.checked)limpiarContenedor_(campos)};na.dispatchEvent(new Event('change'));const ex=$('#finalForm').elements.examenesNoAplica;ex.onchange=()=>{const campos=$('#examFields');campos.classList.toggle('hidden',ex.checked);if(ex.checked)limpiarContenedor_(campos)};ex.dispatchEvent(new Event('change'));agregarDiagnostico('presuntivos');agregarDiagnostico('definitivos');agregarMedicamento();mostrarFinal_(0)}
+function mostrarFinal_(i){finalIndex=i;const paneles=document.querySelectorAll('.final-panel');paneles.forEach((p,j)=>p.classList.toggle('hidden',j!==i));document.querySelectorAll('[data-final]').forEach((b,j)=>b.classList.toggle('active',j===i));const sig=$('#finalNextButton');if(sig)sig.classList.toggle('hidden',i===paneles.length-1);const documentos=$('#documentFinishSection');if(documentos)documentos.classList.toggle('hidden',i!==paneles.length-1)}
+function finalPrev(){if(finalIndex>0)mostrarFinal_(finalIndex-1);else $('#clinicalSection').scrollIntoView({behavior:'smooth'})}
+function finalNext(){const paneles=document.querySelectorAll('.final-panel');if(finalIndex<paneles.length-1)mostrarFinal_(finalIndex+1)}
+function agregarDiagnostico(id){const c=$('#'+id);if(c.children.length>=3)return alert('Máximo 3 diagnósticos.');const r=document.createElement('div');r.className='repeat-row diagnosis-row';r.innerHTML='<div class="cie-search"><input class="cie" autocomplete="off" placeholder="Código CIE-10"><div class="cie-results hidden"></div></div><div class="cie-search"><input class="description" autocomplete="off" placeholder="Descripción del diagnóstico"><div class="cie-results hidden"></div></div><button type="button" class="remove-btn">Quitar</button>';r.querySelector('button').onclick=()=>r.remove();c.appendChild(r);configurarBuscadorCie_(r)}
+function configurarBuscadorCie_(fila){const codigo=fila.querySelector('.cie'),descripcion=fila.querySelector('.description'),cajas=fila.querySelectorAll('.cie-results');let temporizador=0,secuencia=0;const buscar=(entrada,caja,tipo)=>{clearTimeout(temporizador);const q=entrada.value.trim();cajas.forEach(x=>{if(x!==caja)x.classList.add('hidden')});if(q.length<2){caja.classList.add('hidden');return}caja.innerHTML=cargaLista_('Buscando diagnósticos…');caja.classList.remove('hidden');temporizador=setTimeout(async()=>{const actual=++secuencia;try{const lista=await run('buscarCie10',token,q,tipo);if(actual!==secuencia)return;caja.innerHTML=lista.length?lista.map(x=>'<button type="button" class="cie-option" data-codigo="'+esc(x.codigo)+'" data-descripcion="'+esc(x.descripcion)+'"><b>'+esc(x.codigo)+'</b><span>'+esc(x.descripcion)+'</span></button>').join(''):'<div class="no-results">Sin coincidencias</div>';caja.classList.remove('hidden');caja.querySelectorAll('.cie-option').forEach(b=>b.onclick=()=>{codigo.value=b.dataset.codigo;descripcion.value=b.dataset.descripcion;cajas.forEach(x=>x.classList.add('hidden'))})}catch(e){caja.innerHTML='<div class="no-results">'+esc(e.message||String(e))+'</div>';caja.classList.remove('hidden')}},280)};codigo.addEventListener('input',()=>buscar(codigo,cajas[0],'CODIGO'));descripcion.addEventListener('input',()=>buscar(descripcion,cajas[1],'DESCRIPCION'));fila.addEventListener('focusout',()=>setTimeout(()=>cajas.forEach(x=>x.classList.add('hidden')),180))}
+function datosChecklist_(id){const marcas={};[...$('#'+id).children].forEach(d=>{if(d.querySelector('[type=checkbox]').checked)marcas[d.dataset.cell]=true});return marcas}
+function formObjeto_(f){const o=Object.fromEntries(new FormData(f));f.querySelectorAll('[type=checkbox]').forEach(e=>o[e.name]=e.checked);return o}
+$('#finalForm').addEventListener('submit',async e=>{e.preventDefault();if(!admisionActual)return alert('Primero guarde la admisión.');calcularEdadUI_();admisionActual.paciente=Object.assign(admisionActual.paciente,Object.fromEntries(new FormData($('#patientForm'))));const b=$('#generateButton'),s=$('#generateStatus');b.disabled=true;b.textContent='Generando FORM. 008…';s.textContent='Creando PDF y Excel…';s.classList.remove('hidden');try{exigirScoreMamaCompletoCliente_();const clinica=recogerClinica_();clinica.confirmarValoresExtremos=confirmarVitalesCliente_(clinica,'los signos vitales de la atención');const payload={idEpisodio:idEpisodioActual||admisionActual.idEpisodio||'',idRegistro:idRegistroActual||'',paciente:admisionActual.paciente,admision:admisionActual.admision,establecimiento:seleccionApp,clinica:clinica,auditoria:auditoriaHistoriaPayload_()};const r=await run('generarFormulario008',token,payload);if(r.pdfTicket)await descargarArchivoSeguro_(r.pdfTicket,r.pdfNombre);if(r.excelTicket)await descargarArchivoSeguro_(r.excelTicket,r.excelNombre);s.innerHTML='<b>Documentos generados y descargados de forma segura.</b>';b.disabled=false;b.textContent='Generar otra copia'}catch(x){b.disabled=false;b.textContent='Guardar y descargar PDF + Excel';s.textContent=x.message||String(x)}});
+function mostrarPagina_(id){['mainMenu','pendingPage','historyPage','epiPage','certificatePage','statsPage','profilePage','admissionPage','statisticianPage','attentionWorkspace'].forEach(x=>{const e=$('#'+x);if(e)e.classList.toggle('hidden',x!==id)});window.scrollTo({top:0,behavior:'smooth'})}
+function volverMenu_(){const cargo=normalCliente_(usuario&&usuario.cargo);if(cargo==='ADMISIONISTA')mostrarPagina_('statisticianPage');else{mostrarPagina_('mainMenu');actualizarConteoPendientes_()}}
+async function actualizarConteoPendientes_(){try{const lista=await run('listarPendientes',token,'');$('#pendingCount').textContent=lista.length}catch(e){$('#pendingCount').textContent='—'}}
+async function abrirPendientes_(){mostrarPagina_('pendingPage');await cargarPendientes_()}
+async function eliminarHistoriaUI_(id){const motivo=(prompt('Indique el motivo de eliminación de la historia clínica:')||'').trim();if(!motivo)return;if(motivo.length<5)return alert('El motivo debe contener al menos 5 caracteres.');if(!confirm('¿Eliminar lógicamente esta historia clínica? La versión y el motivo quedarán en la auditoría.'))return;try{await run('eliminarHistoriaClinica',token,id,motivo);const panel=$('#historyAuditPanel');if(panel)panel.classList.add('hidden');cargarHistorias_()}catch(e){alert(e.message||String(e))}}
+function restaurarMarcasHistoria_(marcas){document.querySelectorAll('.check-item').forEach(d=>{const c=d.querySelector('[type=checkbox]');c.checked=!!(marcas&&marcas[d.dataset.cell]);c.dispatchEvent(new Event('change'))})}
+async function modificarHistoria_(id){const motivo=(prompt('Indique el motivo de la modificación de esta historia clínica:')||'').trim();if(!motivo)return;if(motivo.length<5)return alert('El motivo debe contener al menos 5 caracteres.');try{const d=await run('obtenerHistoriaClinica',token,id),c=d.clinica||{};reiniciarAtencion_();motivoModificacionHistoria_=motivo;idEpisodioActual=d.idEpisodio||((d.admision||{}).idEpisodio)||'';idRegistroActual=d.idRegistro||id;seleccionApp=d.establecimiento||establecimientoCuenta;if(seleccionApp)seleccionarApp(seleccionApp);rellenarForm_($('#patientForm'),Object.assign({},d.paciente||{},d.admision||{}));$('#patientForm').classList.remove('hidden');aplicarTipoIdentificacion_($('#patientForm').elements.tipoDocumento);actualizarPanelVinculoIdentidad_();admisionActual={idEpisodio:idEpisodioActual,paciente:d.paciente||{},admision:d.admision||{}};episodioFinalizadoActual_=true;await cargarControlesSignosEpisodio_();await cargarTriajesEpisodio_();await cargarModoCriticoEpisodio_();await cargarEvolucionObservacion_();actualizarBotonModoCritico_();actualizarBotonEvolucion_();$('#patientSection').classList.remove('hidden');$('#triageSection').classList.remove('hidden');$('#clinicalSection').classList.remove('hidden');$('#finalSection').classList.remove('hidden');rellenarForm_($('#clinicalForm'),c);rellenarForm_($('#finalForm'),c);const scoreMamaVigente=normalCliente_(c.scoreMamaActivo)==='SI'||normalCliente_(c.scoreMamaVersion)==='MSP-EC-GPC-CONTROL-PRENATAL-ANEXO8';$('#enableScoreMama').checked=scoreMamaVigente;if(scoreMamaVigente)$('#enableScoreMama').dispatchEvent(new Event('change'));else $('#scoreMamaFields').classList.add('hidden');restaurarMarcasHistoria_(c.marcas||{});restaurarRepetibles_('presuntivos',c.presuntivos,'diag');restaurarRepetibles_('definitivos',c.definitivos,'diag');restaurarRepetibles_('medicamentos',c.medicamentos,'med');['eventSummary','historySummary','physicalSummary'].forEach(x=>{const e=$('#'+x);if(e&&c[e.name]!==undefined)e.value=c[e.name]});mostrarClinical_(0);mostrarFinal_(0);mostrarPagina_('attentionWorkspace');document.querySelectorAll('.steps span').forEach((s,i)=>s.classList.toggle('active',i===3));$('#draftStatus').textContent='Editando historia clínica guardada';$('#patientSection').scrollIntoView({behavior:'smooth'})}catch(e){alert(e.message||String(e))}}
+async function cargarPendientes_(){const box=$('#pendingList');box.innerHTML='<div class="no-results">Cargando pendientes…</div>';try{const lista=await run('listarPendientes',token,$('#pendingSearch').value);box.innerHTML=lista.length?lista.map(x=>'<article class="pending-item"><div><h3>'+esc(x.nombre||'PACIENTE SIN NOMBRE')+'</h3><p>Identificación: '+esc(x.cedula||'—')+' · Atención: '+esc(String(x.fecha||'').slice(0,10))+' '+esc(x.hora||'')+'</p><small>Última sección: '+esc(x.seccion||'—')+'</small></div><div class="pending-actions"><button class="btn primary auto" type="button" onclick="continuarPendiente_(\''+esc(x.idPendiente)+'\')">Continuar</button><button class="remove-btn" type="button" onclick="eliminarPendienteUI_(\''+esc(x.idPendiente)+'\')">Eliminar</button></div></article>').join(''):'<div class="no-results">No existen FORM.008 pendientes.</div>'}catch(e){box.innerHTML='<div class="no-results">'+esc(e.message||String(e))+'</div>'}}
+async function eliminarPendienteUI_(id){if(!confirm('¿Eliminar definitivamente este borrador?'))return;try{await run('eliminarPendiente',token,id);await cargarPendientes_();actualizarConteoPendientes_()}catch(e){alert(e.message||String(e))}}
+function estadoChecklists_(){const o={};['eventChecklist','historyChecklist','physicalChecklist','examChecklist'].forEach(id=>o[id]=[...$('#'+id).children].map(d=>({checked:d.querySelector('[type=checkbox]').checked,detalle:d.querySelector('.check-detail').value})));return o}
+function auditoriaHistoriaPayload_(){return idRegistroActual&&motivoModificacionHistoria_?{motivo:motivoModificacionHistoria_}:null}
+function construirBorrador_(){const pf=Object.fromEntries(new FormData($('#patientForm'))),adm={fechaAdmision:pf.fechaAdmision||'',horaAdmision:pf.horaAdmision||'',historiaEnEstablecimiento:pf.historiaEnEstablecimiento||'',condicionLlegada:pf.condicionLlegada||'',motivoAtencion:pf.motivoAtencion||'',idEpisodio:idEpisodioActual||''};['fechaAdmision','horaAdmision','historiaEnEstablecimiento','condicionLlegada','motivoAtencion'].forEach(k=>delete pf[k]);const clinica=recogerClinica_(),seccion=!$('#finalSection').classList.contains('hidden')?'FINALIZACION '+(finalIndex+1):!$('#clinicalSection').classList.contains('hidden')?'ATENCION '+(clinicalIndex+1):!$('#triageSection').classList.contains('hidden')?'TRIAJE':!$('#patientSection').classList.contains('hidden')?'PACIENTE':'ESTABLECIMIENTO';return{idPendiente:idPendienteActual,idEpisodio:idEpisodioActual||'',idRegistro:idRegistroActual||'',paciente:pf,admision:adm,clinica:clinica,establecimiento:seleccionApp,seccionActual:seccion,estadoUI:{clinicalIndex,finalIndex,enableAccident:$('#enableAccident').checked,enableHistory:$('#enableHistory').checked,enableTrauma:$('#enableTrauma').checked,enableScoreMama:$('#enableScoreMama').checked,checklists:estadoChecklists_()}}}
+async function guardarPendienteUI_(){if(idRegistroActual&&motivoModificacionHistoria_)return alert('Una historia clínica finalizada no puede volver a guardarse como pendiente. Finalice la corrección para crear una nueva versión auditada.');const estado=$('#draftStatus');if(estado)estado.textContent='Guardando…';try{const borrador=construirBorrador_(),r=await run('guardarPendiente',token,borrador);idPendienteActual=r.idPendiente;idEpisodioActual=r.idEpisodio||idEpisodioActual;borrador.idPendiente=idPendienteActual;borrador.idEpisodio=idEpisodioActual;borrador.admision=borrador.admision||{};borrador.admision.idEpisodio=idEpisodioActual;borrador.clinica.idPendiente=idPendienteActual;borrador.clinica.idEpisodio=idEpisodioActual;const rr=await run('guardarRegistroCompleto',token,borrador,'PENDIENTE',{idEpisodio:idEpisodioActual,idPendiente:idPendienteActual,idRegistro:idRegistroActual||''});idRegistroActual=rr&&rr.idRegistro?rr.idRegistro:idRegistroActual;const campo=$('#idPendienteFinal');if(campo)campo.value=idPendienteActual;if(estado)estado.textContent='✓ Guardado '+new Date().toLocaleTimeString();actualizarConteoPendientes_()}catch(e){if(estado)estado.textContent='Error: '+(e.message||String(e));else alert(e.message||String(e))}}
+function restaurarChecklist_(id,datos){[...$('#'+id).children].forEach((d,i)=>{const x=(datos||[])[i];if(!x)return;const c=d.querySelector('[type=checkbox]'),t=d.querySelector('.check-detail');c.checked=!!x.checked;t.value=x.detalle||'';c.dispatchEvent(new Event('change'));if(x.checked)t.value=x.detalle||''})}
+async function continuarPendiente_(id){try{const d=await run('obtenerPendiente',token,id);reiniciarAtencion_();idPendienteActual=id;idEpisodioActual=d.idEpisodio||((d.admision||{}).idEpisodio)||'';idRegistroActual=d.idRegistro||'';$('#idPendienteFinal').value=id;seleccionApp=d.establecimiento||establecimientoCuenta;if(seleccionApp)seleccionarApp(seleccionApp);rellenarForm_($('#patientForm'),Object.assign({},d.paciente||{},d.admision||{}));$('#patientForm').classList.remove('hidden');aplicarTipoIdentificacion_($('#patientForm').elements.tipoDocumento);actualizarPanelVinculoIdentidad_();admisionActual={idEpisodio:idEpisodioActual,paciente:d.paciente||{},admision:d.admision||{}};episodioFinalizadoActual_=false;await cargarControlesSignosEpisodio_();await cargarTriajesEpisodio_();await cargarModoCriticoEpisodio_();await cargarEvolucionObservacion_();actualizarBotonModoCritico_();actualizarBotonEvolucion_();$('#patientSection').classList.remove('hidden');$('#triageSection').classList.remove('hidden');$('#clinicalSection').classList.remove('hidden');$('#finalSection').classList.remove('hidden');rellenarForm_($('#clinicalForm'),d.clinica||{});rellenarForm_($('#finalForm'),d.clinica||{});const ui=d.estadoUI||{};$('#enableAccident').checked=!!ui.enableAccident;$('#enableAccident').dispatchEvent(new Event('change'));$('#enableHistory').checked=!!ui.enableHistory;$('#enableHistory').dispatchEvent(new Event('change'));$('#enableTrauma').checked=!!ui.enableTrauma;$('#enableTrauma').dispatchEvent(new Event('change'));$('#enableScoreMama').checked=!!ui.enableScoreMama;$('#enableScoreMama').dispatchEvent(new Event('change'));Object.keys(ui.checklists||{}).forEach(k=>restaurarChecklist_(k,ui.checklists[k]));restaurarRepetibles_('presuntivos',(d.clinica||{}).presuntivos,'diag');restaurarRepetibles_('definitivos',(d.clinica||{}).definitivos,'diag');restaurarRepetibles_('medicamentos',(d.clinica||{}).medicamentos,'med');mostrarClinical_(Number(ui.clinicalIndex)||0);mostrarFinal_(Number(ui.finalIndex)||0);mostrarPagina_('attentionWorkspace');document.querySelectorAll('.steps span').forEach((s,i)=>s.classList.toggle('active',i===3));$('#draftStatus').textContent='Borrador recuperado';$('#clinicalSection').scrollIntoView({behavior:'smooth'})}catch(e){alert(e.message||String(e))}}
+
+async function salir(){
+  const tokenCerrar=token;
+  token='';usuario=null;establecimientos=[];seleccionRegistro=null;seleccionApp=null;establecimientoCuenta=null;admisionActual=null;idEpisodioActual='';idRegistroActual='';idEpisodioAdmisionRolActual='';
+  reiniciarAtencion_();
+  ['login','registro','recuperar'].forEach(id=>{const f=$('#'+id);if(f)f.reset()});
+  $('#app').classList.add('hidden');
+  $('#auth').classList.remove('hidden');
+  $('#msg').classList.add('hidden');
+  verAuth('login');
+  window.scrollTo({top:0,behavior:'auto'});
+  try{if(tokenCerrar)await run('cerrarSesion',tokenCerrar)}catch(e){console.warn('La sesión local ya fue cerrada.',e)}
+}
+function mensaje(t,error=false){const m=$('#msg');m.textContent=t;m.classList.remove('hidden');m.style.background=error?'#fff0ee':'#eafaf3';m.style.color=error?'#a43b31':'#187856'}
+
+function actualizarSaludo_(){if(!usuario)return;const hora=Number(new Intl.DateTimeFormat('es-EC',{timeZone:'America/Guayaquil',hour:'2-digit',hour12:false}).format(new Date()).replace(/\D/g,''));const saludo=hora<12?'Buenos días':hora<19?'Buenas tardes':'Buenas noches';const nombre=[usuario.primerNombre,usuario.segundoNombre,usuario.primerApellido,usuario.segundoApellido].filter(Boolean).join(' ');$('#userText').textContent=saludo+', '+nombre}
+async function guardarPerfilUI_(e){e.preventDefault();const d=Object.fromEntries(new FormData(e.target));if(d.nuevaClave&&d.nuevaClave!==d.confirmarClave)return alert('Las nuevas claves no coinciden.');d.firmaPng=firmaProcesada;d.selloPng=selloProcesado;const b=$('#profileSave'),s=$('#profileStatus');b.disabled=true;s.textContent='Actualizando perfil...';s.classList.remove('hidden');try{const r=await run('actualizarPerfil',token,d);usuario=r.usuario;actualizarSaludo_();s.textContent=r.mensaje;firmaProcesada='';selloProcesado='';e.target.elements.claveActual.value='';e.target.elements.nuevaClave.value='';e.target.elements.confirmarClave.value=''}catch(x){s.textContent=x.message||String(x)}finally{b.disabled=false}}
+async function abrirEstadisticas_(){mostrarPagina_('statsPage');await cargarEstadisticas_()}
+function seleccionarMetodoFirma_(ambito,metodo){const perfil=ambito==='profile',imagen=$('#'+(perfil?'profileSignatureImage':'registerSignatureImage')),dibujo=$('#'+(perfil?'profileSignatureDraw':'registerSignatureDraw')),archivo=$('#'+(perfil?'profileFirmaFile':'firmaFile')),vista=$('#'+(perfil?'profileFirmaCanvas':'firmaCanvas')),pad=$('#'+(perfil?'profileSignaturePad':'registerSignaturePad')),control=$('#'+(perfil?'profileBackgroundThreshold':'backgroundThreshold')),valor=$('#'+(perfil?'profileThresholdValue':'thresholdValue'));firmaProcesada='';firmaOriginal=null;if(archivo)archivo.value='';if(vista)vista.getContext('2d').clearRect(0,0,vista.width,vista.height);limpiarLienzoFirma_(pad.id);imagen.classList.toggle('hidden',metodo!=='IMAGE');dibujo.classList.toggle('hidden',metodo!=='DRAW');if(metodo==='DRAW'){if(control)control.value=0;if(valor)valor.textContent='0';dibujo.scrollIntoView({behavior:'smooth',block:'center'})}}
+function alternarLienzoFirma_(id){const perfil=id.indexOf('profile')===0;seleccionarMetodoFirma_(perfil?'profile':'register','DRAW')}
+function prepararLienzoFirma_(id){const c=$('#'+id);if(!c)return;c.width=1200;c.height=400;const ctx=c.getContext('2d');ctx.lineWidth=6;ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle='#15344d';let dibujando=false,ultimo=null;const punto=e=>{const r=c.getBoundingClientRect();return{x:(e.clientX-r.left)*c.width/r.width,y:(e.clientY-r.top)*c.height/r.height}};c.addEventListener('pointerdown',e=>{e.preventDefault();dibujando=true;c.setPointerCapture(e.pointerId);ultimo=punto(e);ctx.beginPath();ctx.arc(ultimo.x,ultimo.y,ctx.lineWidth/2,0,Math.PI*2);ctx.fillStyle=ctx.strokeStyle;ctx.fill();ctx.beginPath();ctx.moveTo(ultimo.x,ultimo.y)});c.addEventListener('pointermove',e=>{if(!dibujando)return;e.preventDefault();const actual=punto(e),medio={x:(ultimo.x+actual.x)/2,y:(ultimo.y+actual.y)/2};ctx.quadraticCurveTo(ultimo.x,ultimo.y,medio.x,medio.y);ctx.stroke();ultimo=actual});const fin=e=>{if(!dibujando)return;const actual=e&&e.clientX!==undefined?punto(e):ultimo;if(actual){ctx.lineTo(actual.x,actual.y);ctx.stroke()}dibujando=false;ultimo=null;ctx.closePath()};c.addEventListener('pointerup',fin);c.addEventListener('pointercancel',fin);c.addEventListener('pointerleave',e=>{if(dibujando&&e.buttons===0)fin(e)})}
+function limpiarLienzoFirma_(id){const c=$('#'+id);if(c){c.getContext('2d').clearRect(0,0,c.width,c.height);const panel=c.closest('.signature-draw-panel');if(panel){panel.classList.remove('signature-ready');const aviso=panel.querySelector('.draw-ready');if(aviso)aviso.remove()}}}
+function usarFirmaDibujada_(padId,previewId){const pad=$('#'+padId),data=pad.getContext('2d').getImageData(0,0,pad.width,pad.height),box=recorte_(data,pad.width,pad.height);let contiene=false;for(let i=3;i<data.data.length;i+=4)if(data.data[i]>20){contiene=true;break}if(!contiene)return alert('Primero dibuje la firma dentro del panel.');const out=document.createElement('canvas');out.width=1400;out.height=Math.max(220,Math.min(600,Math.round(1400*box.h/box.w)));const ox=out.getContext('2d');ox.imageSmoothingEnabled=true;ox.imageSmoothingQuality='high';ox.drawImage(pad,box.x,box.y,box.w,box.h,0,0,out.width,out.height);const seguro=limitarCanvasPng_(out);firmaProcesada=seguro.toDataURL('image/png');firmaOriginal=null;const vista=$('#'+previewId);vista.width=seguro.width;vista.height=seguro.height;vista.getContext('2d').drawImage(seguro,0,0);const panel=pad.closest('.signature-draw-panel');if(panel){panel.classList.add('signature-ready');let aviso=panel.querySelector('.draw-ready');if(!aviso){aviso=document.createElement('b');aviso.className='draw-ready';panel.appendChild(aviso)}aviso.textContent='✓ Firma dibujada lista para guardar.'}}
+function limitarCanvasPng_(origen){let actual=origen;const maxPixeles=900000,maxBase64=1750000;for(let intento=0;intento<8;intento++){const url=actual.toDataURL('image/png');if(actual.width*actual.height<=maxPixeles&&url.length<=maxBase64)return actual;const factorPixeles=Math.sqrt(maxPixeles/(actual.width*actual.height)),factorPeso=Math.sqrt(maxBase64/Math.max(1,url.length)),factor=Math.min(.88,factorPixeles,factorPeso),nuevo=document.createElement('canvas');nuevo.width=Math.max(1,Math.floor(actual.width*factor));nuevo.height=Math.max(1,Math.floor(actual.height*factor));const ctx=nuevo.getContext('2d');ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';ctx.drawImage(actual,0,0,nuevo.width,nuevo.height);actual=nuevo}return actual}
+function normalCliente_(v){return String(v||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim()}
+function esMedico_(){return normalCliente_(usuario&&usuario.cargo)==='MEDICO'}
+function ajustarRegistroPorCargo_(){const cargo=$('#regCargo'),sello=$('#selloFile');if(!cargo||!sello)return;const ocultar=normalCliente_(cargo.value)==='ADMISIONISTA',caja=sello.closest('.signature-grid>div');if(caja)caja.classList.toggle('hidden',ocultar);if(ocultar){sello.value='';selloProcesado='';selloOriginal=null;const c=$('#selloCanvas');c.getContext('2d').clearRect(0,0,c.width,c.height)}}
+function prepararPanelesRoles_(){const af=$('#admissionRoleForm'),sf=$('#statPatientForm');if(af)af.addEventListener('submit',guardarAdmisionRolUI_);if(sf)sf.addEventListener('submit',guardarPacienteEstadistico_)}
+function mostrarPanelRol_(id,boton){['nurseVitals','nurseMedicines'].forEach(x=>$('#'+x).classList.toggle('hidden',x!==id));document.querySelectorAll('.role-tabs button').forEach(b=>b.classList.toggle('active',b===boton));if(id==='nurseMedicines')cargarMedicamentosUnidad_()}
+async function cargarSignos008_(cedula,fecha){try{const codigo=seleccionApp&&seleccionApp.unicodigo?seleccionApp.unicodigo:(usuario&&usuario.unicodigo||''),r=await run('buscarSignosPacienteFecha',token,cedula,fecha,codigo);if(!r.encontrado)return;const f=$('#clinicalForm'),d=r.signos||{};['temperatura','pas','pad','pulso','frecuenciaRespiratoria','pulsioximetria','peso','talla','glicemia','perimetroCefalico','llenadoCapilar'].forEach(k=>{if(f.elements[k]&&d[k]!==undefined&&d[k]!=='')f.elements[k].value=d[k]});const aviso=$('#draftStatus');if(aviso)aviso.textContent='Signos vitales cargados desde enfermería para '+fecha}catch(e){console.warn(e)}}
+async function buscarPacienteAdmision_(){idEpisodioAdmisionRolActual='';const ced=normalizarIdentificacionCliente_($('#admissionSearch').value,'OTRO');if(!ced)return alert('Ingrese la identificación.');try{const r=await run('buscarPaciente',token,ced),f=$('#admissionRoleForm');f.reset();rellenarForm_(f,r.paciente||{});f.elements.cedula.value=(r.paciente&&r.paciente.cedula)||r.identificacionResuelta||ced;f.elements.cedula.required=true;aplicarTipoIdentificacion_(f.elements.tipoDocumento);const d=new Date(),pad=n=>String(n).padStart(2,'0');f.elements.fechaAdmision.value=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());f.elements.horaAdmision.value=pad(d.getHours())+':'+pad(d.getMinutes());f.classList.remove('hidden');actualizarPanelVinculoAdmision_()}catch(e){alert(e.message||String(e))}}
+async function guardarAdmisionRolUI_(e){e.preventDefault();const d=Object.fromEntries(new FormData(e.target)),adm={fechaAdmision:d.fechaAdmision,horaAdmision:d.horaAdmision,historiaEnEstablecimiento:d.historiaEnEstablecimiento,condicionLlegada:d.condicionLlegada,motivoAtencion:d.motivoAtencion,idEpisodio:idEpisodioAdmisionRolActual||''};['fechaAdmision','horaAdmision','historiaEnEstablecimiento','condicionLlegada','motivoAtencion'].forEach(k=>delete d[k]);const s=$('#admissionRoleStatus');s.textContent='Actualizando admisión...';s.classList.remove('hidden');try{const r=await run('guardarPacienteYAdmision',token,{idEpisodio:idEpisodioAdmisionRolActual||'',paciente:d,admision:adm,establecimiento:establecimientoCuenta});idEpisodioAdmisionRolActual=r.idEpisodio||idEpisodioAdmisionRolActual;if(r.paciente){Object.assign(d,r.paciente);rellenarForm_(e.target,r.paciente)}if(r.identificacion){d.cedula=r.identificacion;e.target.elements.cedula.value=r.identificacion;e.target.elements.cedula.required=true}actualizarPanelVinculoAdmision_();s.textContent=(r.identificacionProvisional?'Paciente sin documento registrado con código provisional '+r.identificacion+'. ':'')+'Datos del paciente y admisión actualizados correctamente.'}catch(x){s.textContent=x.message||String(x)}}
+async function buscarPacienteEstadistico_(){const ced=$('#statPatientSearch').value.replace(/\D/g,'');if(!ced)return alert('Ingrese la cédula.');try{const r=await run('buscarPaciente',token,ced),f=$('#statPatientForm');f.reset();rellenarForm_(f,r.paciente||{});f.elements.cedula.value=ced;f.classList.remove('hidden')}catch(e){alert(e.message||String(e))}}
+async function guardarPacienteEstadistico_(e){e.preventDefault();calcularEdadFormulario_(e.target,$('#admissionBirthTimeBox'),false);const s=$('#statPatientStatus');s.textContent='Guardando información...';s.classList.remove('hidden');try{const r=await run('guardarFichaPaciente',token,Object.fromEntries(new FormData(e.target)));s.textContent=r.mensaje}catch(x){s.textContent=x.message||String(x)}}
+function prepararDescargasSeparadas_(){
+  const final=$('#finalForm');
+  if(final)final.addEventListener('submit',e=>{e.preventDefault();e.stopImmediatePropagation()},true);
+}
+async function generarFormularioTipo_(formato){
+  if(!admisionActual)return alert('Primero guarde la admisión.');
+  const pdf=$('#generatePdfButton'),excel=$('#generateExcelButton'),boton=formato==='EXCEL'?excel:pdf,s=$('#generateStatus');
+  calcularEdadUI_();admisionActual.paciente=Object.assign(admisionActual.paciente,Object.fromEntries(new FormData($('#patientForm'))));
+  [pdf,excel].forEach(b=>{if(b)b.disabled=true});s.textContent='';s.classList.remove('hidden');
+  try{const clinica=recogerClinica_();clinica.confirmarValoresExtremos=confirmarVitalesCliente_(clinica,'los signos vitales de la atención');clinica.formatoSalida=formato;const payload={idEpisodio:idEpisodioActual||admisionActual.idEpisodio||'',idRegistro:idRegistroActual||'',paciente:admisionActual.paciente,admision:admisionActual.admision,establecimiento:seleccionApp,clinica:clinica,auditoria:auditoriaHistoriaPayload_()};const r=await run('generarFormulario008',token,payload),ticket=formato==='EXCEL'?r.excelTicket:r.pdfTicket,nombre=formato==='EXCEL'?r.excelNombre:r.pdfNombre;if(!ticket)throw new Error('No se recibió la descarga segura del archivo '+formato+'.');if(s){s.textContent='';s.classList.add('hidden')}await descargarArchivoSeguro_(ticket,nombre);const nuevo=$('#newPatientArea');if(nuevo)nuevo.classList.remove('hidden')}catch(x){if(s){s.textContent=x.message||String(x);s.classList.remove('hidden')}}finally{[pdf,excel].forEach(b=>{if(b)b.disabled=false});if(pdf)pdf.textContent='Guardar y descargar PDF';if(excel)excel.textContent='Guardar y descargar Excel'}
+}
+async function verVersionesHistoria_(id){
+  const panel=$('#historyAuditPanel'),contenido=$('#historyAuditContent');if(!panel||!contenido)return;
+  panel.classList.remove('hidden');contenido.innerHTML=cargaLista_('Cargando auditoría clínica…');panel.scrollIntoView({behavior:'smooth',block:'start'});
+  try{const lista=await run('listarVersionesHistoria',token,id);contenido.innerHTML=lista.length?lista.map(v=>'<article class="history-item"><div class="history-date"><b>V'+esc(v.numeroVersion)+'</b><small>'+esc(String(v.fechaVersion||'').replace('T',' ').slice(0,19))+'</small></div><div class="history-data"><h3>'+esc(v.accion||'VERSIÓN')+'</h3><p><b>Motivo:</b> '+esc(v.motivo||'—')+'</p><small>'+esc(v.profesional||'')+' · '+esc(v.establecimiento||'')+' · '+esc(v.estadoAnterior||'')+' → '+esc(v.estadoNuevo||'')+'</small></div><div class="history-actions"><button class="btn soft auto" type="button" onclick="verDetalleVersionHistoria_(\\\''+esc(v.idVersion)+'\\\')">Ver versión</button></div></article>').join(''):'<div class="no-results">Esta historia todavía no tiene versiones registradas.</div>'}catch(e){contenido.innerHTML='<div class="no-results">'+esc(e.message||String(e))+'</div>'}
+}
+async function verDetalleVersionHistoria_(idVersion){
+  const contenido=$('#historyAuditContent');if(!contenido)return;
+  try{const v=await run('obtenerVersionHistoria',token,idVersion);contenido.innerHTML='<div class="section-head"><i>↺</i><div><h2>Versión '+esc(v.numeroVersion)+'</h2><p>'+esc(v.accion||'')+' · '+esc(String(v.fechaVersion||'').replace('T',' ').slice(0,19))+'</p></div></div><div class="patient-result-meta"><span><b>Paciente:</b> '+esc(v.paciente||'—')+'</span><span><b>Identificación:</b> '+esc(v.identificacion||'—')+'</span><span><b>Atención:</b> '+esc(String(v.fechaAtencion||'').slice(0,10))+' '+esc(v.horaAtencion||'')+'</span></div><p><b>Motivo de auditoría:</b> '+esc(v.motivo||'—')+'</p><p><b>Diagnósticos:</b> '+(v.diagnosticos&&v.diagnosticos.length?v.diagnosticos.map(esc).join(' · '):'Sin diagnósticos')+'</p><p><b>Enfermedad actual:</b> '+esc(v.enfermedadActual||'—')+'</p><p><b>Observaciones de egreso:</b> '+esc(v.observacionesEgreso||'—')+'</p><small>'+esc(v.profesional||'')+' · '+esc(v.establecimiento||'')+'</small><div class="history-toolbar"><button class="btn soft" type="button" onclick="cerrarAuditoriaHistoria_()">Cerrar auditoría</button></div>'}catch(e){contenido.innerHTML='<div class="no-results">'+esc(e.message||String(e))+'</div>'}
+}
+function cerrarAuditoriaHistoria_(){const p=$('#historyAuditPanel');if(p)p.classList.add('hidden')}
+async function descargarHistoria_(id,formato){const estado=$('#historyStatus');estado.textContent='Regenerando '+formato+'…';try{const r=await run('regenerarHistoriaClinica',token,id,formato),ticket=formato==='EXCEL'?r.excelTicket:r.pdfTicket,nombre=formato==='EXCEL'?r.excelNombre:r.pdfNombre;if(!ticket)throw new Error('No se recibió la descarga segura.');await descargarArchivoSeguro_(ticket,nombre);estado.textContent='Documento '+formato+' descargado de forma segura.'}catch(e){estado.textContent=e.message||String(e)}}
+async function cargarHistorias_(){
+  const box=$('#historyList'),estado=$('#historyStatus'),min=$('#historyAgeMin').value,max=$('#historyAgeMax').value;if(min!==''&&max!==''&&Number(min)>Number(max)){alert('La edad mínima no puede ser mayor que la edad máxima.');return}box.innerHTML='<div class="no-results">Cargando historias clínicas…</div>';
+  try{const lista=await run('listarHistoriasClinicas',token,{desde:$('#historyFrom').value,hasta:$('#historyTo').value,cedula:$('#historyQuery').value,nombre:$('#historyQuery').value,unidadEdad:$('#historyAgeUnit').value,edadMin:min,edadMax:max});estado.textContent=lista.length+' registro(s)';box.innerHTML=lista.length?lista.map(x=>'<article class="history-item"><div class="history-date"><b>'+esc(String(x.fecha||'').slice(0,10))+'</b><small>'+esc(x.hora||'')+'</small></div><div class="history-data"><h3>'+esc(x.nombre||'PACIENTE SIN NOMBRE')+'</h3><div class="patient-result-meta"><span><b>Identificación:</b> '+esc(x.cedula||'—')+'</span><span><b>Edad:</b> '+esc(x.edad||'—')+'</span><span><b>Sexo:</b> '+esc(x.sexo||'—')+'</span></div><div class="history-diagnoses"><b>Diagnósticos:</b> '+(x.diagnosticos&&x.diagnosticos.length?x.diagnosticos.map(d=>'<span>'+esc(d)+'</span>').join(''):'<em>Sin diagnósticos registrados</em>')+'</div><small>'+esc(x.establecimiento||'')+' · '+esc(x.medico||'')+' · Estado: '+esc(x.estado||'')+'</small></div><div class="history-actions"><button class="btn soft" type="button" onclick="modificarHistoria_(\''+esc(x.idRegistro)+'\')">Modificar</button><button class="btn primary auto" type="button" onclick="descargarHistoria_(\''+esc(x.idRegistro)+'\',\'PDF\')">PDF</button><button class="btn soft auto" type="button" onclick="descargarHistoria_(\''+esc(x.idRegistro)+'\',\'EXCEL\')">Excel</button><button class="btn soft auto" type="button" onclick="verVersionesHistoria_(\''+esc(x.idRegistro)+'\')">Versiones</button><button class="remove-btn" type="button" onclick="eliminarHistoriaUI_(\''+esc(x.idRegistro)+'\')">Eliminar</button></div></article>').join(''):'<div class="no-results">No se encontraron pacientes con esos criterios.</div>'}catch(e){estado.textContent='';box.innerHTML='<div class="no-results">'+esc(e.message||String(e))+'</div>'}
+}
+function establecimientosCuentaCliente_(){const propios=(usuario&&usuario.establecimientos)||[],codigos=propios.map(x=>codigoNormal(x.unicodigo));return establecimientos.filter(e=>codigos.includes(codigoNormal(e.unicodigo))).concat(propios.filter(x=>!establecimientos.some(e=>codigoNormal(e.unicodigo)===codigoNormal(x.unicodigo))))}
+function abrirPerfil_(){mostrarPagina_('profilePage');firmaProcesada='';selloProcesado='';firmaOriginal=null;selloOriginal=null;const f=$('#profileForm');f.reset();rellenarForm_(f,usuario||{});['profileFirmaCanvas','profileSelloCanvas','profileSignaturePad'].forEach(id=>{const c=$('#'+id);if(c)c.getContext('2d').clearRect(0,0,c.width,c.height)});$('#profileSignatureImage').classList.remove('hidden');$('#profileSignatureDraw').classList.add('hidden');const selloPerfil=$('#profileSelloFile').closest('.profile-images>div');if(selloPerfil)selloPerfil.classList.toggle('hidden',normalCliente_(usuario&&usuario.cargo)==='ADMISIONISTA');$('#profileBackgroundThreshold').value=0;$('#profileThresholdValue').textContent='0';$('#profileStatus').classList.add('hidden');if(!f.dataset.ready){f.addEventListener('submit',guardarPerfilUI_);f.dataset.ready='1'}cargarEstablecimientosPerfil_()}
+async function agregarEstablecimientoPerfil_(){alert('Los establecimientos son asignados únicamente por la administración del sistema.')}
+async function activarEstablecimientoPerfil_(codigo){try{const r=await run('activarEstablecimientoCuenta',token,codigo);usuario=r.usuario;establecimientoCuenta=r.establecimiento;await cargarEstablecimientosPerfil_()}catch(x){alert(x.message||String(x))}}
+async function quitarEstablecimientoPerfil_(){alert('Los establecimientos autorizados no pueden modificarse desde el perfil.')}
+async function solicitarEliminarCuentaUI_(){const s=$('#deleteAccountStatus');s.textContent='Enviando código…';s.classList.remove('hidden');try{const r=await run('solicitarEliminacionCuenta',token);s.textContent=r.mensaje;$('#deleteAccountConfirm').classList.remove('hidden')}catch(x){s.textContent=x.message||String(x)}}
+async function confirmarEliminarCuentaUI_(){const codigo=$('#deleteAccountCode').value.trim();if(!codigo)return alert('Ingrese el código recibido.');if(!confirm('¿Confirma que desea eliminar su cuenta?'))return;try{await run('confirmarEliminacionCuenta',token,codigo);token='';usuario=null;location.reload()}catch(x){$('#deleteAccountStatus').textContent=x.message||String(x)}}
+function agregarMedicamento(){
+  const c=$('#medicamentos');if(c.children.length>=7)return alert('Máximo 7 medicamentos.');
+  const r=document.createElement('div');r.className='repeat-row medicine-row';r.dataset.medicamentoId='';r.dataset.controlInventarioV2='1';r.dataset.stockDisponible='';
+  r.innerHTML='<div class="medicine-search medicine-main"><label>Medicamento</label><input class="med" autocomplete="off" placeholder="Medicamento de la unidad"><div class="medicine-results hidden"></div></div><div class="medicine-field"><label>Vía</label><input class="via" placeholder="Vía"></div><div class="medicine-field"><label>Dosis clínica</label><input class="dosis" placeholder="Ej. 1 g"></div><div class="medicine-field"><label>Cada</label><input class="intervalo" type="number" min="1" step="1" placeholder="8"></div><div class="medicine-field"><label>Intervalo</label><select class="unidad-intervalo"><option>HORAS</option><option>DÍAS</option><option>MINUTOS</option></select></div><div class="medicine-field"><label>Días</label><input class="dias" type="number" min="1" step="1" placeholder="3"></div><div class="medicine-inventory-control"><div class="medicine-field"><label>Unidades físicas por administración</label><input class="unidades-admin" type="number" min="0" step="0.001" value="0" placeholder="Ej. 2 tabletas"></div><div class="medicine-field"><label>Administraciones realizadas en emergencia</label><input class="administraciones" type="number" min="0" step="1" value="0" placeholder="Ej. 1"></div><div class="medicine-field"><label>Unidades entregadas al paciente</label><input class="entregadas" type="number" min="0" step="0.001" value="0" placeholder="Ej. 6"></div><div class="medicine-stock-summary"><small class="medicine-consumption">Prescripción estimada: 0 tomas · Salida inventario: 0</small><small class="medicine-stock">Seleccione el medicamento desde el inventario si registrará una salida física.</small></div></div><button type="button" class="remove-btn">Quitar</button>';
+  r.querySelector('.remove-btn').onclick=()=>r.remove();
+  r.querySelectorAll('.intervalo,.unidad-intervalo,.dias').forEach(e=>e.addEventListener('input',()=>actualizarConsumoFila_(r)));
+  r.querySelectorAll('.unidades-admin,.administraciones,.entregadas').forEach(e=>e.addEventListener('input',()=>{r.dataset.controlInventarioV2='1';actualizarConsumoFila_(r)}));
+  c.appendChild(r);configurarBuscadorMedicamento_(r);actualizarConsumoFila_(r)
+}
+function numeroFilaMedicamento_(r,selector){const e=r.querySelector(selector),n=Number(e&&e.value||0);return Number.isFinite(n)&&n>=0?n:0}
+function actualizarConsumoFila_(r){
+  const n=Number(r.querySelector('.intervalo').value),d=Number(r.querySelector('.dias').value),u=normalCliente_(r.querySelector('.unidad-intervalo').value);let tomas=0;
+  if(n>0&&d>0)tomas=Math.ceil(u==='MINUTOS'?d*1440/n:u==='HORAS'?d*24/n:d/n);
+  const unidades=numeroFilaMedicamento_(r,'.unidades-admin'),administraciones=numeroFilaMedicamento_(r,'.administraciones'),administrado=Math.round(unidades*administraciones*1000)/1000,entregado=Math.round(numeroFilaMedicamento_(r,'.entregadas')*1000)/1000,total=Math.round((administrado+entregado)*1000)/1000;
+  const resumen=r.querySelector('.medicine-consumption');if(resumen)resumen.textContent='Prescripción estimada: '+tomas+' '+(tomas===1?'toma':'tomas')+' · Administrado: '+administrado+' · Entregado: '+entregado+' · Salida inventario: '+total;
+  const stockBox=r.querySelector('.medicine-stock'),stock=Number(r.dataset.stockDisponible);if(!stockBox)return;
+  stockBox.classList.remove('stock-warning','stock-ok');
+  if(total>0&&!r.dataset.medicamentoId){stockBox.textContent='Seleccione este medicamento desde el inventario para registrar la salida física.';stockBox.classList.add('stock-warning');return}
+  if(r.dataset.stockDisponible!==''&&Number.isFinite(stock)){
+    const queda=Math.round((stock-total)*1000)/1000,pres=r.dataset.presentacionStock||'unidades';stockBox.textContent='Stock actual: '+stock+' '+pres+' · Después de esta salida: '+queda;stockBox.classList.add(queda<0?'stock-warning':'stock-ok');
+  }else stockBox.textContent=total>0?'El stock será validado nuevamente por el servidor al finalizar.':'La prescripción no descuenta inventario mientras no registre unidades administradas o entregadas.';
+}
+function configurarBuscadorMedicamento_(fila){
+  const input=fila.querySelector('.med'),box=fila.querySelector('.medicine-results');let timer=0;
+  input.addEventListener('input',()=>{fila.dataset.medicamentoId='';fila.dataset.stockDisponible='';fila.dataset.presentacionStock='';clearTimeout(timer);actualizarConsumoFila_(fila);const q=input.value.trim();if(q.length<2){box.classList.add('hidden');return}box.innerHTML=cargaLista_('Buscando medicamentos…');box.classList.remove('hidden');timer=setTimeout(async()=>{try{const codigo=seleccionApp&&seleccionApp.unicodigo?seleccionApp.unicodigo:(usuario&&usuario.unicodigo||''),lista=await run('listarMedicamentosUnidadContexto',token,q,codigo);box.innerHTML=lista.length?lista.map((x,i)=>'<button type="button" data-index="'+i+'"><b>'+esc(x.nombre)+'</b><span>'+esc(x.presentacion)+' · '+esc([x.concentracion,x.unidadMedida].filter(Boolean).join(' '))+' · Disponible: '+esc(String(x.cantidad||0))+'</span></button>').join(''):'<div class="no-results">Sin coincidencias en el inventario del establecimiento seleccionado</div>';box.classList.remove('hidden');box.querySelectorAll('button').forEach(b=>b.onclick=()=>{const x=lista[Number(b.dataset.index)],concentracion=[x.concentracion,x.unidadMedida].filter(Boolean).join(' ');input.value=[x.nombre,x.presentacion].filter(Boolean).join(' · ');fila.dataset.medicamentoId=x.id;fila.dataset.stockDisponible=String(x.cantidad==null?'':x.cantidad);fila.dataset.presentacionStock=x.presentacion||'unidades';fila.dataset.controlInventarioV2='1';fila.querySelector('.dosis').value=concentracion;box.classList.add('hidden');actualizarConsumoFila_(fila)})}catch(e){box.innerHTML='<div class="no-results">'+esc(e.message||String(e))+'</div>';box.classList.remove('hidden')}},250)});
+  fila.addEventListener('focusout',()=>setTimeout(()=>box.classList.add('hidden'),180))
+}
+const REGLAS_VITALES_CLIENTE_={
+  temperatura:{nombre:'Temperatura',unidad:'°C',min:10,max:50,alertaMin:30,alertaMax:43},
+  pas:{nombre:'PAS',unidad:'mmHg',min:0,max:400,alertaMin:50,alertaMax:260},
+  pad:{nombre:'PAD',unidad:'mmHg',min:0,max:300,alertaMin:20,alertaMax:180},
+  pulso:{nombre:'Frecuencia cardíaca',unidad:'lpm',min:0,max:400,alertaMin:20,alertaMax:250},
+  frecuenciaRespiratoria:{nombre:'Frecuencia respiratoria',unidad:'rpm',min:0,max:150,alertaMin:5,alertaMax:80},
+  pulsioximetria:{nombre:'SpO₂',unidad:'%',min:0,max:100,alertaMin:70},
+  glicemia:{nombre:'Glicemia',unidad:'mg/dL',min:0,max:3000,alertaMin:20,alertaMax:1000},
+  peso:{nombre:'Peso',unidad:'kg',min:.2,max:500,alertaMax:350},
+  talla:{nombre:'Talla',unidad:'cm',min:10,max:300,alertaMax:230},
+  perimetroCefalico:{nombre:'Perímetro cefálico',unidad:'cm',min:5,max:100,alertaMin:20,alertaMax:70},
+  llenadoCapilar:{nombre:'Llenado capilar',unidad:'s',min:0,max:120,alertaMax:10}
+};
+function numeroVitalCliente_(v){if(v===null||v===undefined||String(v).trim()==='')return null;const n=Number(String(v).replace(',','.'));return Number.isFinite(n)?n:NaN}
+function evaluarVitalesCliente_(d){d=d||{};const invalidos=[],alertas=[];Object.entries(REGLAS_VITALES_CLIENTE_).forEach(([k,r])=>{const n=numeroVitalCliente_(d[k]);if(n===null)return;if(!Number.isFinite(n)){invalidos.push(r.nombre+': valor no numérico');return}if(n<r.min||n>r.max){invalidos.push(r.nombre+' '+n+(r.unidad?' '+r.unidad:'')+' fuera del límite de captura '+r.min+'–'+r.max+(r.unidad?' '+r.unidad:''));return}if((r.alertaMin!==undefined&&n<r.alertaMin)||(r.alertaMax!==undefined&&n>r.alertaMax))alertas.push(r.nombre+' '+n+(r.unidad?' '+r.unidad:''))});const pas=numeroVitalCliente_(d.pas),pad=numeroVitalCliente_(d.pad);if(Number.isFinite(pas)&&Number.isFinite(pad)&&pas!==null&&pad!==null&&pad>=pas)alertas.push('PA '+pas+'/'+pad+' mmHg: revise la relación PAS/PAD');[['glasgowOcular','Glasgow ocular',1,4],['glasgowVerbal','Glasgow verbal',1,5],['glasgowMotora','Glasgow motora',1,6]].forEach(x=>{const n=numeroVitalCliente_(d[x[0]]);if(n===null)return;if(!Number.isFinite(n)||n<x[2]||n>x[3]||Math.floor(n)!==n)invalidos.push(x[1]+' debe estar entre '+x[2]+' y '+x[3]+'.')});return{invalidos,alertas}}
+function actualizarValidacionVitalesUI_(){const box=$('#vitalValidationStatus'),f=$('#clinicalForm');if(!box||!f)return;const d={};Object.keys(REGLAS_VITALES_CLIENTE_).concat(['glasgowOcular','glasgowVerbal','glasgowMotora']).forEach(k=>{const e=f.elements[k];if(e)d[k]=e.value});const r=evaluarVitalesCliente_(d);if(r.invalidos.length){box.className='vital-validation-status vital-invalid';box.textContent='Revise: '+r.invalidos.join(' · ');return}if(r.alertas.length){box.className='vital-validation-status vital-warning';box.textContent='Valor extremo: '+r.alertas.join(' · ')+' · Confirme la medición antes de guardar.';return}box.className='vital-validation-status hidden';box.textContent=''}
+function confirmarVitalesCliente_(datos,contexto){const r=evaluarVitalesCliente_(datos||{});if(r.invalidos.length)throw new Error('Revise los signos vitales: '+r.invalidos.join(' | '));if(!r.alertas.length)return false;const ok=confirm('Se detectaron valores extremos'+(contexto?' en '+contexto:'')+':\n\n'+r.alertas.join('\n')+'\n\nSi la medición es correcta, pulse Aceptar para confirmarla.');if(!ok)throw new Error('Revise o repita la medición antes de continuar.');return true}
+function fechaHoraControlActual_(){
+  const d=new Date(),pad=n=>String(n).padStart(2,'0'),fecha=$('#vitalControlDate'),hora=$('#vitalControlTime');
+  if(fecha&&!fecha.value)fecha.value=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+  if(hora&&!hora.value)hora.value=pad(d.getHours())+':'+pad(d.getMinutes());
+}
+function prepararControlesSignosUI_(){
+  fechaHoraControlActual_();
+  const f=$('#clinicalForm');if(f){Object.keys(REGLAS_VITALES_CLIENTE_).concat(['glasgowOcular','glasgowVerbal','glasgowMotora']).forEach(k=>{const e=f.elements[k];if(e){e.addEventListener('input',actualizarValidacionVitalesUI_);e.addEventListener('change',actualizarValidacionVitalesUI_)}});actualizarValidacionVitalesUI_()}
+}
+function reiniciarControlesSignosUI_(){
+  controlesSignosEpisodio_=[],triajesEpisodio_=[],registrosCriticosEpisodio_=[],evolucionesEpisodio_=[],triajeObligatorioActual_=false;const id=$('#vitalControlId'),lista=$('#vitalSeriesList'),estado=$('#vitalSeriesStatus'),contador=$('#vitalSeriesCount'),cancelar=$('#cancelVitalEdit'),boton=$('#saveVitalControl');
+  if(id)id.value='';if(lista)lista.innerHTML='<div class="no-results">Todavía no hay controles registrados en este episodio.</div>';if(estado){estado.textContent='';estado.classList.add('hidden')}if(contador)contador.textContent='0 controles';if(cancelar)cancelar.classList.add('hidden');if(boton)boton.textContent='Registrar control';
+  const fecha=$('#vitalControlDate'),hora=$('#vitalControlTime');if(fecha)fecha.value='';if(hora)hora.value='';fechaHoraControlActual_();
+}
+function datosControlSignosActual_(){
+  const f=$('#clinicalForm'),nombres=['temperatura','pas','pad','pulso','frecuenciaRespiratoria','pulsioximetria','peso','talla','glicemia','perimetroCefalico','llenadoCapilar','glasgowOcular','glasgowVerbal','glasgowMotora','pupilaDerecha','pupilaIzquierda'],d={};
+  nombres.forEach(k=>{const e=f&&f.elements[k];if(e)d[k]=e.value});
+  d.idControl=$('#vitalControlId')?$('#vitalControlId').value:'';d.idEpisodio=idEpisodioActual||admisionActual&&admisionActual.idEpisodio||'';d.idAdmision=admisionActual&&admisionActual.admision?admisionActual.admision.idAdmision||'':'';d.cedula=admisionActual&&admisionActual.paciente?admisionActual.paciente.cedula||'':'';d.fechaControl=$('#vitalControlDate')?$('#vitalControlDate').value:'';d.horaControl=$('#vitalControlTime')?$('#vitalControlTime').value:'';d.establecimiento=seleccionApp||establecimientoCuenta||{};return d
+}
+async function guardarControlSignosUI_(){
+  if(!idEpisodioActual&&!admisionActual)return alert('Primero guarde la admisión para crear el episodio de emergencia.');
+  const estado=$('#vitalSeriesStatus'),boton=$('#saveVitalControl');if(estado){estado.textContent='Guardando control...';estado.classList.remove('hidden')}if(boton)boton.disabled=true;
+  try{const datos=datosControlSignosActual_();datos.confirmarValoresExtremos=confirmarVitalesCliente_(datos,'este control de signos vitales');const r=await run('guardarControlSignosEpisodio',token,datos);if(estado)estado.textContent=r.mensaje;cancelarEdicionControlSignos_(true);await cargarControlesSignosEpisodio_()}catch(e){if(estado)estado.textContent=e.message||String(e);else alert(e.message||String(e))}finally{if(boton)boton.disabled=false}
+}
+async function cargarControlesSignosEpisodio_(){
+  const episodio=idEpisodioActual||admisionActual&&admisionActual.idEpisodio||'',lista=$('#vitalSeriesList'),contador=$('#vitalSeriesCount');
+  if(!episodio){controlesSignosEpisodio_=[],triajesEpisodio_=[],registrosCriticosEpisodio_=[],evolucionesEpisodio_=[],triajeObligatorioActual_=false;if(lista)lista.innerHTML='<div class="no-results">Guarde primero la admisión para registrar controles seriados.</div>';if(contador)contador.textContent='0 controles';return}
+  try{controlesSignosEpisodio_=await run('listarControlesSignosEpisodio',token,episodio)||[];pintarControlesSignos_()}catch(e){controlesSignosEpisodio_=[],triajesEpisodio_=[],registrosCriticosEpisodio_=[],evolucionesEpisodio_=[],triajeObligatorioActual_=false;if(lista)lista.innerHTML='<div class="no-results">'+esc(e.message||String(e))+'</div>'}
+}
+function pintarControlesSignos_(){
+  const lista=$('#vitalSeriesList'),contador=$('#vitalSeriesCount');if(!lista)return;const n=controlesSignosEpisodio_.length;if(contador)contador.textContent=n+' '+(n===1?'control':'controles');
+  if(!n){lista.innerHTML='<div class="no-results">Todavía no hay controles registrados en este episodio.</div>';return}
+  lista.innerHTML=controlesSignosEpisodio_.map((x,i)=>{const pa=(x.pas||x.pad)?esc((x.pas||'—')+'/'+(x.pad||'—')):'';const chips=[x.temperatura?'T '+esc(x.temperatura)+'°C':'',pa?'PA '+pa:'',x.pulso?'FC '+esc(x.pulso):'',x.frecuenciaRespiratoria?'FR '+esc(x.frecuenciaRespiratoria):'',x.pulsioximetria?'SatO₂ '+esc(x.pulsioximetria)+'%':'',x.glicemia?'Glicemia '+esc(x.glicemia):'',x.glasgowTotal?'Glasgow '+esc(x.glasgowTotal):''].filter(Boolean).map(v=>'<span class="vital-chip">'+v+'</span>').join('');return '<div class="vital-control-card"><div class="vital-control-when"><b>'+esc(String(x.fechaControl||'').slice(0,10))+' · '+esc(String(x.horaControl||'').slice(0,5))+'</b><small>'+esc(x.profesional||'')+'</small></div><div class="vital-control-values">'+(chips||'<span class="vital-chip">Control registrado</span>')+'</div><div class="vital-control-actions"><button class="btn soft auto" type="button" onclick="editarControlSignos_('+i+')">Editar</button></div></div>'}).join('')
+}
+function editarControlSignos_(indice){
+  const x=controlesSignosEpisodio_[indice];if(!x)return;const f=$('#clinicalForm'),campos=['temperatura','pas','pad','pulso','frecuenciaRespiratoria','pulsioximetria','peso','talla','glicemia','perimetroCefalico','llenadoCapilar','glasgowOcular','glasgowVerbal','glasgowMotora','pupilaDerecha','pupilaIzquierda'];
+  campos.forEach(k=>{const e=f&&f.elements[k];if(e&&x[k]!==undefined)e.value=x[k]==null?'':x[k]});if($('#vitalControlId'))$('#vitalControlId').value=x.idControl||'';if($('#vitalControlDate'))$('#vitalControlDate').value=String(x.fechaControl||'').slice(0,10);if($('#vitalControlTime'))$('#vitalControlTime').value=String(x.horaControl||'').slice(0,5);totalGlasgow_();const cancelar=$('#cancelVitalEdit'),boton=$('#saveVitalControl');if(cancelar)cancelar.classList.remove('hidden');if(boton)boton.textContent='Actualizar control';$('#vitales').scrollIntoView({behavior:'smooth',block:'start'})
+}
+function cancelarEdicionControlSignos_(reponerHora=true){
+  const id=$('#vitalControlId'),cancelar=$('#cancelVitalEdit'),boton=$('#saveVitalControl');if(id)id.value='';if(cancelar)cancelar.classList.add('hidden');if(boton)boton.textContent='Registrar control';if(reponerHora){const fecha=$('#vitalControlDate'),hora=$('#vitalControlTime');if(fecha)fecha.value='';if(hora)hora.value='';fechaHoraControlActual_()}
+}
+
+function recogerClinica_(){const c=formObjeto_($('#clinicalForm')),f=formObjeto_($('#finalForm'));c.presionArterial=(c.pas&&c.pad)?c.pas+'/'+c.pad:'';c.marcas=Object.assign({},datosChecklist_('eventChecklist'),datosChecklist_('historyChecklist'),datosChecklist_('physicalChecklist'),datosChecklist_('examChecklist'));if(c.sinConstantes)c.marcas['2!L2']=true;if(f.embarazoNoAplica)c.marcas['2!BL26']=true;if(f.examenesNoAplica)c.marcas['2!BL35']=true;if(c.custodia==='SI')c.marcas['1!BH37']=true;if(c.custodia==='NO')c.marcas['1!BL37']=true;if(c.notificacion==='SI')c.marcas['1!BH40']=true;if(c.notificacion==='NO')c.marcas['1!BL40']=true;c.presuntivos=[...$('#presuntivos').children].map(r=>({cie:r.querySelector('.cie').value,descripcion:r.querySelector('.description').value}));c.definitivos=[...$('#definitivos').children].map(r=>({cie:r.querySelector('.cie').value,descripcion:r.querySelector('.description').value}));c.medicamentos=[...$('#medicamentos').children].map(r=>{const intervalo=r.querySelector('.intervalo').value,unidad=r.querySelector('.unidad-intervalo').value,unidades=numeroFilaMedicamento_(r,'.unidades-admin'),administraciones=numeroFilaMedicamento_(r,'.administraciones'),administrada=Math.round(unidades*administraciones*1000)/1000,entregada=Math.round(numeroFilaMedicamento_(r,'.entregadas')*1000)/1000;return{medicamentoId:r.dataset.medicamentoId||'',medicamento:r.querySelector('.med').value,via:r.querySelector('.via').value,dosis:r.querySelector('.dosis').value,intervalo:intervalo,unidadIntervalo:unidad,posologia:intervalo?'CADA '+intervalo+' '+unidad:'',dias:r.querySelector('.dias').value,controlInventarioV2:r.dataset.controlInventarioV2!=='0',unidadesPorAdministracion:unidades,administracionesRealizadas:administraciones,cantidadAdministrada:administrada,cantidadEntregada:entregada}});c.controlesSignosVitales=(controlesSignosEpisodio_||[]).map(x=>Object.assign({},x));c.triajes=(triajesEpisodio_||[]).map(x=>Object.assign({},x));c.triajeActual=c.triajes.length?Object.assign({},c.triajes[0]):null;c.modoCriticoRegistros=(registrosCriticosEpisodio_||[]).map(x=>Object.assign({},x));c.modoCriticoActivo=c.modoCriticoRegistros.length?'SI':'NO';c.evolucionesObservacion=(evolucionesEpisodio_||[]).map(x=>Object.assign({},x));c.observacionActiva=c.evolucionesObservacion.length?'SI':'NO';Object.assign(c,f);return c}
+function restaurarRepetibles_(id,items,tipo){const box=$('#'+id);box.innerHTML='';(items&&items.length?items:[{}]).forEach(x=>{if(tipo==='med'){agregarMedicamento();const r=box.lastElementChild,esV2=x.controlInventarioV2===true||normalCliente_(x.controlInventarioV2)==='SI'||x.unidadesPorAdministracion!==undefined||x.administracionesRealizadas!==undefined||x.cantidadEntregada!==undefined;r.dataset.medicamentoId=x.medicamentoId||'';r.dataset.controlInventarioV2=esV2?'1':'0';r.querySelector('.med').value=x.medicamento||'';r.querySelector('.via').value=x.via||'';r.querySelector('.dosis').value=x.dosis||'';r.querySelector('.intervalo').value=x.intervalo||'';r.querySelector('.unidad-intervalo').value=x.unidadIntervalo||'HORAS';r.querySelector('.dias').value=x.dias||'';r.querySelector('.unidades-admin').value=esV2?(x.unidadesPorAdministracion||0):0;r.querySelector('.administraciones').value=esV2?(x.administracionesRealizadas||0):0;r.querySelector('.entregadas').value=esV2?(x.cantidadEntregada||0):0;const stock=r.querySelector('.medicine-stock');if(stock&&!esV2)stock.textContent='Registro histórico anterior al control físico de inventario. No se ajustará stock hasta que registre cantidades administradas o entregadas.';actualizarConsumoFila_(r)}else{agregarDiagnostico(id);const r=box.lastElementChild;r.querySelector('.cie').value=x.cie||'';r.querySelector('.description').value=x.descripcion||''}})}
+function editarMedicamentoUnidad_(id,nombre,presentacion,concentracion,unidadMedida,cantidad){const f=$('#nurseMedicineForm');f.elements.id.value=id;f.elements.nombre.value=nombre;f.elements.presentacion.value=presentacion;f.elements.concentracion.value=concentracion;f.elements.unidadMedida.value=unidadMedida||'';f.elements.cantidad.value=cantidad;$('#nurseMedicineSave').textContent='Guardar modificación';f.scrollIntoView({behavior:'smooth'})}
+function cancelarEdicionMedicamento_(){const f=$('#nurseMedicineForm');f.reset();f.elements.id.value='';$('#nurseMedicineSave').textContent='Agregar medicamento'}
+function prepararBuscadorInventarioEnfermeria_(){const f=$('#nurseMedicineForm');if(!f||f.dataset.buscador==='1')return;const input=f.elements.nombre,contenedor=input.parentElement,box=document.createElement('div');contenedor.classList.add('medicine-search');box.className='medicine-results hidden';contenedor.appendChild(box);let timer=0;const asignar=(campo,valor)=>{const e=f.elements[campo];if(!e)return;if(e.tagName==='SELECT'&&valor&&![...e.options].some(o=>o.value===valor)){const op=document.createElement('option');op.value=valor;op.textContent=valor;e.appendChild(op)}e.value=valor||''};input.addEventListener('input',()=>{f.elements.id.value='';clearTimeout(timer);const q=input.value.trim();if(q.length<2){box.classList.add('hidden');return}timer=setTimeout(async()=>{try{const lista=await run('buscarHistorialMedicamentosUnidad',token,q,codigoUnidadEnfermeria_());box.innerHTML=lista.length?lista.map((x,i)=>'<button type="button" data-index="'+i+'"><b>'+esc(x.nombre)+'</b><span>'+esc(x.presentacion)+' · '+esc([x.concentracion,x.unidadMedida].filter(Boolean).join(' '))+' · '+(normalCliente_(x.estado)==='INACTIVO'?'INACTIVO — SE REACTIVARÁ':'ACTIVO')+'</span></button>').join(''):'<div class="no-results">No existen coincidencias anteriores.</div>';box.classList.remove('hidden');box.querySelectorAll('button').forEach(b=>b.onclick=()=>{const x=lista[Number(b.dataset.index)];f.elements.id.value=x.id||'';input.value=x.nombre||'';asignar('presentacion',x.presentacion);asignar('concentracion',x.concentracion);asignar('unidadMedida',x.unidadMedida);f.elements.cantidad.value='';$('#nurseMedicineSave').textContent=normalCliente_(x.estado)==='INACTIVO'?'Reactivar medicamento':'Actualizar existencia';box.classList.add('hidden');f.elements.cantidad.focus()})}catch(e){box.innerHTML='<div class="no-results">'+esc(e.message||String(e))+'</div>';box.classList.remove('hidden')}},250)});input.addEventListener('focusout',()=>setTimeout(()=>box.classList.add('hidden'),180));f.dataset.buscador='1'}
+function completarEstablecimientoCatalogo_(e){if(!e)return null;return establecimientos.find(x=>codigoNormal(x.unicodigo)===codigoNormal(e.unicodigo))||e}
+function llenarSelectorEstablecimientos_(id){const s=$('#'+id);if(!s)return;const anterior=s.value,lista=establecimientosCuentaCliente_().map(completarEstablecimientoCatalogo_);s.innerHTML=lista.map(e=>'<option value="'+esc(e.unicodigo)+'">'+esc(e.nombre)+' · '+esc(e.unicodigo)+'</option>').join('');if(anterior&&lista.some(e=>codigoNormal(e.unicodigo)===codigoNormal(anterior)))s.value=anterior;else if(lista.some(e=>codigoNormal(e.unicodigo)===codigoNormal(usuario.unicodigo)))s.value=usuario.unicodigo;else if(lista[0])s.value=lista[0].unicodigo}
+async function guardarEst(){if(!seleccionApp)return alert('Seleccione un establecimiento de su lista.');$('#patientSection').classList.remove('hidden');document.querySelectorAll('.steps span').forEach((s,i)=>s.classList.toggle('active',i===1));fechaHoraActual_();$('#patientSection').scrollIntoView({behavior:'smooth'})}
+async function cambiarEstablecimientoTrabajo_(codigo){try{const r=await run('activarEstablecimientoCuenta',token,codigo);if(r.usuario)usuario=r.usuario;establecimientoCuenta=r.establecimiento||establecimientoCuenta;const e=completarEstablecimientoCatalogo_(r.establecimiento)||establecimientosCuentaCliente_().map(completarEstablecimientoCatalogo_).find(x=>codigoNormal(x.unicodigo)===codigoNormal(codigo));if(e)seleccionApp=e;await cargarMedicamentosUnidad_();inicializarFiltrosSignos_(true);await cargarSignosEnfermeriaUI_()}catch(e){alert(e.message||String(e))}}
+async function abrirNuevaAtencion_(){reiniciarAtencion_();try{const r=await run('obtenerEstablecimientosCuenta',token);if(r.usuario)usuario=Object.assign({},usuario||{},r.usuario);usuario.establecimientos=r.establecimientos||[];if(!usuario.establecimientos.length)throw new Error('Su cuenta no tiene establecimientos autorizados. Contacte al administrador del sistema.')}catch(e){alert(e.message||String(e));return}llenarSelectorEstablecimientos_('appEstablishmentSelect');const s=$('#appEstablishmentSelect'),lista=establecimientosCuentaCliente_().map(completarEstablecimientoCatalogo_),e=lista.find(x=>codigoNormal(x.unicodigo)===codigoNormal(s&&s.value||usuario.unicodigo))||lista[0];if(e)seleccionarApp(e);mostrarPagina_('attentionWorkspace')}
+function rangoMesActual_(){const d=new Date(),pad=n=>String(n).padStart(2,'0'),hoy=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());return{desde:hoy,hasta:hoy}}
+function inicializarFechasHistorias_(forzar){const r=rangoMesActual_(),desde=$('#historyFrom'),hasta=$('#historyTo');if(desde&&(forzar||!desde.value))desde.value=r.desde;if(hasta&&(forzar||!hasta.value))hasta.value=r.hasta}
+async function abrirHistorias_(){mostrarPagina_('historyPage');inicializarFechasHistorias_(false);await cargarHistorias_()}
+function limpiarFiltrosHistorias_(){['historyQuery','historyAgeUnit','historyAgeMin','historyAgeMax'].forEach(id=>$('#'+id).value='');inicializarFechasHistorias_(true);cargarHistorias_()}
+async function seleccionarEstablecimientoCuentaUI_(codigo){try{const r=await run('activarEstablecimientoCuenta',token,codigo);if(r.usuario)usuario=r.usuario;establecimientoCuenta=r.establecimiento||establecimientoCuenta;const e=completarEstablecimientoCatalogo_(r.establecimiento)||establecimientosCuentaCliente_().map(completarEstablecimientoCatalogo_).find(x=>codigoNormal(x.unicodigo)===codigoNormal(codigo));if(e)seleccionarApp(e)}catch(e){alert(e.message||String(e));llenarSelectorEstablecimientos_('appEstablishmentSelect')}}
+async function cargarEstablecimientosPerfil_(){try{const r=await run('obtenerEstablecimientosCuenta',token),lista=r.establecimientos||[],box=$('#profileEstList');if(r.usuario)usuario=Object.assign({},usuario||{},r.usuario);usuario.establecimientos=lista;box.innerHTML=lista.length?lista.map(e=>'<article class="account-establishment"><div><b>'+esc(e.nombre)+'</b><span>'+esc(e.unicodigo)+' · '+esc([e.institucion,e.provincia,e.canton,e.parroquia].filter(Boolean).join(' · '))+'</span></div><span class="picker-code">AUTORIZADO</span></article>').join(''):'<div class="no-results">No tiene establecimientos autorizados. Contacte al administrador del sistema.</div>'}catch(e){$('#profileEstList').innerHTML='<div class="no-results">'+esc(e.message||String(e))+'</div>'}}
+function codigoUnidadEnfermeria_(){const s=$('#nurseEstablishmentSelect');return s&&s.value?s.value:(usuario&&usuario.unicodigo||'')}
+function prepararListadoSignos_(){const panel=$('#nurseVitals');if(!panel||$('#nurseVitalsCatalog'))return;const form=$('#nurseVitalsForm');if(form&&!form.elements.id){const id=document.createElement('input');id.type='hidden';id.name='id';form.prepend(id)}const caja=document.createElement('div');caja.id='nurseVitalsCatalog';caja.className='vitals-catalog';caja.innerHTML='<h3>Registros de signos vitales</h3><div class="history-filters nurse-vital-filters"><div><label>Desde</label><input id="nurseVitalFrom" type="date"></div><div><label>Hasta</label><input id="nurseVitalTo" type="date"></div><div><label>Cédula</label><input id="nurseVitalQuery" inputmode="numeric" maxlength="10" placeholder="Buscar por cédula"></div><div class="align-end"><button class="btn primary auto" type="button" onclick="cargarSignosEnfermeriaUI_()">Buscar</button></div></div><div id="nurseVitalList" class="history-list"></div>';panel.appendChild(caja)}
+function inicializarFiltrosSignos_(forzar){const d=new Date(),pad=n=>String(n).padStart(2,'0'),hoy=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()),a=$('#nurseVitalFrom'),b=$('#nurseVitalTo');if(a&&(forzar||!a.value))a.value=hoy;if(b&&(forzar||!b.value))b.value=hoy}
+function prepararInicioEnfermeria_(){llenarSelectorEstablecimientos_('nurseEstablishmentSelect');const f=$('#nurseVitalsForm'),d=new Date(),pad=n=>String(n).padStart(2,'0');if(f){if(!f.elements.fecha.value)f.elements.fecha.value=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());if(!f.elements.hora.value)f.elements.hora.value=pad(d.getHours())+':'+pad(d.getMinutes())}prepararListadoSignos_();inicializarFiltrosSignos_(false);cargarSignosEnfermeriaUI_();cargarMedicamentosUnidad_()}
+async function guardarSignosEnfermeriaUI_(e){e.preventDefault();const s=$('#nurseVitalsStatus');s.textContent='Guardando signos vitales...';s.classList.remove('hidden');try{const r=await run('guardarSignosEnfermeriaContexto',token,Object.fromEntries(new FormData(e.target)),codigoUnidadEnfermeria_());s.textContent=r.mensaje;cancelarEdicionSignos_();await cargarSignosEnfermeriaUI_()}catch(x){s.textContent=x.message||String(x)}}
+async function cargarSignosEnfermeriaUI_(){const box=$('#nurseVitalList');if(!box)return;box.innerHTML='<div class="no-results">Cargando registros…</div>';try{const lista=await run('listarSignosEnfermeria',token,{desde:$('#nurseVitalFrom').value,hasta:$('#nurseVitalTo').value,cedula:$('#nurseVitalQuery').value},codigoUnidadEnfermeria_());box.innerHTML=lista.length?lista.map(x=>'<article class="history-item"><div class="history-date"><b>'+esc(String(x.fecha||'').slice(0,10))+'</b><small>'+esc(x.hora||'')+'</small></div><div class="history-data"><h3>Cédula: '+esc(x.cedula||'—')+'</h3><p>PA '+esc(x.pas||'—')+'/'+esc(x.pad||'—')+' · FC '+esc(x.pulso||'—')+' · FR '+esc(x.frecuenciaRespiratoria||'—')+' · SatO₂ '+esc(x.pulsioximetria||'—')+'</p><small>'+esc(x.establecimiento||'')+'</small></div><div class="history-actions"><button class="btn soft vital-edit" type="button">Modificar</button><button class="remove-btn vital-delete" type="button">Eliminar</button></div></article>').join(''):'<div class="no-results">No existen registros para los filtros indicados.</div>';box.querySelectorAll('.vital-edit').forEach((b,i)=>b.onclick=()=>editarSignosEnfermeria_(lista[i]));box.querySelectorAll('.vital-delete').forEach((b,i)=>b.onclick=()=>eliminarSignosEnfermeriaUI_(lista[i].id))}catch(e){box.innerHTML='<div class="no-results">'+esc(e.message||String(e))+'</div>'}}
+function editarSignosEnfermeria_(x){const f=$('#nurseVitalsForm');rellenarForm_(f,x||{});f.elements.id.value=x.id||'';f.scrollIntoView({behavior:'smooth'});$('#nurseVitalsStatus').textContent='Editando signos vitales de '+(x.cedula||'');$('#nurseVitalsStatus').classList.remove('hidden')}
+function cancelarEdicionSignos_(){const f=$('#nurseVitalsForm');if(!f)return;const fecha=f.elements.fecha.value,hora=f.elements.hora.value;f.reset();if(f.elements.id)f.elements.id.value='';f.elements.fecha.value=fecha;f.elements.hora.value=hora}
+async function eliminarSignosEnfermeriaUI_(id){if(!confirm('¿Eliminar este registro de signos vitales?'))return;try{await run('eliminarSignosEnfermeria',token,id,codigoUnidadEnfermeria_());await cargarSignosEnfermeriaUI_()}catch(e){alert(e.message||String(e))}}
+async function eliminarMedicamentoUnidadUI_(id){if(!confirm('¿Quitar este medicamento del inventario del establecimiento seleccionado?'))return;try{await run('eliminarMedicamentoUnidadContexto',token,id,codigoUnidadEnfermeria_());await cargarMedicamentosUnidad_()}catch(e){alert(e.message||String(e))}}
+async function guardarMedicamentoUnidadUI_(e){e.preventDefault();const datos=Object.fromEntries(new FormData(e.target));try{const r=await run('guardarMedicamentoUnidadContexto',token,datos,codigoUnidadEnfermeria_());cancelarEdicionMedicamento_();await cargarMedicamentosUnidad_();alert(r.mensaje||'Inventario actualizado.')}catch(x){alert(x.message||String(x))}}
+async function cargarMedicamentosUnidad_(){const box=$('#nurseMedicineList');if(!box)return;box.innerHTML='<div class="no-results">Cargando medicamentos...</div>';try{const lista=await run('listarMedicamentosUnidadContexto',token,'',codigoUnidadEnfermeria_());box.innerHTML=lista.length?lista.map(x=>'<article><div><b>'+esc(x.nombre)+'</b><span>'+esc(x.presentacion)+' · '+esc([x.concentracion,x.unidadMedida].filter(Boolean).join(' '))+' · <strong>Existencia: '+esc(String(x.cantidad||0))+'</strong></span></div><div><button class="btn soft medicine-edit-button" type="button">Modificar</button><button class="remove-btn medicine-delete-button" type="button">Quitar</button></div></article>').join(''):'<div class="no-results">Aún no existen medicamentos para esta unidad.</div>';box.querySelectorAll('.medicine-edit-button').forEach((b,i)=>b.onclick=()=>{const x=lista[i];editarMedicamentoUnidad_(x.id,x.nombre,x.presentacion,x.concentracion,x.unidadMedida,Number(x.cantidad||0))});box.querySelectorAll('.medicine-delete-button').forEach((b,i)=>b.onclick=()=>eliminarMedicamentoUnidadUI_(lista[i].id))}catch(e){box.innerHTML='<div class="no-results">'+esc(e.message||String(e))+'</div>'}}
+async function cargarEstadisticas_(){const carga=$('#statsLoading'),contenido=$('#statsContent');carga.textContent='Calculando estadísticas...';carga.classList.remove('hidden');contenido.classList.add('hidden');try{if(normalCliente_(usuario&&usuario.cargo)==='ENFERMERIA'){const r=await run('obtenerEstadisticasEnfermeria',token);contenido.innerHTML='<div class="stats-grid nurse-stats"><article class="stat-box stat-pink"><span>♥</span><div><small>Pacientes con signos vitales</small><strong>'+r.pacientes+'</strong></div></article></div><div class="stats-footer"><button class="btn soft" type="button" onclick="volverMenu_()">← Volver</button><button class="btn primary auto" type="button" onclick="cargarEstadisticas_()">Actualizar</button></div>';carga.classList.add('hidden');contenido.classList.remove('hidden');return}const r=await run('obtenerEstadisticas',token),grid=contenido.querySelector('.stats-grid');let tarjeta=$('#statPatients');if(!tarjeta&&grid){grid.insertAdjacentHTML('afterbegin','<article class="stat-box stat-purple"><span>♟</span><div><small>Pacientes actualizados por mí</small><strong id="statPatients">0</strong></div></article>');tarjeta=$('#statPatients')}if(tarjeta)tarjeta.textContent=r.pacientes||0;$('#stat008').textContent=r.creadas;$('#statPending').textContent=r.pendientes;$('#statIndividual').textContent=r.individuales;$('#statGroup').textContent=r.grupales;$('#statTotal').textContent=r.total;const items=[['Pacientes',r.pacientes||0,'#7654bd'],['FORM.008',r.creadas,'#3486e8'],['Pendientes',r.pendientes,'#f3a338'],['EPI individual',r.individuales,'#e45883'],['EPI grupal',r.grupales,'#25aa7a']],max=Math.max(1,...items.map(x=>x[1]));$('#statsBars').innerHTML=items.map(x=>'<div class="stat-bar"><label><span>'+x[0]+'</span><b>'+x[1]+'</b></label><i><em style="width:'+(100*x[1]/max)+'%;background:'+x[2]+'"></em></i></div>').join('');carga.classList.add('hidden');contenido.classList.remove('hidden')}catch(e){carga.textContent=e.message||String(e)}}
+['eventSummary','historySummary','physicalSummary','observacionesExamenes'].forEach(id=>{const e=$('#'+id);if(e){e.readOnly=false;e.classList.add('editable-summary');e.title='Puede modificar manualmente este texto antes de guardar.'}});
+const cargarEstadisticasProfesional_=cargarEstadisticas_;
+cargarEstadisticas_=async function(){
+  if(normalCliente_(usuario&&usuario.cargo)!=='ADMISIONISTA')return cargarEstadisticasProfesional_();
+  const carga=$('#statsLoading'),contenido=$('#statsContent');carga.textContent='Calculando pacientes ingresados...';carga.classList.remove('hidden');contenido.classList.add('hidden');
+  try{const r=await run('obtenerEstadisticas',token);contenido.innerHTML='<div class="stats-grid statistician-stats"><article class="stat-box stat-purple"><span>♟</span><div><small>Pacientes ingresados o actualizados por mí</small><strong>'+(r.pacientes||0)+'</strong></div></article></div><div class="stats-visual"><div class="stats-donut"><div><strong>'+(r.pacientes||0)+'</strong><small>pacientes</small></div></div></div><div class="stats-footer"><button class="btn soft" type="button" onclick="volverMenu_()">← Volver</button><button class="btn primary auto" type="button" onclick="cargarEstadisticas_()">Actualizar</button></div>';carga.classList.add('hidden');contenido.classList.remove('hidden')}catch(e){carga.textContent=e.message||String(e)}
+};
+const llenadoMedico=$('#clinicalForm')&&$('#clinicalForm').elements.llenadoCapilar;if(llenadoMedico&&llenadoMedico.tagName==='SELECT'){const nuevo=document.createElement('input');nuevo.name='llenadoCapilar';nuevo.type='number';nuevo.min='0';nuevo.max='60';nuevo.step='0.1';nuevo.inputMode='decimal';nuevo.placeholder='Ej.: 2';llenadoMedico.replaceWith(nuevo)}const llenadoLic=$('#nurseVitalsForm')&&$('#nurseVitalsForm').elements.llenadoCapilar;if(llenadoLic){llenadoLic.type='number';llenadoLic.min='0';llenadoLic.step='1';llenadoLic.inputMode='numeric'}
+function campoDebeSerMayuscula_(e){if(!e||e.disabled||e.readOnly)return false;if(e.tagName==='TEXTAREA')return true;if(e.tagName!=='INPUT')return false;const t=(e.type||'text').toLowerCase();return ['text','search','tel'].includes(t)}
+document.addEventListener('input',e=>{const campo=e.target;if(!campoDebeSerMayuscula_(campo))return;const inicio=campo.selectionStart,fin=campo.selectionEnd,mayuscula=campo.value.toLocaleUpperCase('es-EC');if(campo.value!==mayuscula){campo.value=mayuscula;try{campo.setSelectionRange(inicio,fin)}catch(x){}}});
+const cargarEstadisticasPorCargo_=cargarEstadisticas_;
+cargarEstadisticas_=async function(){await cargarEstadisticasPorCargo_();const cargo=normalCliente_(usuario&&usuario.cargo);if(cargo==='MEDICO'||cargo==='MÉDICO'){const numero=$('#statPatients'),tarjeta=numero&&numero.closest('.stat-box');if(tarjeta)tarjeta.remove();document.querySelectorAll('#statsBars .stat-bar').forEach(e=>{const titulo=e.querySelector('label span');if(titulo&&normalCliente_(titulo.textContent)==='PACIENTES')e.remove()})}};
+function tipoDocumentoCanonicoCliente_(tipo){const t=normalCliente_(tipo);if(['CC/CI','CEDULA','CEDULA DE IDENTIDAD','CEDULA DE CIUDADANIA','CEDULA DE IDENTIDAD O CIUDADANIA'].includes(t))return'CC/CI';if(t==='VISA')return'VISA';if(t==='PASAPORTE')return'PASAPORTE';if(['CARNE','CARNET','CARNE DE REFUGIADO','CARNET DE REFUGIADO'].includes(t))return'CARNÉ DE REFUGIADO';if(['SIN DOCUMENTO','SIN DOCUMENTO DE IDENTIFICACION'].includes(t))return'SIN DOCUMENTO';return''}
+function normalizarIdentificacionCliente_(valor,tipo){const canon=tipoDocumentoCanonicoCliente_(tipo),cedula=canon==='CC/CI';return String(valor||'').toUpperCase().replace(cedula?/\D/g:/[^A-Z0-9]/g,'').slice(0,cedula?10:17)}
+function esIdentificacionProvisionalCliente_(v){return /^SIN\d{12}[A-Z0-9]{2}$/.test(String(v||'').toUpperCase().replace(/[^A-Z0-9]/g,''))}
+function iniciarPacienteSinDocumentoUI_(){const f=$('#patientForm'),m=$('#patientMessage');f.reset();f.elements.tipoDocumento.value='SIN DOCUMENTO';f.elements.cedula.value='';aplicarTipoIdentificacion_(f.elements.tipoDocumento);f.classList.remove('hidden');m.textContent='Paciente sin documento. El sistema asignará una identificación provisional única al guardar la admisión.';m.classList.remove('hidden');fechaHoraActual_();actualizarPanelVinculoIdentidad_();f.scrollIntoView({behavior:'smooth',block:'start'})}
+function actualizarPanelVinculoIdentidad_(){const f=$('#patientForm'),box=$('#patientIdentityLink');if(!f||!box)return;const provisional=esIdentificacionProvisionalCliente_(f.elements.cedula&&f.elements.cedula.value);box.classList.toggle('hidden',!provisional);if(!provisional){const n=$('#patientFinalDocumentNumber');if(n)n.value=''}}
+async function vincularIdentidadUI_(){const f=$('#patientForm'),provisional=normalizarIdentificacionCliente_(f.elements.cedula.value,'OTRO'),tipo=$('#patientFinalDocumentType').value,definitiva=normalizarIdentificacionCliente_($('#patientFinalDocumentNumber').value,tipo);if(!idEpisodioActual)return alert('Primero guarde la admisión del paciente.');if(!esIdentificacionProvisionalCliente_(provisional))return alert('Este paciente ya tiene una identificación definitiva.');if(!definitiva)return alert('Ingrese la identificación definitiva.');if(!confirm('Se vinculará '+provisional+' con '+definitiva+'. El episodio y sus registros clínicos se conservarán.'))return;try{const paciente=Object.fromEntries(new FormData(f)),r=await run('vincularIdentidadDefinitivaPaciente',token,{idEpisodio:idEpisodioActual,identificacionProvisional:provisional,identificacionDefinitiva:definitiva,tipoDocumento:tipo,paciente:paciente,establecimiento:seleccionApp});f.elements.cedula.value=r.identificacion;f.elements.tipoDocumento.value=tipo;f.elements.cedula.readOnly=false;rellenarForm_(f,r.paciente||{});if(admisionActual&&admisionActual.paciente)admisionActual.paciente=Object.assign({},admisionActual.paciente,r.paciente||{},{cedula:r.identificacion,tipoDocumento:tipo});aplicarTipoIdentificacion_(f.elements.tipoDocumento);actualizarPanelVinculoIdentidad_();$('#patientMessage').textContent='Identidad definitiva vinculada correctamente. El episodio '+idEpisodioActual+' se conserva.';$('#patientMessage').classList.remove('hidden')}catch(e){alert(e.message||String(e))}}
+function iniciarPacienteSinDocumentoAdmision_(){idEpisodioAdmisionRolActual='';const f=$('#admissionRoleForm');f.reset();f.elements.tipoDocumento.value='SIN DOCUMENTO';f.elements.cedula.value='';f.elements.cedula.required=false;const d=new Date(),pad=n=>String(n).padStart(2,'0');f.elements.fechaAdmision.value=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());f.elements.horaAdmision.value=pad(d.getHours())+':'+pad(d.getMinutes());f.classList.remove('hidden');actualizarPanelVinculoAdmision_();const s=$('#admissionRoleStatus');s.textContent='Paciente sin documento. Al guardar se asignará un código provisional único.';s.classList.remove('hidden')}
+function actualizarPanelVinculoAdmision_(){const f=$('#admissionRoleForm'),box=$('#admissionIdentityLink');if(!f||!box)return;box.classList.toggle('hidden',!esIdentificacionProvisionalCliente_(f.elements.cedula.value))}
+async function vincularIdentidadAdmisionUI_(){const f=$('#admissionRoleForm'),provisional=normalizarIdentificacionCliente_(f.elements.cedula.value,'OTRO'),tipo=$('#admissionFinalDocumentType').value,definitiva=normalizarIdentificacionCliente_($('#admissionFinalDocumentNumber').value,tipo);if(!idEpisodioAdmisionRolActual)return alert('Primero guarde la admisión para crear el episodio.');if(!esIdentificacionProvisionalCliente_(provisional))return alert('El paciente ya tiene identificación definitiva.');if(!definitiva)return alert('Ingrese la identificación definitiva.');if(!confirm('Vincular '+provisional+' con '+definitiva+'?'))return;try{const paciente=Object.fromEntries(new FormData(f)),r=await run('vincularIdentidadDefinitivaPaciente',token,{idEpisodio:idEpisodioAdmisionRolActual,identificacionProvisional:provisional,identificacionDefinitiva:definitiva,tipoDocumento:tipo,paciente:paciente,establecimiento:establecimientoCuenta});f.elements.cedula.value=r.identificacion;f.elements.cedula.required=true;f.elements.tipoDocumento.value=tipo;rellenarForm_(f,r.paciente||{});actualizarPanelVinculoAdmision_();const st=$('#admissionRoleStatus');st.textContent='Identidad definitiva vinculada. Se conservó el episodio '+idEpisodioAdmisionRolActual+'.';st.classList.remove('hidden')}catch(e){alert(e.message||String(e))}}
+function aplicarTipoIdentificacion_(select){if(!select)return;const form=select.form,campo=form&&form.elements.cedula;if(!campo)return;const tipo=tipoDocumentoCanonicoCliente_(select.value),sinDoc=tipo==='SIN DOCUMENTO',esCedula=tipo==='CC/CI';campo.maxLength=esCedula?10:17;campo.inputMode=esCedula?'numeric':'text';campo.required=!sinDoc;campo.readOnly=sinDoc;if(sinDoc){if(campo.value&&!esIdentificacionProvisionalCliente_(campo.value))campo.value='';campo.placeholder='SE ASIGNARÁ UN CÓDIGO PROVISIONAL AL GUARDAR';const ap=form.elements.primerApellido,nm=form.elements.primerNombre;if(ap)ap.required=false;if(nm)nm.required=false}else{campo.readOnly=false;campo.placeholder=!tipo?'SELECCIONE EL TIPO DE IDENTIFICACIÓN':esCedula?'SOLO 10 DÍGITOS':'3 A 17 CARACTERES ALFANUMÉRICOS';if(tipo)campo.value=normalizarIdentificacionCliente_(campo.value,tipo);const ap=form.elements.primerApellido,nm=form.elements.primerNombre;if(ap)ap.required=true;if(nm)nm.required=true}if(form&&form.id==='patientForm')actualizarPanelVinculoIdentidad_()}
+document.addEventListener('change',e=>{if(e.target.matches('select[name="tipoDocumento"]'))aplicarTipoIdentificacion_(e.target)});
+document.addEventListener('input',e=>{if(!e.target.matches('form input[name="cedula"]'))return;const tipo=e.target.form&&e.target.form.elements.tipoDocumento,esPacienteSinTipo=e.target.closest('#nurseVitalsForm');e.target.value=normalizarIdentificacionCliente_(e.target.value,tipo?tipo.value:(esPacienteSinTipo?'OTRO':'CC/CI'))});
+document.querySelectorAll('select[name="tipoDocumento"]').forEach(aplicarTipoIdentificacion_);
+function aplicarTipoIdentificacionDefinitiva_(select,input){if(!select||!input)return;const tipo=tipoDocumentoCanonicoCliente_(select.value),cedula=tipo==='CC/CI';input.maxLength=cedula?10:17;input.inputMode=cedula?'numeric':'text';input.placeholder=cedula?'SOLO 10 DÍGITOS':'3 A 17 CARACTERES ALFANUMÉRICOS';input.value=normalizarIdentificacionCliente_(input.value,tipo||'OTRO')}
+[['patientFinalDocumentType','patientFinalDocumentNumber'],['admissionFinalDocumentType','admissionFinalDocumentNumber']].forEach(([sid,iid])=>{const sel=$('#'+sid),inp=$('#'+iid);if(!sel||!inp)return;sel.addEventListener('change',()=>aplicarTipoIdentificacionDefinitiva_(sel,inp));inp.addEventListener('input',()=>{inp.value=normalizarIdentificacionCliente_(inp.value,sel.value)});aplicarTipoIdentificacionDefinitiva_(sel,inp)});
+['buscarCedula','statPatientSearch','epiCedula','admissionSearch'].forEach(id=>{const e=$('#'+id);if(e){e.maxLength=17;e.inputMode='text';e.placeholder='CÉDULA, VISA, PASAPORTE O CARNÉ'}});
+function actualizarEtiquetasIdentificacion_(){const app=$('#app');if(!app)return;app.querySelectorAll('label').forEach(l=>{const t=normalCliente_(l.textContent);if(t==='CEDULA DEL PACIENTE'||t==='CEDULA DEL PACIENTE *'||t==='CEDULA *'||t==='CEDULA')l.textContent=t.endsWith('*')?'Número de identificación *':'Número de identificación';else if(t==='CEDULA O PACIENTE')l.textContent='Identificación o paciente'});app.querySelectorAll('input[placeholder*="cédula" i],input[placeholder*="CÉDULA" i]').forEach(e=>{if(e.closest('#auth'))return;e.placeholder=e.id==='historyQuery'?'Identificación, nombres o apellidos':'Buscar por número de identificación';e.maxLength=17;if(e.type!=='number')e.inputMode='text'})}
+const observarEtiquetasIdentificacion_=new MutationObserver(()=>actualizarEtiquetasIdentificacion_());observarEtiquetasIdentificacion_.observe($('#app'),{childList:true,subtree:true});actualizarEtiquetasIdentificacion_();
+buscarPacienteUI=async function(){const entrada=$('#buscarCedula'),c=normalizarIdentificacionCliente_(entrada.value,'OTRO'),m=$('#patientMessage');if(!c)return alert('Ingrese el número de identificación.');m.innerHTML=cargaLista_('Buscando paciente…');m.classList.remove('hidden');try{const r=await run('buscarPaciente',token,c),f=$('#patientForm');f.reset();rellenarForm_(f,r.paciente||{});if(r.paciente&&r.paciente.tipoDocumento){const canon=tipoDocumentoCanonicoCliente_(r.paciente.tipoDocumento);if(canon)f.elements.tipoDocumento.value=canon}f.elements.cedula.value=(r.paciente&&r.paciente.cedula)||r.identificacionResuelta||c;aplicarTipoIdentificacion_(f.elements.tipoDocumento);f.classList.remove('hidden');const previo=r.ultimoCertificado?' Último certificado: '+String(r.ultimoCertificado.fechaAtencion||'').slice(0,10)+'.':'';const resuelta=r.identificacionConsultada&&r.identificacionResuelta&&r.identificacionConsultada!==r.identificacionResuelta?' Identidad provisional vinculada a '+r.identificacionResuelta+'.':'';m.textContent=(r.encontrado?'Paciente encontrado. Revise y modifique los datos necesarios.':'Paciente nuevo. Seleccione el tipo de identificación y complete sus datos.')+resuelta+previo;fechaHoraActual_();actualizarPanelVinculoIdentidad_()}catch(x){m.textContent=x.message||String(x)}};
+buscarPacienteEstadistico_=async function(){const entrada=$('#statPatientSearch'),ced=normalizarIdentificacionCliente_(entrada.value,'OTRO');if(!ced)return alert('Ingrese el número de identificación.');try{const r=await run('buscarPaciente',token,ced),f=$('#statPatientForm');f.reset();rellenarForm_(f,r.paciente||{});f.elements.cedula.value=(r.paciente&&r.paciente.cedula)||r.identificacionResuelta||ced;aplicarTipoIdentificacion_(f.elements.tipoDocumento);f.classList.remove('hidden')}catch(e){alert(e.message||String(e))}};
+let historiasEncontradas_=[],paginaHistorias_=1;
+function pintarPaginaHistorias_(pagina){const box=$('#historyList'),estado=$('#historyStatus'),total=historiasEncontradas_.length,paginas=Math.max(1,Math.ceil(total/10));paginaHistorias_=Math.min(Math.max(1,Number(pagina)||1),paginas);const lista=historiasEncontradas_.slice((paginaHistorias_-1)*10,paginaHistorias_*10);estado.textContent=total+' registro(s) · Página '+paginaHistorias_+' de '+paginas;const filas=lista.map(x=>'<article class="history-item"><div class="history-date"><b>'+esc(String(x.fecha||'').slice(0,10))+'</b><small>'+esc(x.hora||'')+'</small></div><div class="history-data"><h3>'+esc(x.nombre||'PACIENTE SIN NOMBRE')+'</h3><div class="patient-result-meta"><span><b>Identificación:</b> '+esc(x.cedula||'—')+'</span><span><b>Edad:</b> '+esc(x.edad||'—')+'</span><span><b>Sexo:</b> '+esc(x.sexo||'—')+'</span></div><div class="history-diagnoses"><b>Diagnósticos:</b> '+(x.diagnosticos&&x.diagnosticos.length?x.diagnosticos.map(d=>'<span>'+esc(d)+'</span>').join(''):'<em>Sin diagnósticos registrados</em>')+'</div><small>'+esc(x.establecimiento||'')+' · '+esc(x.medico||'')+' · Estado: '+esc(x.estado||'')+'</small></div><div class="history-actions"><button class="btn soft" type="button" onclick="modificarHistoria_(\''+esc(x.idRegistro)+'\')">Modificar</button><button class="btn primary auto" type="button" onclick="descargarHistoria_(\''+esc(x.idRegistro)+'\',\'PDF\')">PDF</button><button class="btn soft auto" type="button" onclick="descargarHistoria_(\''+esc(x.idRegistro)+'\',\'EXCEL\')">Excel</button><button class="btn soft auto" type="button" onclick="verVersionesHistoria_(\''+esc(x.idRegistro)+'\')">Versiones</button><button class="remove-btn" type="button" onclick="eliminarHistoriaUI_(\''+esc(x.idRegistro)+'\')">Eliminar</button></div></article>').join('');const nav=total>10?'<nav class="history-pagination"><button type="button" '+(paginaHistorias_===1?'disabled':'')+' onclick="pintarPaginaHistorias_('+(paginaHistorias_-1)+')">‹</button>'+Array.from({length:paginas},(_,i)=>'<button type="button" class="'+(paginaHistorias_===i+1?'active':'')+'" onclick="pintarPaginaHistorias_('+(i+1)+')">'+(i+1)+'</button>').join('')+'<button type="button" '+(paginaHistorias_===paginas?'disabled':'')+' onclick="pintarPaginaHistorias_('+(paginaHistorias_+1)+')">›</button></nav>':'';box.innerHTML=total?filas+nav:'<div class="no-results">No se encontraron pacientes con esos criterios.</div>';if(pagina>1)box.scrollIntoView({behavior:'smooth',block:'start'})}
+cargarHistorias_=async function(){const box=$('#historyList'),estado=$('#historyStatus'),min=$('#historyAgeMin').value,max=$('#historyAgeMax').value;if(min!==''&&max!==''&&Number(min)>Number(max)){alert('La edad mínima no puede ser mayor que la edad máxima.');return}box.innerHTML=cargaLista_('Buscando historias clínicas…');try{historiasEncontradas_=await run('listarHistoriasClinicas',token,{desde:$('#historyFrom').value,hasta:$('#historyTo').value,cedula:$('#historyQuery').value,nombre:$('#historyQuery').value,unidadEdad:$('#historyAgeUnit').value,edadMin:min,edadMax:max});pintarPaginaHistorias_(1)}catch(e){historiasEncontradas_=[];estado.textContent='';box.innerHTML='<div class="no-results">'+esc(e.message||String(e))+'</div>'}};
+let certificadoPaciente_=null;
+function fechaHoraCertificado_(){const f=$('#certificateForm'),d=new Date(),pad=n=>String(n).padStart(2,'0');if(!f)return;const fecha=f.elements.namedItem('fecha'),inicio=f.elements.namedItem('horaInicio'),fin=f.elements.namedItem('horaFin');if(fecha&&!fecha.value)fecha.value=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());if(inicio&&!inicio.value)inicio.value=pad(d.getHours())+':'+pad(d.getMinutes());if(fin&&!fin.value)fin.value=pad(d.getHours())+':'+pad(d.getMinutes())}
+function abrirCertificado_(){mostrarPagina_('certificatePage');certificadoPaciente_=null;const f=$('#certificateForm');if(!f)return;f.reset();f.classList.add('hidden');const buscar=$('#certificatePatientSearch'),resultado=$('#certificatePatientResult'),estado=$('#certificateStatus'),dx=$('#certificateDiagnoses');if(buscar)buscar.value='';if(resultado)resultado.classList.add('hidden');if(estado)estado.classList.add('hidden');if(dx)dx.innerHTML='';fechaHoraCertificado_()}
+function llenarCertificadoPaciente_(paciente,diagnosticos,fecha,hora,certificados){certificadoPaciente_=paciente||{};const f=$('#certificateForm'),nombre=[paciente.primerApellido,paciente.segundoApellido,paciente.primerNombre,paciente.segundoNombre].filter(Boolean).join(' ');$('#certificatePatientResult').innerHTML='<b>'+esc(nombre||'PACIENTE NUEVO')+'</b><br>Identificación: '+esc(paciente.cedula||'—');$('#certificatePatientResult').classList.remove('hidden');f.reset();rellenarForm_(f,paciente);f.elements.cedula.value=paciente.cedula||'';f.elements.fecha.value=fecha?String(fecha).slice(0,10):'';f.elements.horaInicio.value=hora||'';f.elements.edad.value=paciente.edad||'';f.elements.tipoEdad.value=normalCliente_(paciente.condicionEdad)==='DIAS'?'DÍAS':paciente.condicionEdad||'AÑOS';f.elements.sexo.value=['FEMENINO','MUJER','F'].includes(normalCliente_(paciente.sexo))?'F':['MASCULINO','HOMBRE','M'].includes(normalCliente_(paciente.sexo))?'M':'';f.classList.remove('hidden');fechaHoraCertificado_();const box=$('#certificateDiagnoses');box.innerHTML='';(diagnosticos||[]).slice(0,4).forEach(x=>agregarDiagnosticoCertificado_(x));if(!box.children.length)agregarDiagnosticoCertificado_();const hist=$('#certificateHistory'),lista=certificados||[];hist.innerHTML=lista.length?'<b>Certificados anteriores</b><br>Último: '+esc(String(lista[0].fechaAtencion||'').slice(0,10))+' · '+esc(lista[0].profesional||''):'Este paciente no registra certificados anteriores.';hist.classList.remove('hidden')}
+async function buscarPacienteCertificado_(){const id=normalizarIdentificacionCliente_($('#certificatePatientSearch').value,'OTRO'),box=$('#certificatePatientResult');if(!id)return alert('Ingrese el número de identificación.');box.innerHTML=cargaLista_('Buscando paciente…');box.classList.remove('hidden');try{const r=await run('buscarPacienteCertificado',token,id);llenarCertificadoPaciente_(r.paciente||{cedula:id},r.diagnosticos||[],r.ultimaAtencion&&r.ultimaAtencion.fecha,r.ultimaAtencion&&r.ultimaAtencion.hora,r.certificados||[]);if(!r.encontrado)box.innerHTML='<b>PACIENTE NO REGISTRADO</b><br>Complete sus nombres, apellidos y demás datos.'}catch(e){box.textContent=e.message||String(e)}}
+function agregarDiagnosticoCertificado_(dato={}){const box=$('#certificateDiagnoses');if(box.children.length>=4)return alert('Máximo 4 diagnósticos.');const r=document.createElement('div');r.className='repeat-row diagnosis-row';r.innerHTML='<div class="cie-search"><input class="cie" autocomplete="off" placeholder="Código CIE-10"><div class="cie-results hidden"></div></div><div class="cie-search"><input class="description" autocomplete="off" placeholder="Descripción del diagnóstico"><div class="cie-results hidden"></div></div><button type="button" class="remove-btn">Quitar</button>';r.querySelector('.cie').value=dato.cie||dato.cie10||'';r.querySelector('.description').value=dato.descripcion||'';r.querySelector('.remove-btn').onclick=()=>r.remove();box.appendChild(r);configurarBuscadorCie_(r)}
+async function generarCertificadoUI_(formato){const f=$('#certificateForm'),s=$('#certificateStatus'),botones=[$('#certificatePdf'),$('#certificateExcel')],diagnosticos=[...$('#certificateDiagnoses').children].map(r=>({cie:r.querySelector('.cie').value,descripcion:r.querySelector('.description').value})).filter(x=>x.cie||x.descripcion),formulario=formObjeto_(f),paciente=Object.assign({},certificadoPaciente_||{},{cedula:formulario.cedula,tipoDocumento:formulario.tipoDocumento,primerApellido:formulario.primerApellido,segundoApellido:formulario.segundoApellido,primerNombre:formulario.primerNombre,segundoNombre:formulario.segundoNombre,sexo:formulario.sexo,fechaNacimiento:formulario.fechaNacimiento,edad:formulario.edad,condicionEdad:formulario.tipoEdad,telefonoCelular:formulario.telefonoCelular,nacionalidad:formulario.nacionalidad});botones.forEach(b=>b.disabled=true);s.classList.add('hidden');try{formulario.formatoSalida=formato;const r=await run('generarCertificadoMedico',token,{paciente:paciente,formulario:formulario,diagnosticos:diagnosticos,establecimiento:seleccionApp||establecimientoCuenta}),ticket=formato==='EXCEL'?r.excelTicket:r.pdfTicket;if(!ticket)throw new Error('No se recibió la descarga segura.');await descargarArchivoSeguro_(ticket,r.nombre)}catch(e){s.textContent=e.message||String(e);s.classList.remove('hidden')}finally{botones.forEach(b=>b.disabled=false)}}
+function abrirCertificadoDesdeAtencion_(){const p=Object.fromEntries(new FormData($('#patientForm'))),dx=[...$('#presuntivos').children,...$('#definitivos').children].map(r=>({cie:r.querySelector('.cie').value,descripcion:r.querySelector('.description').value})).filter(x=>x.cie||x.descripcion);mostrarPagina_('certificatePage');llenarCertificadoPaciente_(p,dx,$('#patientForm').elements.fechaAdmision&&$('#patientForm').elements.fechaAdmision.value,$('#patientForm').elements.horaAdmision&&$('#patientForm').elements.horaAdmision.value);const dias=$('#finalForm').elements.diasReposo&&$('#finalForm').elements.diasReposo.value;if(dias){$('#certificateForm').elements.reposo.value='SI';$('#certificateForm').elements.diasReposo.value=dias;$('#certificateRestDays').classList.remove('hidden')}}
+const reposoCertificado_=$('#certificateRest');if(reposoCertificado_)reposoCertificado_.addEventListener('change',e=>{const caja=$('#certificateRestDays'),f=$('#certificateForm'),dias=f&&f.elements.namedItem('diasReposo');if(caja)caja.classList.toggle('hidden',e.target.value!=='SI');if(e.target.value!=='SI'&&dias)dias.value=''});
+async function generarCertificadoDesdeAtencion_(){const pf=$('#patientForm'),ff=$('#finalForm'),p=Object.fromEntries(new FormData(pf)),pad=n=>String(n).padStart(2,'0'),ahora=new Date(),dx=[...$('#presuntivos').children,...$('#definitivos').children].map(r=>({cie:r.querySelector('.cie').value,descripcion:r.querySelector('.description').value})).filter(x=>x.cie||x.descripcion),dias=ff.elements.diasReposo&&ff.elements.diasReposo.value,formulario={especialidad:'MEDICINA GENERAL',fecha:p.fechaAdmision||ahora.getFullYear()+'-'+pad(ahora.getMonth()+1)+'-'+pad(ahora.getDate()),horaInicio:p.horaAdmision||pad(ahora.getHours())+':'+pad(ahora.getMinutes()),horaFin:pad(ahora.getHours())+':'+pad(ahora.getMinutes()),reposo:Number(dias)>0?'SI':'NO',diasReposo:dias||0,incluirFirma:true,formatoSalida:'PDF'};try{const r=await run('generarCertificadoMedico',token,{paciente:p,formulario:formulario,diagnosticos:dx,establecimiento:seleccionApp||establecimientoCuenta});if(!r.pdfTicket)throw new Error('No se recibió la descarga segura del certificado.');await descargarArchivoSeguro_(r.pdfTicket,r.nombre)}catch(e){alert(e.message||String(e))}}
+function siguientePintado_(){return new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)))}
+function configurarCargaRealTarjetas_(){const configuracion=[['medical','attentionWorkspace',()=>abrirNuevaAtencion_()],['pending','pendingPage',()=>abrirPendientes_()],['histories','historyPage',()=>abrirHistorias_()],['epi','epiPage',()=>abrirEpi_()],['certificate','certificatePage',()=>abrirCertificado_()]];configuracion.forEach(([clase,panel,accion])=>{const tarjeta=document.querySelector('.menu-card.'+clase);if(!tarjeta||tarjeta.dataset.cargaReal==='1')return;tarjeta.onclick=null;tarjeta.addEventListener('click',async()=>{mostrarCargaTarjeta_();mostrarPagina_(panel);try{await Promise.all([Promise.resolve(accion()),new Promise(ok=>setTimeout(ok,300))]);await siguientePintado_()}catch(e){alert(e.message||String(e))}finally{terminarCargaGlobal_()}});tarjeta.dataset.cargaReal='1'})}
+configurarCargaRealTarjetas_();
+
+// La admisión usa un indicador pequeño dentro de su propia tarjeta.
+const formularioPacienteCarga_=$('#patientForm'),estadoAdmisionCarga_=$('#admissionContinueStatus'),seccionClinicaCarga_=$('#clinicalSection');
+if(formularioPacienteCarga_&&estadoAdmisionCarga_){formularioPacienteCarga_.addEventListener('submit',()=>{estadoAdmisionCarga_.innerHTML=cargaLista_('Guardando admisión y preparando la atención…');estadoAdmisionCarga_.classList.remove('hidden')},true)}
+if(seccionClinicaCarga_&&estadoAdmisionCarga_)new MutationObserver(()=>{if(!seccionClinicaCarga_.classList.contains('hidden')){estadoAdmisionCarga_.classList.add('hidden');estadoAdmisionCarga_.innerHTML=''}}).observe(seccionClinicaCarga_,{attributes:true,attributeFilter:['class']});
+
+function diagnosticosUnicosCliente_(lista){
+  const vistos={};
+  return (lista||[]).map(x=>({cie:String(x.cie||x.cie10||'').trim().toUpperCase(),descripcion:String(x.descripcion||'').trim().toUpperCase()})).filter(x=>{
+    if(!x.cie&&!x.descripcion)return false;
+    const clave=x.cie?x.cie.replace(/[^A-Z0-9]/g,''):'DESC:'+normalCliente_(x.descripcion);
+    if(vistos[clave])return false;
+    vistos[clave]=true;return true
+  })
+}
+
+llenarCertificadoPaciente_=function(paciente,diagnosticos,fecha,hora,certificados){
+  paciente=paciente||{};certificadoPaciente_=paciente;
+  const f=$('#certificateForm'),resultado=$('#certificatePatientResult');
+  if(!f)return;
+  const nombre=[paciente.primerApellido,paciente.segundoApellido,paciente.primerNombre,paciente.segundoNombre].filter(Boolean).join(' ');
+  resultado.innerHTML='<b>'+esc(nombre||'PACIENTE NUEVO')+'</b><br>Identificación: '+esc(paciente.cedula||'—');
+  resultado.classList.remove('hidden');f.reset();rellenarForm_(f,paciente);
+  const poner=(nombreCampo,valor)=>{const campo=f.elements[nombreCampo];if(campo)campo.value=valor==null?'':valor};
+  const tipoCanon=tipoDocumentoCanonicoCliente_(paciente.tipoDocumento);if(tipoCanon&&f.elements.tipoDocumento)f.elements.tipoDocumento.value=tipoCanon;
+  poner('cedula',paciente.cedula);aplicarTipoIdentificacion_(f.elements.tipoDocumento);poner('fecha',fecha?String(fecha).slice(0,10):'');poner('horaInicio',hora||'');
+  poner('edad',paciente.edad);poner('tipoEdad',normalCliente_(paciente.condicionEdad)==='DIAS'?'DÍAS':paciente.condicionEdad||'AÑOS');
+  poner('sexo',['FEMENINO','MUJER','F'].includes(normalCliente_(paciente.sexo))?'F':['MASCULINO','HOMBRE','M'].includes(normalCliente_(paciente.sexo))?'M':'');
+  f.classList.remove('hidden');fechaHoraCertificado_();
+  const box=$('#certificateDiagnoses');box.innerHTML='';
+  diagnosticosUnicosCliente_(diagnosticos).slice(0,4).forEach(x=>agregarDiagnosticoCertificado_(x));
+  if(!box.children.length)agregarDiagnosticoCertificado_();
+  const hist=$('#certificateHistory'),lista=certificados||[];
+  if(hist){hist.innerHTML=lista.length?'<b>Certificados anteriores</b><br>Último: '+esc(String(lista[0].fechaAtencion||'').slice(0,10))+' · '+esc(lista[0].profesional||''):'Este paciente no registra certificados anteriores.';hist.classList.remove('hidden')}
+};
+
+async function abrirDescargaFinal_(ticket,nombre){
+  if(!ticket)return false;
+  return descargarArchivoSeguro_(ticket,nombre);
+}
+
+async function finalizarAtencionSeleccionada_(){
+  if(!admisionActual)return alert('Primero guarde la admisión.');
+  const certificado=!!$('#finishCertificatePdf')?.checked,pdf=!!$('#finish008Pdf')?.checked,excel=!!$('#finish008Excel')?.checked;
+  const boton=$('#finishAttentionButton'),estado=$('#generateStatus'),estActual=seleccionApp;
+  if(boton)boton.disabled=true;if(estado)estado.classList.add('hidden');
+  iniciarCargaGlobal_();
+  try{
+    if(triajeObligatorioActual_&&!(triajesEpisodio_||[]).length)throw new Error('Registre el triaje inicial antes de finalizar la atención.');
+    calcularEdadUI_();
+    exigirScoreMamaCompletoCliente_();
+    const paciente=Object.assign({},admisionActual.paciente,Object.fromEntries(new FormData($('#patientForm')))),clinica=recogerClinica_();
+    clinica.confirmarValoresExtremos=confirmarVitalesCliente_(clinica,'los signos vitales de la atención');
+    clinica.presuntivos=diagnosticosUnicosCliente_(clinica.presuntivos);
+    clinica.definitivos=diagnosticosUnicosCliente_(clinica.definitivos);
+    if(!clinica.presuntivos.length&&!clinica.definitivos.length)throw new Error('Ingrese al menos un diagnóstico presuntivo o definitivo antes de finalizar la atención.');
+    clinica.incluirFirma=!!$('#finishIncludeSignature')?.checked;
+    const payload={idEpisodio:idEpisodioActual||admisionActual.idEpisodio||'',idRegistro:idRegistroActual||'',paciente:paciente,admision:admisionActual.admision,establecimiento:estActual,clinica:clinica,auditoria:auditoriaHistoriaPayload_()};
+    let r008=null;
+    const formatos=[];if(pdf)formatos.push('PDF');if(excel)formatos.push('EXCEL');
+    if(formatos.length){clinica.formatosSalida=formatos;r008=await run('generarFormulario008',token,payload)}
+    else await run('finalizarAtencionSin008',token,payload);
+    let rCert=null;
+    if(certificado){
+      const d=new Date(),pad=n=>String(n).padStart(2,'0'),dx=diagnosticosUnicosCliente_([].concat(clinica.presuntivos||[],clinica.definitivos||[])),dias=clinica.diasReposo||0;
+      const formulario={especialidad:'MEDICINA GENERAL',fecha:admisionActual.admision.fechaAdmision||d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()),horaInicio:admisionActual.admision.horaAdmision||pad(d.getHours())+':'+pad(d.getMinutes()),horaFin:pad(d.getHours())+':'+pad(d.getMinutes()),reposo:Number(dias)>0?'SI':'NO',diasReposo:dias,incluirFirma:clinica.incluirFirma!==false,formatoSalida:'PDF'};
+      rCert=await run('generarCertificadoMedico',token,{paciente:paciente,formulario:formulario,diagnosticos:dx,establecimiento:estActual})
+    }
+    if(r008){await abrirDescargaFinal_(r008.pdfTicket,r008.pdfNombre);await abrirDescargaFinal_(r008.excelTicket,r008.excelNombre)}
+    if(rCert)await abrirDescargaFinal_(rCert.pdfTicket,rCert.nombre);
+    nuevoPaciente_()
+  }catch(e){
+    if(estado){estado.textContent=e.message||String(e);estado.classList.remove('hidden')}
+  }finally{
+    if(boton)boton.disabled=false;
+    terminarCargaGlobal_()
+  }
+}
+
+const reposoEgreso_=$('#egresoReposo');
+if(reposoEgreso_)reposoEgreso_.addEventListener('change',()=>{
+  const caja=$('#egresoDiasReposoBox'),f=$('#finalForm'),dias=f&&f.elements.namedItem('diasReposo'),mostrar=reposoEgreso_.value==='SI';
+  if(caja)caja.classList.toggle('hidden',!mostrar);
+  if(dias){dias.required=mostrar;if(!mostrar)dias.value=''}
+});
+if(reposoEgreso_)reposoEgreso_.dispatchEvent(new Event('change'));
+
+const reiniciarAtencionBase_=reiniciarAtencion_;
+reiniciarAtencion_=function(){
+  reiniciarAtencionBase_();
+  const documentos=$('#documentFinishSection');if(documentos)documentos.classList.add('hidden');
+  const firma=$('#finishIncludeSignature'),cert=$('#finishCertificatePdf'),pdf=$('#finish008Pdf'),excel=$('#finish008Excel');
+  if(firma)firma.checked=true;if(cert)cert.checked=false;if(pdf)pdf.checked=true;if(excel)excel.checked=false;
+  if(reposoEgreso_){reposoEgreso_.value='NO';reposoEgreso_.dispatchEvent(new Event('change'))}
+};
+prepararDescargasSeparadas_();
+
+const EPI2_SINTOMAS = [
+  'ADENOPATÍAS','CIANOSIS','ESCALOFRÍOS','PRURITO',
+  'ALTERACIÓN NEUROLÓGICA A NIVEL PERIFÉRICO','CONVULSIONES','ESPASMO MUSCULAR','RIGIDEZ MUSCULAR',
+  'ALTERACIÓN NEUROLÓGICA A NIVEL CENTRAL','DESHIDRATACIÓN','ESTRIDOR RESPIRATORIO','SANGRADOS',
+  'ANOREXIA','DIARREA','FIEBRE','TOS',
+  'APNEA','DIFICULTAD RESPIRATORIA','ICTERICIA','TRISMUS',
+  'ARTRALGIA','DOLOR ABDOMINAL','MIALGIAS','VISIÓN BORROSA',
+  'ASCITIS','DOLOR DE GARGANTA','NÁUSEAS/VÓMITOS','ONCOCERCOMAS',
+  'CEFÁLEA','ERUPCIÓN','PARÁLISIS','SUDORACIÓN NOCTURNA'
+];
+const EPI2_VACUNAS = [
+  'BCG','HB','ROTA','OPV','PENTA','INFLUENZA','NEUMOCOCO CONJUGADO','SR',
+  'FA','DT','DPT','D-T','SRP','VARICELA','NEUMOCOCO POLISACÁRIDO','OTRAS'
+];
+const EPI2_CONTACTOS = [
+  'ANIMAL VIVO','ANIMALES MUERTOS','AGUA/SUELOS','BASURALES','NINGUNO',
+  'METANOL','PERSONA SINTOMÁTICA','ALIMENTOS','PLAGUICIDAS',
+  'OTRO ORIGEN DEL CONTACTO','METALES PESADOS','SOLVENTES'
+];
+const EPI2_RIESGOS = [
+  'HIJOS DE MADRES INFECTADA POR EL VHB','TRANSFUSIONES','HEMODIÁLISIS',
+  'TRASPLANTE DE ÓRGANOS','DROGAS INYECTABLES','TATUAJES Y PERFORACIONES',
+  'SEXO SOLO CON HOMBRES','SEXO SOLO CON MUJERES','SEXO CON HOMBRES Y MUJERES',
+  'PINCHAZOS CON AGUJA CORTOPUNZANTE',
+  'COMPARTIR CEPILLOS DE DIENTES Y AFEITADORAS',
+  'HIJO DE MADRE INFECTADA POR EL VHC','CIRUGÍAS','TRATAMIENTOS DENTALES',
+  'MATERNO INFANTIL','HORIZONTAL','SEXUAL','TRANSFUSIONES SANGUÍNEAS',
+  'PERCUTÁNEA','NOSOCOMIAL'
+];
+
+let epiPacienteActual2_ = null;
+let epiPrefillActual2_ = null;
+
+const esBusquedaSilenciosaBaseEpi2_ = esBusquedaSilenciosa_;
+esBusquedaSilenciosa_ = function(fn,args) {
+  return fn === 'buscarPacienteEpiAvanzada' ||
+    fn === 'listarHistoriasClinicasAvanzado' ||
+    esBusquedaSilenciosaBaseEpi2_(fn,args);
+};
+
+mostrarPagina_ = function(id) {
+  [
+    'mainMenu','pendingPage','historyPage','epiPage','matrixPage',
+    'certificatePage','statsPage','profilePage','admissionPage',
+    'statisticianPage','attentionWorkspace'
+  ].forEach(function(nombre) {
+    const elemento = $('#' + nombre);
+    if (elemento) elemento.classList.toggle('hidden', nombre !== id);
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+};
+
+function prepararEpiMatriz2_() {
+  crearChecksEpi2_('epiSymptoms',EPI2_SINTOMAS);
+  crearChecksEpi2_('epiVaccines',EPI2_VACUNAS);
+  crearChecksEpi2_('epiSources',[
+    'TARJETA DE VACUNACIÓN','REGISTRO EN EL SERVICIO DE SALUD','VERBAL'
+  ]);
+  crearChecksEpi2_('epiContactBackground',EPI2_CONTACTOS);
+  crearChecksEpi2_('epiFoodOrigin',[
+    'CASA','RESTAURANTE','CALLE','REUNIÓN SOCIAL'
+  ]);
+  crearChecksEpi2_('epiOtherSickPlace',[
+    'CASA','BARRIO','LUGAR DE TRABAJO','ESTABLECIMIENTO DE SALUD',
+    'DESCONOCIDO','OTRO'
+  ]);
+  crearChecksEpi2_('epiRiskFactors',EPI2_RIESGOS);
+  crearChecksEpi2_('epiTreatmentEvolution',[
+    'MEJORÓ','IGUALES CONDICIONES','EMPEORÓ'
+  ]);
+  crearChecksEpi2_('epiTreatmentPlace',[
+    'DOMICILIO','UNIDADES DE SALUD DEL MSP','FARMACIA',
+    'OTRAS UNIDADES DEL SECTOR PÚBLICO','UNIDADES DE SALUD PRIVADAS'
+  ]);
+  crearChecksEpi2_('epiFinalClassification',[
+    'DESCARTADO','NO CONCLUYENTE','CONFIRMADO','CON RIESGO','SIN RIESGO',
+    'RELACIONADO CON LA VACUNA','COINCIDENTE',
+    'RELACIONADO CON EL PROGRAMA DE VACUNA'
+  ]);
+  crearChecksEpi2_('epiConfirmedBy',[
+    'LABORATORIO','CLÍNICA','NEXO EPIDEMIOLÓGICO'
+  ]);
+  [
+    'epiVaccines','epiSources','epiContactBackground','epiFoodOrigin',
+    'epiOtherSickPlace','epiRiskFactors','epiTreatmentEvolution',
+    'epiTreatmentPlace','epiFinalClassification','epiConfirmedBy'
+  ].forEach(function(id,indice) {
+    const caja = $('#' + id);
+    if (caja && caja.parentElement) {
+      caja.parentElement.classList.add('epi-check-section','epi-check-theme-' + (indice % 4 + 1));
+    }
+  });
+  crearActividadesEpi2_('epiGeneralActivities',[
+    'VISITA DOMICILIARIA','BÚSQUEDA ACTIVA DE CASOS','SEGUIMIENTO DE CONTACTO'
+  ]);
+  crearActividadesEpi2_('epiSpecificActivities',[
+    'VACUNACIÓN DE BLOQUEO','PROFILAXIS A LOS CONTACTOS',
+    'MONITOREO RÁPIDO DE COBERTURAS','TRATAMIENTO DE CRIADEROS DE VECTORES'
+  ]);
+  const diagnostico = $('#epiDiagnosis');
+  if (diagnostico) diagnostico.addEventListener('change',function() {
+    document.querySelectorAll('#epiForm [name="diagnosticoFinal"]').forEach(function(campo) {
+      campo.value = diagnostico.value;
+    });
+  });
+  configurarTarjetaMatriz2_();
+}
+
+function crearChecksEpi2_(id, opciones) {
+  const caja = $('#' + id);
+  if (!caja || caja.dataset.ready === '1') return;
+  caja.innerHTML = opciones.map(function(opcion) {
+    return '<label class="epi-check-option"><input type="checkbox" value="' +
+      esc(opcion) + '"><span>' + esc(opcion) + '</span></label>';
+  }).join('');
+  caja.dataset.ready = '1';
+}
+
+function crearActividadesEpi2_(id, nombres) {
+  const caja = $('#' + id);
+  if (!caja || caja.dataset.ready === '1') return;
+  caja.innerHTML = nombres.map(function(nombre) {
+    return '<article class="epi-activity-row" data-activity="' + esc(nombre) + '">' +
+      '<b>' + esc(nombre) + '</b>' +
+      '<select data-field="realizada"><option>NO</option><option>SI</option></select>' +
+      '<input data-field="fecha" type="date">' +
+      '<input data-field="observaciones" placeholder="Observaciones">' +
+    '</article>';
+  }).join('');
+  caja.dataset.ready = '1';
+}
+
+function configurarTarjetaMatriz2_() {
+  const tarjeta = document.querySelector('.menu-card.matrix');
+  if (!tarjeta || tarjeta.dataset.cargaReal === '1') return;
+  tarjeta.onclick = null;
+  tarjeta.addEventListener('click',async function() {
+    mostrarCargaTarjeta_();
+    try {
+      abrirMatrizGuardia_();
+      await new Promise(function(ok) { setTimeout(ok,300); });
+      if (typeof siguientePintado_ === 'function') await siguientePintado_();
+    } catch (e) {
+      mostrarAviso_(e.message || String(e),'error');
+    } finally {
+      terminarCargaGlobal_();
+    }
+  });
+  tarjeta.dataset.cargaReal = '1';
+}
+
+document.addEventListener('DOMContentLoaded',prepararEpiMatriz2_);
+
+abrirEpi_ = function() {
+  mostrarPagina_('epiPage');
+  epiPacienteActual2_ = null;
+  epiPrefillActual2_ = null;
+  const form = $('#epiForm');
+  if (form) {
+    form.reset();
+    form.classList.add('hidden');
+  }
+  const entrada = $('#epiCedula'), resultado = $('#epiPatientResult');
+  const estado = $('#epiStatus'), mini = $('#epiSearchMini');
+  if (entrada) entrada.value = '';
+  if (resultado) resultado.classList.add('hidden');
+  if (estado) estado.classList.add('hidden');
+  if (mini) mini.classList.add('hidden');
+  limpiarRepetiblesEpi2_();
+  cambiarTipoEpiUI_();
+};
+
+async function buscarPacienteEpi_() {
+  const entrada = $('#epiCedula');
+  const id = normalizarIdentificacionCliente_(entrada.value,'OTRO');
+  if (!id) return mostrarAviso_('Ingrese el número de identificación del paciente.','error');
+  const resultado = $('#epiPatientResult'), mini = $('#epiSearchMini');
+  mini.innerHTML = cargaLista_('Buscando atención y datos del paciente…');
+  mini.classList.remove('hidden');
+  resultado.classList.add('hidden');
+  try {
+    const r = await run('buscarPacienteEpi',token,id);
+    epiPacienteActual2_ = Object.assign({cedula:id},r.paciente || {});
+    epiPrefillActual2_ = r.prefill || {};
+    const nombre = [
+      epiPacienteActual2_.primerApellido,epiPacienteActual2_.segundoApellido,
+      epiPacienteActual2_.primerNombre,epiPacienteActual2_.segundoNombre
+    ].filter(Boolean).join(' ');
+    resultado.innerHTML =
+      '<b>' + esc(nombre || 'PACIENTE SIN NOMBRE REGISTRADO') + '</b>' +
+      '<div class="patient-result-meta">' +
+        '<span><b>Identificación:</b> ' + esc(epiPacienteActual2_.cedula || id) + '</span>' +
+        '<span><b>Edad:</b> ' + esc(epiPacienteActual2_.edad || '—') + ' ' +
+          esc(epiPacienteActual2_.condicionEdad || '') + '</span>' +
+        '<span><b>Sexo:</b> ' + esc(epiPacienteActual2_.sexo || '—') + '</span>' +
+      '</div>' +
+      (r.ultimaAtencion
+        ? '<small>Datos clínicos recuperados de la atención ' +
+          esc(String(r.ultimaAtencion.fecha || '').slice(0,10)) + '.</small>'
+        : '<small>No existe una atención previa: complete manualmente la ficha.</small>');
+    resultado.classList.remove('hidden');
+    llenarFormularioEpi2_(r);
+  } catch (e) {
+    epiPacienteActual2_ = null;
+    resultado.textContent = e.message || String(e);
+    resultado.classList.remove('hidden');
+  } finally {
+    mini.classList.add('hidden');
+    mini.innerHTML = '';
+  }
+}
+
+function llenarFormularioEpi2_(respuesta) {
+  const form = $('#epiForm');
+  form.reset();
+  limpiarRepetiblesEpi2_();
+  const paciente = respuesta.paciente || {}, prefill = respuesta.prefill || {};
+  form.querySelectorAll('[data-epi-patient]').forEach(function(campo) {
+    campo.value = valorFechaClienteEpi2_(paciente[campo.dataset.epiPatient],campo.type);
+  });
+  actualizarResumenPacienteEpi2_(paciente);
+  Object.keys(prefill).forEach(function(nombre) {
+    form.querySelectorAll('[name="' + nombre + '"]').forEach(function(campo) {
+      if (campo.type !== 'radio' && campo.type !== 'checkbox') {
+        campo.value = valorFechaClienteEpi2_(prefill[nombre],campo.type);
+      }
+    });
+  });
+  const ultima = respuesta.ultimaAtencion || {};
+  if (form.elements.idRegistro008) form.elements.idRegistro008.value = ultima.idRegistro || '';
+  const select = $('#epiDiagnosis');
+  select.innerHTML = '<option value="">SELECCIONE UN DIAGNÓSTICO</option>' +
+    (respuesta.diagnosticos || []).map(function(dx) {
+      const valor = [dx.cie,dx.descripcion].filter(Boolean).join(' - ');
+      return '<option value="' + esc(valor) + '">' +
+        esc((dx.tipo ? dx.tipo + ' · ' : '') + valor) + '</option>';
+    }).join('');
+  const hoy = fechaLocalEpi2_(new Date());
+  if (!form.elements.fechaAtencion.value) form.elements.fechaAtencion.value = hoy;
+  if (!form.elements.fechaInvestigacion.value) form.elements.fechaInvestigacion.value = hoy;
+  if (form.elements.semanaEpidemiologica) {
+    form.elements.semanaEpidemiologica.value = semanaEpidemiologicaEpi2_(
+      form.elements.fechaAtencion.value || hoy
+    );
+  }
+  form.classList.remove('hidden');
+  cambiarTipoEpiUI_();
+}
+
+
+function actualizarResumenPacienteEpi2_(paciente) {
+  const p = paciente || {};
+  const nombre = [
+    p.primerApellido,p.segundoApellido,p.primerNombre,p.segundoNombre
+  ].filter(Boolean).join(' ');
+  const direccion = [
+    p.callePrincipal,p.calleSecundaria,p.referenciaDomiciliaria
+  ].filter(Boolean).join(', ');
+  const nombreCampo = $('#epiPatientFullName');
+  const direccionCampo = $('#epiPatientAddress');
+  if (nombreCampo) nombreCampo.value = nombre;
+  if (direccionCampo) direccionCampo.value = direccion;
+}
+
+function valorFechaClienteEpi2_(valor,tipo) {
+  if (valor == null) return '';
+  if (tipo === 'date') return String(valor).slice(0,10);
+  return valor;
+}
+
+function cambiarTipoEpiUI_() {
+  const seleccionado = document.querySelector('#epiForm [name="tipoEpi"]:checked');
+  const individual = seleccionado && seleccionado.value === 'INDIVIDUAL';
+  const grupal = $('#epiGroupFields'), individualBox = $('#epiIndividualFields');
+  if (grupal) grupal.classList.toggle('hidden',individual);
+  if (individualBox) individualBox.classList.toggle('hidden',!individual);
+}
+
+function datosFormularioEpi2_() {
+  const form = $('#epiForm'), salida = {};
+  form.querySelectorAll('input[name],select[name],textarea[name]').forEach(function(campo) {
+    if (campo.closest('[data-epi-list]')) return;
+    const bloque = campo.closest('#epiGroupFields,#epiIndividualFields');
+    if (bloque && bloque.classList.contains('hidden')) return;
+    if (campo.type === 'radio') {
+      if (campo.checked) salida[campo.name] = campo.value;
+      return;
+    }
+    if (campo.type === 'checkbox') {
+      salida[campo.name] = campo.checked;
+      return;
+    }
+    if (campo.value !== '' || salida[campo.name] === undefined) {
+      salida[campo.name] = campo.value;
+    }
+  });
+  form.querySelectorAll('[data-epi-list]').forEach(function(caja) {
+    if (caja.closest('.hidden')) return;
+    salida[caja.dataset.epiList] = Array.from(
+      caja.querySelectorAll('input[type="checkbox"]:checked')
+    ).map(function(campo) { return campo.value; });
+  });
+  salida.muestrasCierre = leerRepetiblesEpi2_('epiGroupSamples');
+  salida.contactos = leerRepetiblesEpi2_('epiContacts');
+  salida.actividadesGenerales = leerActividadesEpi2_('epiGeneralActivities');
+  salida.actividadesEspecificas = leerActividadesEpi2_('epiSpecificActivities');
+  salida.generarPdf = $('#epiOutputPdf').checked;
+  salida.generarExcel = $('#epiOutputExcel').checked;
+  return salida;
+}
+
+function pacienteFormularioEpi2_() {
+  const paciente = Object.assign({},epiPacienteActual2_ || {});
+  document.querySelectorAll('#epiForm [data-epi-patient]').forEach(function(campo) {
+    paciente[campo.dataset.epiPatient] = campo.value;
+  });
+  return paciente;
+}
+
+async function generarEpiAvanzadaUI_(evento) {
+  evento.preventDefault();
+  if (!epiPacienteActual2_) {
+    return mostrarAviso_('Primero busque el paciente.','error');
+  }
+  const formulario = datosFormularioEpi2_();
+  if (!formulario.diagnostico) {
+    return mostrarAviso_('Seleccione un diagnóstico para la EPI.','error');
+  }
+  if (!formulario.generarPdf && !formulario.generarExcel) {
+    return mostrarAviso_('Seleccione PDF, Excel o ambos.','error');
+  }
+  const boton = $('#epiGenerate'), estado = $('#epiStatus');
+  const ventanas = reservarDescargasEpi2_(formulario);
+  boton.disabled = true;
+  boton.textContent = 'Generando documento…';
+  estado.textContent = 'Preparando los formatos seleccionados…';
+  estado.classList.remove('hidden');
+  try {
+    const respuesta = await run('generarEpiAvanzada',token,{
+      paciente:pacienteFormularioEpi2_(),formulario:formulario
+    });
+    await descargarSalidasEpi2_(respuesta,ventanas);
+    estado.innerHTML = '<b>EPI generada y descargada de forma segura.</b>';
+  } catch (e) {
+    ventanas.forEach(function(ventana) {
+      try { if (ventana && !ventana.closed) ventana.close(); } catch (x) {}
+    });
+    estado.textContent = e.message || String(e);
+  } finally {
+    boton.disabled = false;
+    boton.textContent = 'Generar EPI seleccionada';
+  }
+}
+
+function reservarDescargasEpi2_(formulario) {
+  const cantidad = (formulario.generarPdf ? 1 : 0) + (formulario.generarExcel ? 1 : 0);
+  const ventanas = [];
+  for (let i = 0; i < cantidad; i++) {
+    const ventana = window.open('about:blank','_blank');
+    if (ventana) {
+      ventana.document.write('<p style="font:16px Arial;padding:25px">Preparando descarga EPI…</p>');
+      ventanas.push(ventana);
+    } else {
+      ventanas.push(null);
+    }
+  }
+  return ventanas;
+}
+
+async function descargarSalidasEpi2_(respuesta,ventanas) {
+  const archivos=[];
+  if(respuesta.pdfTicket)archivos.push({ticket:respuesta.pdfTicket,nombre:respuesta.pdfNombre||((respuesta.nombre||'EPI')+'.pdf')});
+  if(respuesta.excelTicket)archivos.push({ticket:respuesta.excelTicket,nombre:respuesta.excelNombre||((respuesta.nombre||'EPI')+'.xlsx')});
+  for(let i=0;i<archivos.length;i++)await descargarArchivoSeguro_(archivos[i].ticket,archivos[i].nombre,(ventanas||[])[i]);
+}
+
+function agregarMuestraCierreEpi_(dato) {
+  const caja = $('#epiGroupSamples');
+  if (caja.children.length >= 3) return;
+  const d = dato || {}, fila = document.createElement('article');
+  fila.className = 'epi-repeat-row epi-sample-row';
+  fila.innerHTML =
+    '<input data-field="tipo" placeholder="Tipo de muestra" value="' + esc(d.tipo || '') + '">' +
+    '<label>Recepción<input data-field="fechaRecepcion" type="date" value="' +
+      esc(d.fechaRecepcion || '') + '"></label>' +
+    '<select data-field="adecuada"><option>SI</option><option>NO</option></select>' +
+    '<label>Procesamiento<input data-field="fechaProcesamiento" type="date" value="' +
+      esc(d.fechaProcesamiento || '') + '"></label>' +
+    '<label>Resultado<input data-field="fechaResultado" type="date" value="' +
+      esc(d.fechaResultado || '') + '"></label>' +
+    '<button class="remove-btn" type="button">Quitar</button>';
+  fila.querySelector('[data-field="adecuada"]').value = d.adecuada || 'SI';
+  fila.querySelector('.remove-btn').onclick = function() { fila.remove(); };
+  caja.appendChild(fila);
+}
+
+function agregarContactoEpi_(dato) {
+  const caja = $('#epiContacts');
+  if (caja.children.length >= 8) return;
+  const d = dato || {}, fila = document.createElement('article');
+  fila.className = 'epi-repeat-row epi-contact-row';
+  fila.innerHTML =
+    '<input data-field="nombre" placeholder="Nombre" value="' + esc(d.nombre || '') + '">' +
+    '<input data-field="edad" type="number" min="0" placeholder="Edad" value="' + esc(d.edad || '') + '">' +
+    '<select data-field="sexo"><option>M</option><option>F</option></select>' +
+    '<input data-field="relacion" placeholder="Relación con el caso" value="' + esc(d.relacion || '') + '">' +
+    '<input data-field="direccionTelefono" placeholder="Dirección / teléfono" value="' + esc(d.direccionTelefono || '') + '">' +
+    '<input data-field="lugarContacto" placeholder="Lugar de contacto" value="' + esc(d.lugarContacto || '') + '">' +
+    '<select data-field="enfermo"><option>NO</option><option>SI</option></select>' +
+    '<input data-field="fechaInicio" type="date" value="' + esc(d.fechaInicio || '') + '">' +
+    '<input data-field="observaciones" placeholder="Observaciones" value="' + esc(d.observaciones || '') + '">' +
+    '<button class="remove-btn" type="button">Quitar</button>';
+  fila.querySelector('[data-field="sexo"]').value = d.sexo || 'M';
+  fila.querySelector('[data-field="enfermo"]').value = d.enfermo || 'NO';
+  fila.querySelector('.remove-btn').onclick = function() { fila.remove(); };
+  caja.appendChild(fila);
+}
+
+function leerRepetiblesEpi2_(id) {
+  const caja = $('#' + id);
+  if (!caja) return [];
+  return Array.from(caja.children).map(function(fila) {
+    const objeto = {};
+    fila.querySelectorAll('[data-field]').forEach(function(campo) {
+      objeto[campo.dataset.field] = campo.value;
+    });
+    return objeto;
+  }).filter(function(objeto) {
+    return Object.keys(objeto).some(function(k) { return String(objeto[k] || '').trim(); });
+  });
+}
+
+function leerActividadesEpi2_(id) {
+  const caja = $('#' + id);
+  if (!caja) return [];
+  return Array.from(caja.children).map(function(fila) {
+    return {
+      nombre:fila.dataset.activity,
+      realizada:fila.querySelector('[data-field="realizada"]').value,
+      fecha:fila.querySelector('[data-field="fecha"]').value,
+      observaciones:fila.querySelector('[data-field="observaciones"]').value
+    };
+  });
+}
+
+function limpiarRepetiblesEpi2_() {
+  ['epiGroupSamples','epiContacts'].forEach(function(id) {
+    const caja = $('#' + id);
+    if (caja) caja.innerHTML = '';
+  });
+  document.querySelectorAll('#epiForm [data-epi-list] input[type="checkbox"]')
+    .forEach(function(c) { c.checked = false; });
+}
+
+function abrirMatrizGuardia_() {
+  mostrarPagina_('matrixPage');
+  const hoy = new Date(), inicio = new Date(hoy.getFullYear(),hoy.getMonth(),1);
+  $('#matrixFrom').value = fechaLocalEpi2_(inicio);
+  $('#matrixTo').value = fechaLocalEpi2_(hoy);
+  $('#matrixScope').value = 'MIS ATENCIONES';
+  const select = $('#matrixEstablishment');
+  const establecimientos = typeof establecimientosCuentaCliente_ === 'function'
+    ? establecimientosCuentaCliente_() : [];
+  select.innerHTML = establecimientos.map(function(e) {
+    return '<option value="' + esc(e.unicodigo || '') + '">' +
+      esc((e.unicodigo || '') + ' · ' + (e.nombre || e.establecimiento || '')) +
+    '</option>';
+  }).join('');
+  if (!select.children.length && usuario) {
+    select.innerHTML = '<option value="' + esc(usuario.unicodigo || '') + '">' +
+      esc((usuario.unicodigo || '') + ' · ' + (usuario.establecimiento || '')) +
+    '</option>';
+  }
+  actualizarAmbitoMatriz_();
+  $('#matrixStatus').classList.add('hidden');
+  $('#matrixSummary').classList.add('hidden');
+}
+
+function actualizarAmbitoMatriz_() {
+  const establecimiento = $('#matrixScope').value === 'ESTABLECIMIENTO';
+  $('#matrixEstablishmentBox').classList.toggle('hidden',!establecimiento);
+}
+
+async function generarMatrizGuardiaUI_(evento) {
+  evento.preventDefault();
+  const datos = {
+    desde:$('#matrixFrom').value,
+    hasta:$('#matrixTo').value,
+    ambito:$('#matrixScope').value,
+    unicodigo:$('#matrixEstablishment').value,
+    generarPdf:$('#matrixOutputPdf').checked,
+    generarExcel:$('#matrixOutputExcel').checked
+  };
+  if (!datos.generarPdf && !datos.generarExcel) {
+    return mostrarAviso_('Seleccione PDF, Excel o ambos.','error');
+  }
+  const boton = $('#matrixGenerate'), estado = $('#matrixStatus');
+  boton.disabled = true;
+  estado.classList.add('hidden');
+  try {
+    const respuesta = await run('generarMatrizGuardiaAvanzada',token,datos);
+    await descargarSalidasEpi2_(respuesta);
+    $('#matrixAttentionCount').textContent = respuesta.atenciones || 0;
+    $('#matrixDiseaseCount').textContent = respuesta.enfermedades || 0;
+    $('#matrixSummary').classList.remove('hidden');
+    estado.textContent = 'Matriz generada correctamente. La descarga fue iniciada.';
+    estado.classList.remove('hidden');
+  } catch (e) {
+    estado.textContent = e.message || String(e);
+    estado.classList.remove('hidden');
+  } finally {
+    boton.disabled = false;
+  }
+}
+
+cargarHistorias_ = async function() {
+  const box = $('#historyList'), estado = $('#historyStatus');
+  const min = $('#historyAgeMin').value, max = $('#historyAgeMax').value;
+  if (min !== '' && max !== '' && Number(min) > Number(max)) {
+    return mostrarAviso_('La edad mínima no puede ser mayor que la edad máxima.','error');
+  }
+  box.innerHTML = cargaLista_('Buscando por paciente, enfermedad o CIE-10…');
+  try {
+    historiasEncontradas_ = await run('listarHistoriasClinicasAvanzado',token,{
+      desde:$('#historyFrom').value,
+      hasta:$('#historyTo').value,
+      consulta:$('#historyQuery').value,
+      unidadEdad:$('#historyAgeUnit').value,
+      edadMin:min,
+      edadMax:max
+    });
+    pintarPaginaHistorias_(1);
+  } catch (e) {
+    historiasEncontradas_ = [];
+    estado.textContent = '';
+    box.innerHTML = '<div class="no-results">' + esc(e.message || String(e)) + '</div>';
+  }
+};
+
+function fechaLocalEpi2_(fecha) {
+  const pad = function(n) { return String(n).padStart(2,'0'); };
+  return fecha.getFullYear() + '-' + pad(fecha.getMonth()+1) + '-' + pad(fecha.getDate());
+}
+
+function semanaEpidemiologicaEpi2_(fechaTexto) {
+  const fecha = new Date(fechaTexto + 'T12:00:00');
+  const jueves = new Date(fecha);
+  jueves.setDate(fecha.getDate() + 3 - ((fecha.getDay()+6)%7));
+  const primero = new Date(jueves.getFullYear(),0,4);
+  return 1 + Math.round(((jueves-primero)/86400000 - 3 + ((primero.getDay()+6)%7))/7);
+}
+
+
+const TRIAGE_META_CLIENTE_={
+  1:{estado:'CRÍTICO',color:'ROJO',tiempo:0,clase:'triage-p1'},
+  2:{estado:'EMERGENCIA',color:'NARANJA',tiempo:10,clase:'triage-p2'},
+  3:{estado:'EMERGENCIA',color:'AMARILLO',tiempo:60,clase:'triage-p3'},
+  4:{estado:'ESTÁNDAR',color:'VERDE',tiempo:120,clase:'triage-p4'},
+  5:{estado:'NO URGENTE',color:'AZUL',tiempo:240,clase:'triage-p5'}
+};
+function prepararTriageUI_(){
+  const f=$('#triageForm');if(!f)return;
+  f.addEventListener('submit',guardarTriageUI_);
+  const sin=$('#triageNoVitals');if(sin)sin.addEventListener('change',()=>{const box=$('#triageVitals');if(box){box.classList.toggle('section-disabled',sin.checked);box.querySelectorAll('input').forEach(x=>{x.disabled=sin.checked;if(sin.checked)x.value=''})}});
+  f.querySelectorAll('input[name="nivelPrioridad"]').forEach(x=>x.addEventListener('change',actualizarResumenPrioridadTriage_));
+  reiniciarTriageUI_();
+}
+function fechaHoraTriage_(){const f=$('#triageForm');if(!f)return;const d=new Date(),pad=n=>String(n).padStart(2,'0');if(!f.elements.fechaTriage.value)f.elements.fechaTriage.value=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());if(!f.elements.horaTriage.value)f.elements.horaTriage.value=pad(d.getHours())+':'+pad(d.getMinutes())}
+function reiniciarTriageUI_(){
+  triajesEpisodio_=[];triajeObligatorioActual_=false;
+  const f=$('#triageForm');if(f){f.reset();const id=$('#triageId');if(id)id.value='';fechaHoraTriage_()}
+  const sin=$('#triageNoVitals');if(sin){sin.checked=false;sin.dispatchEvent(new Event('change'))}
+  const c=$('#cancelTriageEdit');if(c)c.classList.add('hidden');const b=$('#saveTriageButton');if(b)b.textContent='Registrar triaje';
+  const s=$('#triageStatus');if(s){s.textContent='';s.classList.add('hidden')}const l=$('#triageList');if(l)l.innerHTML='<div class="no-results">Todavía no hay triaje registrado para este episodio.</div>';const n=$('#triageCount');if(n)n.textContent='0 registros';const r=$('#triagePrioritySummary');if(r){r.textContent='';r.className='triage-priority-summary hidden'}
+}
+function actualizarResumenPrioridadTriage_(){
+  const f=$('#triageForm'),r=$('#triagePrioritySummary');if(!f||!r)return;const marcado=f.querySelector('input[name="nivelPrioridad"]:checked'),m=marcado&&TRIAGE_META_CLIENTE_[Number(marcado.value)];if(!m){r.className='triage-priority-summary hidden';r.textContent='';return}r.className='triage-priority-summary '+m.clase;r.innerHTML='<b>Nivel '+marcado.value+' · '+esc(m.estado)+'</b><span>'+esc(m.color)+' · '+(m.tiempo===0?'atención inmediata':'tiempo máximo '+m.tiempo+' min')+'</span>'
+}
+function datosTriageUI_(){
+  const f=$('#triageForm'),d=Object.fromEntries(new FormData(f));d.idTriage=$('#triageId')?$('#triageId').value:'';d.idEpisodio=idEpisodioActual||admisionActual&&admisionActual.idEpisodio||'';d.idAdmision=admisionActual&&admisionActual.admision?admisionActual.admision.idAdmision||'':'';d.cedula=admisionActual&&admisionActual.paciente?admisionActual.paciente.cedula||'':'';d.establecimiento=seleccionApp||establecimientoCuenta||{};d.sinSignosVitales=$('#triageNoVitals')&&$('#triageNoVitals').checked?'SI':'NO';return d
+}
+async function guardarTriageUI_(e){
+  e.preventDefault();if(!idEpisodioActual)return alert('Primero guarde la admisión.');const f=e.currentTarget;if(!f.reportValidity())return;const estado=$('#triageStatus'),primero=!(triajesEpisodio_||[]).length;estado.textContent='Guardando triaje…';estado.classList.remove('hidden');try{const datos=datosTriageUI_();if(normalCliente_(datos.sinSignosVitales)!=='SI'&&datos.sinSignosVitales!==true)datos.confirmarValoresExtremos=confirmarVitalesCliente_(datos,'el triaje');const r=await run('guardarTriageEpisodio',token,datos);estado.textContent=r.mensaje||'Triaje guardado.';await cargarTriajesEpisodio_();cancelarEdicionTriage_();if(primero&&triajesEpisodio_.length){aplicarTriageAClinica_(triajesEpisodio_[0]);$('#clinicalSection').classList.remove('hidden');document.querySelectorAll('.steps span').forEach((s,i)=>s.classList.toggle('active',i===3));actualizarGlasgow_();$('#clinicalSection').scrollIntoView({behavior:'smooth'})}}catch(x){estado.textContent=x.message||String(x)}}
+async function cargarTriajesEpisodio_(){
+  const episodio=idEpisodioActual||admisionActual&&admisionActual.idEpisodio||'';if(!episodio){triajesEpisodio_=[];pintarTriajes_();return[]}
+  try{const r=await run('obtenerEstadoTriageEpisodio',token,episodio);triajesEpisodio_=r.registros||[];triajeObligatorioActual_=!!r.requerido;pintarTriajes_();return triajesEpisodio_}catch(e){triajesEpisodio_=[];pintarTriajes_();throw e}
+}
+function pintarTriajes_(){
+  const box=$('#triageList'),count=$('#triageCount');if(!box||!count)return;const lista=triajesEpisodio_||[];count.textContent=lista.length+' '+(lista.length===1?'registro':'registros');if(!lista.length){box.innerHTML='<div class="no-results">Todavía no hay triaje registrado para este episodio.</div>';return}
+  box.innerHTML=lista.map((x,i)=>{const n=Number(x.nivelPrioridad)||0,m=TRIAGE_META_CLIENTE_[n]||{},pa=x.pas&&x.pad?x.pas+'/'+x.pad:'—',v=[x.temperatura?'T '+x.temperatura+'°C':'','PA '+pa,x.pulso?'FC '+x.pulso:'',x.frecuenciaRespiratoria?'FR '+x.frecuenciaRespiratoria:'',x.pulsioximetria?'SatO₂ '+x.pulsioximetria+'%':'',x.glasgow?'Glasgow '+x.glasgow:''].filter(Boolean).join(' · '),editar=String(x.usuarioId||'')===String(usuario&&usuario.id||'')?'<button class="btn soft auto" type="button" onclick="editarTriage_(\''+esc(x.idTriage)+'\')">Editar</button>':'';return '<article class="triage-record '+(m.clase||'')+'"><div class="triage-level"><strong>'+esc(n?('N'+n):'—')+'</strong><span>'+esc(x.colorPrioridad||m.color||'')+'</span></div><div class="triage-record-body"><div><b>'+esc(x.estadoPrioridad||m.estado||'')+'</b><small>'+esc(String(x.fechaTriage||'').slice(0,10))+' '+esc(x.horaTriage||'')+' · '+esc(x.areaAtencion||'')+'</small></div><p>'+esc(x.motivoTriage||'')+'</p><small>'+esc(v)+'</small><small>'+esc(x.profesional||'')+(i===0?' · Clasificación actual':'')+'</small></div><div class="triage-record-actions">'+editar+'</div></article>'}).join('')
+}
+function editarTriage_(id){
+  const x=(triajesEpisodio_||[]).find(t=>String(t.idTriage)===String(id));if(!x)return;const f=$('#triageForm');f.reset();const poner=(n,v)=>{const e=f.elements.namedItem(n);if(e&&'value' in e)e.value=v==null?'':v};['fechaTriage','horaTriage','viaAerea','ventilacion','circulacion','motivoTriage','temperatura','pas','pad','pulso','frecuenciaRespiratoria','pulsioximetria','glicemia','glasgow','dolor','areaAtencion','factoresRiesgo','observaciones'].forEach(k=>poner(k,x[k]));$('#triageId').value=x.idTriage||'';const radio=f.querySelector('input[name="nivelPrioridad"][value="'+Number(x.nivelPrioridad)+'"]');if(radio)radio.checked=true;const sin=$('#triageNoVitals');sin.checked=normalCliente_(x.sinSignosVitales)==='SI';sin.dispatchEvent(new Event('change'));actualizarResumenPrioridadTriage_();$('#saveTriageButton').textContent='Actualizar triaje';$('#cancelTriageEdit').classList.remove('hidden');f.scrollIntoView({behavior:'smooth',block:'start'})
+}
+function cancelarEdicionTriage_(){const f=$('#triageForm');if(!f)return;f.reset();$('#triageId').value='';fechaHoraTriage_();const sin=$('#triageNoVitals');if(sin){sin.checked=false;sin.dispatchEvent(new Event('change'))}$('#saveTriageButton').textContent=(triajesEpisodio_||[]).length?'Registrar reevaluación':'Registrar triaje';$('#cancelTriageEdit').classList.add('hidden');actualizarResumenPrioridadTriage_()}
+function aplicarTriageAClinica_(t){
+  if(!t)return;const f=$('#clinicalForm');if(!f)return;const mapa={temperatura:'temperatura',pas:'pas',pad:'pad',pulso:'pulso',frecuenciaRespiratoria:'frecuenciaRespiratoria',pulsioximetria:'pulsioximetria',glicemia:'glicemia'};Object.keys(mapa).forEach(k=>{const e=f.elements[mapa[k]];if(e&&!e.value&&t[k]!==undefined&&t[k]!=='')e.value=t[k]});const motivo=f.elements.motivoAtencion;if(motivo&&!motivo.value&&t.motivoTriage)motivo.value=t.motivoTriage
+}
+
+
+
+/* Prioridad 14 · Modo Crítico */
+function prepararModoCriticoUI_(){
+  const f=$('#criticalModeForm');if(!f)return;
+  f.addEventListener('submit',guardarModoCriticoUI_);
+  ['glasgowOcular','glasgowVerbal','glasgowMotora'].forEach(n=>{const e=f.elements[n];if(e)e.addEventListener('change',actualizarGlasgowCritico_)});
+  limpiarModoCriticoForm_();actualizarBotonModoCritico_();
+}
+function fechaHoraCriticaActual_(){
+  const d=new Date(),pad=n=>String(n).padStart(2,'0'),f=$('#criticalModeForm');if(!f)return;
+  if(!f.elements.fechaRegistro.value)f.elements.fechaRegistro.value=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+  if(!f.elements.horaRegistro.value)f.elements.horaRegistro.value=pad(d.getHours())+':'+pad(d.getMinutes());
+}
+function actualizarGlasgowCritico_(){
+  const f=$('#criticalModeForm'),out=$('#criticalGlasgowTotal');if(!f||!out)return;const vals=['glasgowOcular','glasgowVerbal','glasgowMotora'].map(n=>Number(f.elements[n].value)||0);
+  out.textContent=vals.every(Boolean)?String(vals.reduce((a,b)=>a+b,0)):'—';
+}
+function actualizarBotonModoCritico_(){
+  const b=$('#criticalModeButton'),medico=normalCliente_(usuario&&usuario.cargo)==='MEDICO',habilitado=!!(idEpisodioActual&&admisionActual&&medico);if(!b)return;b.disabled=!habilitado;b.classList.toggle('critical-active',habilitado&&(registrosCriticosEpisodio_||[]).length>0);b.textContent=(registrosCriticosEpisodio_||[]).length?'! MODO CRÍTICO · '+registrosCriticosEpisodio_.length:'! MODO CRÍTICO';
+}
+async function abrirModoCritico_(){
+  if(!idEpisodioActual||!admisionActual)return alert('Primero guarde la admisión para crear el episodio de emergencia.');
+  if(normalCliente_(usuario&&usuario.cargo)!=='MEDICO')return alert('El Modo Crítico está reservado al rol MÉDICO.');
+  const sec=$('#criticalModeSection');if(!sec)return;sec.classList.remove('hidden');fechaHoraCriticaActual_();await cargarModoCriticoEpisodio_();sec.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function cerrarModoCritico_(){const sec=$('#criticalModeSection');if(sec)sec.classList.add('hidden')}
+function datosModoCriticoUI_(){
+  const f=$('#criticalModeForm'),d=Object.fromEntries(new FormData(f));d.idEpisodio=idEpisodioActual||admisionActual&&admisionActual.idEpisodio||'';d.idAdmision=admisionActual&&admisionActual.admision?admisionActual.admision.idAdmision||'':'';d.cedula=admisionActual&&admisionActual.paciente?admisionActual.paciente.cedula||'':'';d.establecimiento=seleccionApp||establecimientoCuenta||{};return d;
+}
+async function guardarModoCriticoUI_(e){
+  e.preventDefault();if(!idEpisodioActual)return alert('Primero guarde la admisión.');const f=e.currentTarget;if(!f.reportValidity())return;const estado=$('#criticalModeStatus'),boton=$('#saveCriticalMode'),eraPrimero=!(registrosCriticosEpisodio_||[]).length;if(estado){estado.textContent='Guardando registro crítico…';estado.classList.remove('hidden')}if(boton)boton.disabled=true;
+  try{const d=datosModoCriticoUI_();d.confirmarValoresExtremos=confirmarVitalesCliente_(d,'el Modo Crítico');const r=await run('guardarModoCriticoEpisodio',token,d);if(estado)estado.textContent=r.mensaje||'Registro crítico guardado.';await cargarModoCriticoEpisodio_();if(eraPrimero&&r.registro)aplicarRegistroCriticoAClinica_(r.registro,false);limpiarModoCriticoForm_();mostrarAviso_(r.mensaje||'Registro crítico guardado.','info')}catch(x){if(estado)estado.textContent=x.message||String(x);else alert(x.message||String(x))}finally{if(boton)boton.disabled=false}
+}
+function limpiarModoCriticoForm_(){
+  const f=$('#criticalModeForm');if(!f)return;f.reset();fechaHoraCriticaActual_();actualizarGlasgowCritico_();const b=$('#saveCriticalMode');if(b)b.textContent=(registrosCriticosEpisodio_||[]).length?'Registrar reevaluación crítica':'Registrar hora cero crítica';
+}
+async function cargarModoCriticoEpisodio_(){
+  if(normalCliente_(usuario&&usuario.cargo)!=='MEDICO'){registrosCriticosEpisodio_=[];pintarModoCritico_();actualizarBotonModoCritico_();return[]}
+  const episodio=idEpisodioActual||admisionActual&&admisionActual.idEpisodio||'';if(!episodio){registrosCriticosEpisodio_=[];pintarModoCritico_();actualizarBotonModoCritico_();return[]}
+  try{registrosCriticosEpisodio_=await run('listarModoCriticoEpisodio',token,episodio)||[];pintarModoCritico_();actualizarBotonModoCritico_();const b=$('#saveCriticalMode');if(b)b.textContent=registrosCriticosEpisodio_.length?'Registrar reevaluación crítica':'Registrar hora cero crítica';return registrosCriticosEpisodio_}catch(e){registrosCriticosEpisodio_=[];pintarModoCritico_();actualizarBotonModoCritico_();throw e}
+}
+function pintarModoCritico_(){
+  const box=$('#criticalModeList'),count=$('#criticalModeCount');if(!box||!count)return;const lista=registrosCriticosEpisodio_||[];count.textContent=lista.length+' '+(lista.length===1?'registro':'registros');if(!lista.length){box.innerHTML='<div class="no-results">Todavía no hay registros de modo crítico.</div>';return}
+  box.innerHTML=lista.map((x,i)=>{const pa=x.pas||x.pad?(x.pas||'—')+'/'+(x.pad||'—'):'',chips=[x.tipoRegistro||'',x.temperatura?'T '+x.temperatura+'°C':'',pa?'PA '+pa:'',x.pulso?'FC '+x.pulso:'',x.frecuenciaRespiratoria?'FR '+x.frecuenciaRespiratoria:'',x.pulsioximetria?'SatO₂ '+x.pulsioximetria+'%':'',x.glasgowTotal?'GCS '+x.glasgowTotal:'',x.destinoInmediato||''].filter(Boolean).map(v=>'<span>'+esc(v)+'</span>').join('');return '<article class="critical-record"><div class="critical-record-time"><b>'+esc(String(x.fechaRegistro||'').slice(0,10))+' '+esc(String(x.horaRegistro||'').slice(0,5))+'</b><small>'+esc(x.profesional||'')+'</small></div><div class="critical-record-body"><p><b>'+esc(x.motivoActivacion||'Registro crítico')+'</b></p><div class="critical-record-chips">'+chips+'</div><small>X: '+esc(x.xEstado||'—')+' · A: '+esc(x.aEstado||'—')+' · B: '+esc(x.bEstado||'—')+' · C: '+esc(x.cEstado||'—')+'</small>'+(x.respuestaClinica?'<small>Respuesta: '+esc(x.respuestaClinica)+'</small>':'')+'</div><div class="critical-record-actions"><button class="btn soft auto" type="button" onclick="aplicarRegistroCriticoAClinica_(registrosCriticosEpisodio_['+i+'],true)">Aplicar a atención</button></div></article>'}).join('');
+}
+function aplicarRegistroCriticoAClinica_(x,navegar){
+  if(!x)return;const f=$('#clinicalForm');if(!f)return;const mapa=['temperatura','pas','pad','pulso','frecuenciaRespiratoria','pulsioximetria','glicemia','llenadoCapilar','glasgowOcular','glasgowVerbal','glasgowMotora'];mapa.forEach(k=>{const e=f.elements[k];if(e&&x[k]!==undefined&&x[k]!==null&&x[k]!==''&&(navegar||!e.value))e.value=x[k]});totalGlasgow_();
+  if(f.elements.motivoAtencion&&!f.elements.motivoAtencion.value&&x.motivoActivacion)f.elements.motivoAtencion.value=x.motivoActivacion;
+  const activar=$('#enableTrauma'),campos=$('#traumaFields');if(activar&&!activar.checked){activar.checked=true;activar.dispatchEvent(new Event('change'))}
+  const notas={X:[x.xEstado,x.xNotas],A:[x.aEstado,x.aNotas],B:[x.bEstado,x.bNotas],C:[x.cEstado,x.cNotas],D:[x.glasgowTotal?'Glasgow '+x.glasgowTotal:'',x.dNotas,x.pupilas?'Pupilas: '+x.pupilas:''],E:[x.eNotas,x.temperatura?'Temperatura: '+x.temperatura+' °C':'']};
+  if(campos)campos.querySelectorAll('[data-trauma]').forEach(e=>{const arr=(notas[e.dataset.trauma]||[]).filter(Boolean);if(arr.length&&(navegar||!e.value))e.value=arr.join('\n')});
+  const sec=[];if(x.soporteOxigeno)sec.push('OXÍGENO/SOPORTE: '+x.soporteOxigeno+(x.flujoFio2?' · '+x.flujoFio2:''));if(x.intervencionViaAerea)sec.push('VÍA AÉREA: '+x.intervencionViaAerea);if(x.accesoVascular)sec.push('ACCESO/REPOSICIÓN: '+x.accesoVascular);if(x.medicamentosAdministrados)sec.push('MEDICAMENTOS ADMINISTRADOS: '+x.medicamentosAdministrados);if(x.procedimientos)sec.push('PROCEDIMIENTOS: '+x.procedimientos);if(x.respuestaClinica)sec.push('RESPUESTA: '+x.respuestaClinica);if(x.destinoInmediato)sec.push('DESTINO: '+x.destinoInmediato);if(x.observaciones)sec.push('OBSERVACIONES: '+x.observaciones);const secundario=$('#traumaSecondary');if(secundario&&sec.length&&(navegar||!secundario.value))secundario.value=sec.join('\n');if(campos)campos.dispatchEvent(new Event('input',{bubbles:true}));actualizarValidacionVitalesUI_();
+  if(navegar){$('#clinicalSection').classList.remove('hidden');document.querySelectorAll('.steps span').forEach((s,i)=>s.classList.toggle('active',i===3));mostrarClinical_(6);$('#criticalModeSection').classList.add('hidden');$('#clinicalSection').scrollIntoView({behavior:'smooth',block:'start'});mostrarAviso_('Registro crítico aplicado a la atención clínica. Revise y complete el FORM.008.','info')}
+}
+function irAtencionDesdeCritico_(){
+  if(!idEpisodioActual)return;$('#criticalModeSection').classList.add('hidden');$('#clinicalSection').classList.remove('hidden');document.querySelectorAll('.steps span').forEach((s,i)=>s.classList.toggle('active',i===3));mostrarClinical_(6);$('#clinicalSection').scrollIntoView({behavior:'smooth',block:'start'});
+}
+const reiniciarAtencionP14_=reiniciarAtencion_;
+reiniciarAtencion_=function(){reiniciarAtencionP14_();registrosCriticosEpisodio_=[];const sec=$('#criticalModeSection');if(sec)sec.classList.add('hidden');limpiarModoCriticoForm_();actualizarBotonModoCritico_()};
+
+/* Prioridad 15 · Evolución clínica y observación */
+function prepararEvolucionObservacionUI_(){
+  const f=$('#evolutionForm');if(!f)return;f.addEventListener('submit',guardarEvolucionObservacionUI_);limpiarEvolucionObservacionForm_();actualizarBotonEvolucion_();
+}
+function fechaHoraEvolucionActual_(){
+  const f=$('#evolutionForm');if(!f)return;const d=new Date(),pad=n=>String(n).padStart(2,'0');if(!f.elements.fechaRegistro.value)f.elements.fechaRegistro.value=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());if(!f.elements.horaRegistro.value)f.elements.horaRegistro.value=pad(d.getHours())+':'+pad(d.getMinutes());
+}
+function actualizarBotonEvolucion_(){
+  const b=$('#evolutionButton');if(!b)return;const medico=normalCliente_(usuario&&usuario.cargo)==='MEDICO',habilitado=!!(idEpisodioActual&&admisionActual&&medico);b.disabled=!habilitado;b.classList.toggle('evolution-active',habilitado&&(evolucionesEpisodio_||[]).length>0);b.textContent=episodioFinalizadoActual_?'↻ EVOLUCIÓN · CONSULTA':((evolucionesEpisodio_||[]).length?'↻ EVOLUCIÓN · '+evolucionesEpisodio_.length:'↻ EVOLUCIÓN / OBSERVACIÓN');
+}
+async function abrirEvolucionObservacion_(){
+  if(!idEpisodioActual||!admisionActual)return alert('Primero guarde la admisión para crear el episodio de emergencia.');if(normalCliente_(usuario&&usuario.cargo)!=='MEDICO')return alert('La evolución clínica está reservada al rol MÉDICO.');const sec=$('#evolutionSection');if(!sec)return;sec.classList.remove('hidden');configurarModoConsultaEvolucion_();fechaHoraEvolucionActual_();await cargarEvolucionObservacion_();sec.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function configurarModoConsultaEvolucion_(){const f=$('#evolutionForm'),r=$('#evolutionReadOnly');if(f)f.classList.toggle('hidden',!!episodioFinalizadoActual_);if(r)r.classList.toggle('hidden',!episodioFinalizadoActual_)}
+function cerrarEvolucionObservacion_(){const sec=$('#evolutionSection');if(sec)sec.classList.add('hidden')}
+function datosEvolucionObservacionUI_(){
+  const f=$('#evolutionForm'),d=Object.fromEntries(new FormData(f));d.idEpisodio=idEpisodioActual||admisionActual&&admisionActual.idEpisodio||'';d.idAdmision=admisionActual&&admisionActual.admision?admisionActual.admision.idAdmision||'':'';d.cedula=admisionActual&&admisionActual.paciente?admisionActual.paciente.cedula||'':'';d.establecimiento=seleccionApp||establecimientoCuenta||{};return d;
+}
+async function guardarEvolucionObservacionUI_(e){
+  e.preventDefault();if(!idEpisodioActual)return alert('Primero guarde la admisión.');const f=e.currentTarget;if(!f.reportValidity())return;const estado=$('#evolutionStatus'),boton=$('#saveEvolution');if(estado){estado.textContent='Guardando evolución…';estado.classList.remove('hidden')}if(boton)boton.disabled=true;try{const d=datosEvolucionObservacionUI_();d.confirmarValoresExtremos=confirmarVitalesCliente_(d,'la evolución/observación');const r=await run('guardarEvolucionObservacion',token,d);await cargarEvolucionObservacion_();limpiarEvolucionObservacionForm_();if(estado){estado.textContent=r.mensaje||'Evolución guardada.';estado.classList.remove('hidden')}mostrarAviso_(r.mensaje||'Evolución guardada.','info')}catch(x){if(estado){estado.textContent=x.message||String(x);estado.classList.remove('hidden')}else alert(x.message||String(x))}finally{if(boton)boton.disabled=false}
+}
+function limpiarEvolucionObservacionForm_(){const f=$('#evolutionForm');if(!f)return;f.reset();fechaHoraEvolucionActual_();const s=$('#evolutionStatus');if(s){s.textContent='';s.classList.add('hidden')}}
+async function cargarEvolucionObservacion_(){
+  if(normalCliente_(usuario&&usuario.cargo)!=='MEDICO'){evolucionesEpisodio_=[];pintarEvolucionObservacion_();actualizarBotonEvolucion_();return[]}const episodio=idEpisodioActual||admisionActual&&admisionActual.idEpisodio||'';if(!episodio){evolucionesEpisodio_=[];pintarEvolucionObservacion_();actualizarBotonEvolucion_();return[]}try{evolucionesEpisodio_=await run('listarEvolucionObservacion',token,episodio)||[];pintarEvolucionObservacion_();actualizarBotonEvolucion_();configurarModoConsultaEvolucion_();return evolucionesEpisodio_}catch(e){evolucionesEpisodio_=[];pintarEvolucionObservacion_();actualizarBotonEvolucion_();throw e}
+}
+function duracionEvolucion_(lista){
+  if(!lista||lista.length<2)return '';const parse=x=>{const d=new Date(String(x.fechaRegistro||'').slice(0,10)+'T'+String(x.horaRegistro||'00:00').slice(0,5)+':00');return isNaN(d)?null:d};const a=parse(lista[0]),b=parse(lista[lista.length-1]);if(!a||!b||b<a)return '';const min=Math.floor((b-a)/60000),h=Math.floor(min/60),m=min%60;return (h?h+' h ':'')+(m||!h?m+' min':'');
+}
+function pintarEvolucionObservacion_(){
+  const box=$('#evolutionList'),count=$('#evolutionCount');if(!box||!count)return;const lista=evolucionesEpisodio_||[],dur=duracionEvolucion_(lista);count.textContent=lista.length+' '+(lista.length===1?'registro':'registros')+(dur?' · '+dur+' de seguimiento':'');if(!lista.length){box.innerHTML='<div class="no-results">Todavía no hay evoluciones u observaciones registradas.</div>';return}
+  box.innerHTML=lista.map((x,i)=>{const pa=x.pas||x.pad?(x.pas||'—')+'/'+(x.pad||'—'):'',chips=[x.tipoEvento||'',x.condicionClinica&&normalCliente_(x.condicionClinica)!=='NO ESPECIFICADO'?x.condicionClinica:'',x.temperatura?'T '+x.temperatura+'°C':'',pa?'PA '+pa:'',x.pulso?'FC '+x.pulso:'',x.frecuenciaRespiratoria?'FR '+x.frecuenciaRespiratoria:'',x.pulsioximetria?'SatO₂ '+x.pulsioximetria+'%':'',x.glasgowTotal?'GCS '+x.glasgowTotal:''].filter(Boolean).map(v=>'<span>'+esc(v)+'</span>').join(''),partes=[];if(x.evolucionClinica)partes.push('<p>'+esc(x.evolucionClinica)+'</p>');if(x.procedimientos)partes.push('<small><b>Procedimientos:</b> '+esc(x.procedimientos)+'</small>');if(x.medicamentosAdministrados)partes.push('<small><b>Medicamentos:</b> '+esc(x.medicamentosAdministrados)+'</small>');if(x.respuestaClinica)partes.push('<small><b>Respuesta:</b> '+esc(x.respuestaClinica)+'</small>');if(x.planConducta)partes.push('<small><b>Plan:</b> '+esc(x.planConducta)+'</small>');if(x.destino)partes.push('<small><b>Situación/destino:</b> '+esc(x.destino)+'</small>');const tieneSignos=['temperatura','pas','pad','pulso','frecuenciaRespiratoria','pulsioximetria','glicemia','llenadoCapilar'].some(k=>x[k]!==''&&x[k]!==null&&x[k]!==undefined);return '<article class="evolution-record"><div class="evolution-time"><b>'+esc(String(x.fechaRegistro||'').slice(0,10))+' '+esc(String(x.horaRegistro||'').slice(0,5))+'</b><small>'+esc(x.profesional||'')+'</small></div><div class="evolution-body"><div class="evolution-chips">'+chips+'</div>'+partes.join('')+'</div><div class="evolution-record-actions">'+(tieneSignos?'<button class="btn soft auto" type="button" onclick="aplicarEvolucionAClinica_(evolucionesEpisodio_['+i+'])">Aplicar signos</button>':'')+'</div></article>'}).join('');
+}
+function aplicarEvolucionAClinica_(x){
+  if(!x)return;const f=$('#clinicalForm');if(!f)return;['temperatura','pas','pad','pulso','frecuenciaRespiratoria','pulsioximetria','glicemia','llenadoCapilar'].forEach(k=>{const e=f.elements[k];if(e&&x[k]!==undefined&&x[k]!==null&&x[k]!=='')e.value=x[k]});actualizarValidacionVitalesUI_();$('#clinicalSection').classList.remove('hidden');mostrarClinical_(2);$('#evolutionSection').classList.add('hidden');$('#clinicalSection').scrollIntoView({behavior:'smooth',block:'start'});mostrarAviso_('Signos de la evolución aplicados a la atención actual.','info');
+}
+function cargarUltimosSignosEnEvolucion_(){
+  const f=$('#evolutionForm');if(!f)return;const tiene=x=>['temperatura','pas','pad','pulso','frecuenciaRespiratoria','pulsioximetria','glicemia','llenadoCapilar','glasgowTotal','glasgow'].some(k=>x&&x[k]!==undefined&&x[k]!==null&&x[k]!=='');const candidatos=[];(controlesSignosEpisodio_||[]).filter(tiene).forEach(x=>candidatos.push(x));(registrosCriticosEpisodio_||[]).filter(tiene).forEach(x=>candidatos.push(x));(triajesEpisodio_||[]).filter(tiene).forEach(x=>candidatos.push(x));(evolucionesEpisodio_||[]).filter(tiene).forEach(x=>candidatos.push(x));if(!candidatos.length)return alert('No hay signos vitales previos en este episodio.');const fecha=x=>String(x.fechaControl||x.fechaRegistro||x.fechaTriage||'').slice(0,10),hora=x=>String(x.horaControl||x.horaRegistro||x.horaTriage||'00:00').slice(0,5);candidatos.sort((a,b)=>(fecha(a)+'T'+hora(a)).localeCompare(fecha(b)+'T'+hora(b)));const x=candidatos[candidatos.length-1],mapa={temperatura:'temperatura',pas:'pas',pad:'pad',pulso:'pulso',frecuenciaRespiratoria:'frecuenciaRespiratoria',pulsioximetria:'pulsioximetria',glicemia:'glicemia',llenadoCapilar:'llenadoCapilar'};Object.keys(mapa).forEach(k=>{if(f.elements[mapa[k]]&&x[k]!==undefined&&x[k]!==null&&x[k]!=='')f.elements[mapa[k]].value=x[k]});if(f.elements.glasgowTotal&&x.glasgowTotal)f.elements.glasgowTotal.value=x.glasgowTotal;else if(f.elements.glasgowTotal&&x.glasgow)f.elements.glasgowTotal.value=x.glasgow;mostrarAviso_('Se cargaron los signos vitales más recientes del episodio.','info');
+}
+const reiniciarAtencionP15_=reiniciarAtencion_;
+reiniciarAtencion_=function(){reiniciarAtencionP15_();evolucionesEpisodio_=[];episodioFinalizadoActual_=false;const sec=$('#evolutionSection');if(sec)sec.classList.add('hidden');limpiarEvolucionObservacionForm_();actualizarBotonEvolucion_()};
+
+</script>

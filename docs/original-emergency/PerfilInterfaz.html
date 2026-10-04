@@ -1,0 +1,24 @@
+<main id="profilePage" class="app-main hidden">
+  <article class="section-card">
+    <div class="section-head profile-head"><i>♙</i><div><h2>Mi perfil profesional</h2><p>Actualice su información, acceso, firma y sello.</p></div></div>
+    <div class="section-body">
+      <form id="profileForm">
+        <div class="clinical-grid">
+          <div><label>Primer nombre *</label><input name="primerNombre" required></div><div><label>Segundo nombre</label><input name="segundoNombre"></div>
+          <div><label>Primer apellido *</label><input name="primerApellido" required></div><div><label>Segundo apellido</label><input name="segundoApellido"></div>
+          <div><label>Correo electrónico *</label><input name="correo" type="email" required></div><div><label>Cargo</label><input name="cargo" readonly class="readonly-field"></div>
+        </div>
+        <section class="profile-establishments">
+          <h3>Establecimientos autorizados</h3>
+          <p>Estas unidades son asignadas por la administración del sistema. Desde el perfil puede consultarlas, pero no agregarlas ni retirarlas.</p>
+          <div id="profileEstList" class="account-establishment-list"></div>
+        </section>
+        <div class="profile-security"><h3>Cambiar contraseña</h3><p>Déjela vacía si desea conservar su contraseña actual.</p><div class="clinical-grid"><div><label>Clave actual</label><input name="claveActual" type="password"></div><div><label>Nueva clave</label><input name="nuevaClave" type="password" minlength="6"></div><div><label>Confirmar nueva clave</label><input name="confirmarClave" type="password" minlength="6"></div></div></div>
+        <div class="profile-images"><div><h3>Firma profesional</h3><div class="signature-method-choice"><label><input type="radio" name="profileSignatureMethod" value="IMAGE" checked onchange="seleccionarMetodoFirma_('profile','IMAGE')"><span>▣</span><b>Subir imagen</b></label><label><input type="radio" name="profileSignatureMethod" value="DRAW" onchange="seleccionarMetodoFirma_('profile','DRAW')"><span>✎</span><b>Dibujar firma</b></label></div><div id="profileSignatureImage" class="signature-method-panel"><input id="profileFirmaFile" type="file" accept="image/*"><canvas id="profileFirmaCanvas" class="signature-preview"></canvas></div><div id="profileSignatureDraw" class="signature-draw-panel hidden"><p>Dibuje lentamente dentro del recuadro.</p><canvas id="profileSignaturePad" class="signature-pad"></canvas><div><button class="btn soft" type="button" onclick="limpiarLienzoFirma_('profileSignaturePad')">Limpiar</button><button class="btn primary auto" type="button" onclick="usarFirmaDibujada_('profileSignaturePad','profileFirmaCanvas')">Usar esta firma</button></div></div></div><div><h3>Sello profesional</h3><input id="profileSelloFile" type="file" accept="image/*"><canvas id="profileSelloCanvas" class="signature-preview"></canvas></div></div>
+        <div class="background-control profile-background"><label>Quitar fondo de las imágenes: <b id="profileThresholdValue">0</b></label><input id="profileBackgroundThreshold" type="range" min="0" max="255" value="0" step="1"></div>
+        <div class="actions profile-actions"><button class="btn soft" type="button" onclick="volverMenu_()">Cancelar</button><button id="profileSave" class="btn primary auto" type="submit">Guardar cambios</button></div><div id="profileStatus" class="selected-place hidden"></div>
+      </form>
+      <section class="danger-zone"><h3>Eliminar cuenta</h3><p>Se enviará un código al correo registrado. La cuenta quedará desactivada conservando la trazabilidad de las historias clínicas.</p><button class="remove-btn" type="button" onclick="solicitarEliminarCuentaUI_()">Enviar código de eliminación</button><div id="deleteAccountConfirm" class="hidden"><label>Código recibido</label><input id="deleteAccountCode" inputmode="numeric" maxlength="6"><button class="remove-btn" type="button" onclick="confirmarEliminarCuentaUI_()">Confirmar eliminación de cuenta</button></div><div id="deleteAccountStatus" class="selected-place hidden"></div></section>
+    </div>
+  </article>
+</main>
