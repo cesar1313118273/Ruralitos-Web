@@ -16,6 +16,17 @@ Plataforma web multiservicios para centros de salud rurales.
 3. Estadisticas
 4. Administracion tecnica
 
+## Consulta externa: atenciones diarias
+
+La ruta `/consulta-externa/atenciones-diarias` muestra el HTML original del
+sistema intramural, sin sustituir sus formularios por otros. La correspondencia
+de roles, horarios y estados está documentada en
+`docs/consulta-externa-atenciones-diarias.md`.
+
+**Estado actual:** la vista es verificable, pero el inicio de sesión, la
+colaboración y el guardado permanecen deshabilitados hasta conectar el backend
+al almacén acordado. No introduzcas datos reales de pacientes en esta etapa.
+
 ## Desarrollo local
 
 ### Frontend

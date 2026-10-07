@@ -1,0 +1,7635 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root{--bg:#f4f7f9;--card:#fff;--tx:#17212b;--mu:#66727e;--bd:#dde4ea;--ac:#0f766e;--ac2:#115e59;--err:#b91c1c;--errbg:#fee2e2;--ok:#15803d;--okbg:#dcfce7;--warn:#b45309;--warnbg:#fef3c7;--blue:#1d4ed8;--bluebg:#dbeafe;--shadow:0 8px 28px rgba(15,23,42,.06)}
+    *{box-sizing:border-box}body{font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--tx);margin:0;min-height:100vh;font-size:13px}button,input,select{font:inherit;font-size:12px}
+    .center{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}.box{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:28px 24px;max-width:390px;width:100%;box-shadow:var(--shadow)}
+    h1{font-size:18px;margin:0 0 4px}h2{font-size:18px;margin:0}.sub,.mu{color:var(--mu);font-size:11px}.sub{margin:0 0 18px}label{display:block;font-size:11px;color:var(--mu);margin:12px 0 5px}
+    input,select{width:100%;padding:9px 10px;border:1px solid var(--bd);border-radius:9px;background:#fff;color:var(--tx)}button{border:none;border-radius:9px;background:var(--ac);color:#fff;padding:9px 12px;font-weight:650;cursor:pointer}button:hover{background:var(--ac2)}button:disabled{opacity:.55;cursor:default}
+    form>button{width:100%;margin-top:18px}.link{background:none!important;border:none;color:var(--ac);font-size:13px;margin-top:14px;width:auto;padding:0;font-weight:400;text-decoration:underline;display:block}.msg{font-size:13px;border-radius:8px;padding:8px 10px;margin-top:12px}.msg.err{background:var(--errbg);color:var(--err)}.msg.ok{background:var(--okbg);color:var(--ok)}
+    header{background:var(--card);border-bottom:1px solid var(--bd);padding:12px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;position:sticky;top:0;z-index:10}header b{display:block;font-size:13px}header span{color:var(--mu);font-size:11px}.rolchip{font-size:12px;font-weight:700;padding:4px 10px;border-radius:99px;background:var(--okbg);color:var(--ok)!important}.rolchip.licenciada{background:var(--warnbg);color:var(--warn)!important}.rolchip.medico{background:var(--bluebg);color:var(--blue)!important}.salir{background:#fff;color:var(--mu);border:1px solid var(--bd);font-weight:500}
+    main{padding:22px 16px 50px;max-width:1180px;margin:0 auto}#app{display:none}.vista{display:none}.vista.activa{display:block}.toolbar,.backbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.backbar{margin-bottom:12px}.backbar button,.secundario{background:#fff;color:var(--tx);border:1px solid var(--bd);font-weight:500}.peligro{background:#fff;color:var(--err);border:1px solid #fecaca}.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:16px}.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:17px;cursor:pointer;text-align:left;color:var(--tx);box-shadow:var(--shadow)}.card:hover{background:#fff;border-color:#b9c6d2}.card b{display:block;font-size:15px;margin-bottom:4px}.card span{color:var(--mu);font-size:13px}.nueva{border:1px dashed #aab8c5;background:transparent;color:var(--ac);box-shadow:none}.panel{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:17px;margin-top:14px;max-width:580px;box-shadow:var(--shadow)}.fila-form{display:flex;gap:10px}.fila-form>div{flex:1}
+    .agenda-wrap{background:var(--card);border:1px solid var(--bd);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}.agenda-head,.agenda-row{display:grid;grid-template-columns:105px minmax(165px,1.25fr) minmax(180px,.95fr) 120px 138px 150px;gap:6px;align-items:center;padding:7px 8px}.agenda-head{background:#eef4f6;font-size:10px;font-weight:750;color:var(--mu);text-transform:uppercase}.agenda-row{border-top:1px solid var(--bd);min-height:50px;font-size:12px}.agenda-row.preparado{background:#f0fdf4}.agenda-row.atendido{background:#f8fafc}.agenda-row.almuerzo{display:flex;justify-content:center;gap:12px;background:#f1f5f9;color:var(--mu);font-weight:700}.hora{font-variant-numeric:tabular-nums;font-weight:700}.celda-flex{display:flex;gap:6px;align-items:center;min-width:0}.celda-flex input,.celda-flex select{min-width:0}.badge{display:inline-block;font-size:11px;font-weight:700;border-radius:99px;padding:3px 8px;background:#eef2f7;color:#51606f}.badge.listo_consulta{background:var(--okbg);color:var(--ok)}.badge.en_consulta{background:var(--bluebg);color:var(--blue)}.badge.atendido{background:#e2e8f0;color:#334155}.badge.pendiente_signos{background:var(--warnbg);color:var(--warn)}.check{width:22px;height:22px}.acciones{display:flex;gap:6px;flex-wrap:wrap}.acciones button{font-size:11px;padding:5px 7px}.mini{font-size:11px}.identificacion-input{font-size:12px!important;letter-spacing:.15px;padding-left:8px!important;padding-right:8px!important}.autosave{font-size:10px;color:var(--mu);white-space:nowrap}.autosave.guardando{color:var(--warn)}.autosave.guardado{color:var(--ok)}.autosave.error{color:var(--err)}
+    .paciente-cell{display:flex;flex-direction:column;gap:5px;min-width:0}.vital-toggle{align-self:flex-start;background:#fff!important;color:var(--ac)!important;border:1px solid #b7d8d4!important;padding:4px 7px!important;font-size:10px!important;font-weight:700!important}
+    .agenda-item{border-top:0}.vital-panel{display:none;border-top:1px dashed #cbd5e1;background:#f8fbfc;padding:12px 14px}.vital-panel.visible{display:block}.vital-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.vital-title b{font-size:12px}.vital-grid{display:grid;grid-template-columns:repeat(3,minmax(145px,1fr));gap:9px}.vital-field{min-width:0}.vital-field label{margin:0 0 4px;font-size:10px}.vital-field input{font-size:12px;padding:7px 8px}.vital-read{min-height:34px;border:1px solid var(--bd);border-radius:8px;background:#fff;padding:8px;font-size:12px;font-variant-numeric:tabular-nums}.vital-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}.vital-unit{color:var(--mu);font-size:10px}.estado-pendiente{font-size:10px;color:var(--mu)}
+    .vacio{padding:24px;color:var(--mu);text-align:center}.hist-item{background:#fff;border:1px solid var(--bd);border-radius:10px;padding:10px 12px;margin:8px 0}.hist-item b{display:block}.hist-meta{color:var(--mu);font-size:12px;margin-top:3px}
+    .toast{position:fixed;right:18px;top:82px;z-index:9999;max-width:min(420px,calc(100vw - 36px));padding:11px 14px;border-radius:10px;border:1px solid var(--bd);background:#fff;box-shadow:0 14px 40px rgba(15,23,42,.18);font-size:13px;display:none}.toast.visible{display:block}.toast.err{background:var(--errbg);border-color:#fecaca;color:var(--err)}.toast.ok{background:var(--okbg);border-color:#bbf7d0;color:var(--ok)}
+    @media(max-width:900px){.agenda-head{display:none}.agenda-row{display:flex;flex-direction:column;align-items:stretch;gap:8px}.agenda-row.almuerzo{flex-direction:row}.hora{font-size:14px}.agenda-row>*{width:100%}.fila-form{flex-direction:column}.vital-grid{grid-template-columns:1fr 1fr}}@media(max-width:560px){.vital-grid{grid-template-columns:1fr}}
+
+    /* Navegación horizontal compacta */
+    .app-nav{display:flex;gap:6px;align-items:center;overflow-x:auto;padding:2px 0 10px;scrollbar-width:thin}.nav-btn{white-space:nowrap;background:#fff;color:var(--tx);border:1px solid var(--bd);padding:7px 11px;font-weight:600}.nav-btn.activo{background:var(--ac);border-color:var(--ac);color:#fff}.nav-btn.crear{border-style:dashed;color:var(--ac);background:#fff}.nav-title{font-size:10px;color:var(--mu);font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 5px}.nav-strip{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px;scrollbar-width:thin}.tab-btn{white-space:nowrap;background:#fff;color:var(--tx);border:1px solid var(--bd);padding:7px 10px;font-weight:600}.tab-btn.activo{background:#e6f3f1;border-color:#8bc5be;color:var(--ac2)}.tab-btn.add{border-style:dashed;color:var(--ac)}
+    .workspace{min-width:0}.agenda-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:8px 0 10px}.agenda-toolbar .fecha-nav{display:flex;align-items:center;gap:6px}.agenda-toolbar input[type=date]{width:auto;min-width:145px}.jornada-cerrada{background:#f1f5f9;border:1px solid var(--bd);color:#475569;padding:8px 10px;border-radius:9px;font-size:11px;font-weight:650}.jornada-futura{background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;padding:8px 10px;border-radius:9px;font-size:11px;font-weight:650}
+    .inline-form{background:#fff;border:1px solid var(--bd);border-radius:12px;padding:14px;margin:8px 0 12px}.inline-form h3{font-size:14px;margin:0 0 8px}.inline-form .form-actions{display:flex;gap:7px;margin-top:12px}.inline-form .form-actions button{width:auto}
+    .history-filter{display:flex;align-items:end;gap:8px;flex-wrap:wrap;background:#fff;border:1px solid var(--bd);border-radius:12px;padding:12px;margin:8px 0 12px}.history-filter label{margin:0 0 4px}.history-filter input{width:auto;min-width:170px}.history-table-wrap{overflow-x:auto;background:#fff;border:1px solid var(--bd);border-radius:12px}.history-table{width:100%;border-collapse:collapse;min-width:920px}.history-table th,.history-table td{padding:8px 9px;border-bottom:1px solid var(--bd);font-size:11px;text-align:left;vertical-align:top}.history-table th{background:#eef4f6;color:var(--mu);font-size:10px;text-transform:uppercase;position:sticky;top:0}.history-table tr:last-child td{border-bottom:0}.history-signos{display:none;background:#f8fbfc}.history-signos.visible{display:table-row}.signos-linea{display:grid;grid-template-columns:repeat(3,minmax(140px,1fr));gap:6px;padding:7px 0}.signo-chip{border:1px solid var(--bd);background:#fff;border-radius:8px;padding:6px 8px;font-size:11px}.signo-chip b{display:block;font-size:9px;color:var(--mu);text-transform:uppercase;margin-bottom:2px}
+    .check-wrap{display:flex;align-items:center;gap:6px}.check-label{font-size:10px;color:var(--mu);font-weight:650}.draft-note{font-size:10px;color:var(--warn);font-weight:650}.locked-input{background:#f8fafc!important;color:#64748b!important}
+    @media(max-width:700px){.signos-linea{grid-template-columns:1fr 1fr}.app-nav,.nav-strip{padding-bottom:6px}.agenda-toolbar{align-items:stretch}.agenda-toolbar .fecha-nav{width:100%}.agenda-toolbar input[type=date]{flex:1}}
+
+  
+    /* ===== Neurodesarrollo · solo médico ===== */
+    .neuro-shell{display:grid;gap:12px}
+    .neuro-top{display:flex;align-items:end;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid var(--bd);border-radius:12px;padding:12px}
+    .neuro-top>div{min-width:180px}
+    .neuro-top label{margin:0 0 4px}
+    .neuro-top input,.neuro-top select{width:100%}
+    .neuro-summary{font-size:11px;color:var(--mu);padding-bottom:8px}
+    .neuro-form{background:#fff;border:1px solid var(--bd);border-radius:12px;padding:14px}
+    .neuro-form h3{margin:0 0 4px;font-size:15px}
+    .neuro-identidad{display:grid;grid-template-columns:minmax(220px,1.4fr) minmax(150px,.7fr) minmax(130px,.6fr);gap:8px;margin:10px 0 14px}
+    .neuro-read{border:1px solid var(--bd);background:#f8fafc;border-radius:9px;padding:8px 9px;font-size:12px;min-height:38px}
+    .neuro-grid{display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:10px}
+    .neuro-field label{margin:0 0 4px;font-size:11px}
+    .neuro-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:14px}
+    .neuro-actions button{width:auto}
+    .neuro-existing{background:var(--bluebg);color:var(--blue);border-radius:8px;padding:8px 10px;font-size:11px;margin:8px 0}
+    .neuro-empty{padding:22px;text-align:center;color:var(--mu);border:1px dashed var(--bd);border-radius:12px;background:#fff}
+    @media(max-width:760px){.neuro-identidad,.neuro-grid{grid-template-columns:1fr}}
+
+  
+    /* ===== Neurodesarrollo V2 ===== */
+    .neuro-subnav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+    .neuro-subnav button{width:auto;padding:7px 12px;background:#fff;color:var(--mu);border:1px solid var(--bd)}
+    .neuro-subnav button.activo{background:var(--ac);border-color:var(--ac);color:#fff}
+    .neuro-stats-controls{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:12px}
+    .neuro-stats-controls>div{min-width:180px}
+    .neuro-doctors{display:flex;gap:6px;flex-wrap:wrap;max-width:100%}
+    .neuro-doctor-check{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--bd);border-radius:999px;padding:6px 9px;background:#fff;font-size:11px}
+    .neuro-doctor-check input{width:auto;margin:0}
+    .neuro-kpis{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
+    .neuro-kpi{background:#fff;border:1px solid var(--bd);border-radius:10px;padding:10px 13px;min-width:150px}
+    .neuro-kpi b{font-size:21px;display:block}
+    .neuro-kpi span{font-size:11px;color:var(--mu)}
+    .neuro-table-wrap{overflow-x:auto;border:1px solid var(--bd);border-radius:12px;background:#fff}
+    .neuro-table{width:100%;border-collapse:collapse;min-width:1050px;font-size:11px}
+    .neuro-table th,.neuro-table td{padding:8px 9px;border-bottom:1px solid var(--bd);text-align:left;vertical-align:top}
+    .neuro-table th{background:#eef4f6;color:var(--mu);font-size:10px;text-transform:uppercase;position:sticky;top:0}
+    .neuro-optional{font-size:9px;color:var(--mu);font-weight:400;margin-left:4px}
+
+  
+    /* ===== Perfil médico y certificados ===== */
+    .profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.profile-card{background:#fff;border:1px solid var(--bd);border-radius:12px;padding:13px;min-width:0}.profile-card h3{margin:0 0 4px;font-size:14px}.profile-meta{font-size:11px;color:var(--mu);margin-bottom:12px}.img-editor{border:1px solid var(--bd);border-radius:11px;padding:10px;background:#fbfdfe}.img-editor-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px}.img-editor-preview{min-height:150px;display:flex;align-items:center;justify-content:center;border:1px dashed var(--bd);border-radius:9px;overflow:hidden;background-color:#fff;background-image:linear-gradient(45deg,#eef2f4 25%,transparent 25%),linear-gradient(-45deg,#eef2f4 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#eef2f4 75%),linear-gradient(-45deg,transparent 75%,#eef2f4 75%);background-size:18px 18px;background-position:0 0,0 9px,9px -9px,-9px 0}.img-editor-preview canvas{display:block;max-width:100%;max-height:210px}.img-editor-empty{font-size:11px;color:var(--mu);padding:24px;text-align:center}.img-slider{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;margin-top:9px}.img-slider input[type=range]{width:100%;padding:0}.img-editor-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}.img-editor-actions button{width:auto}.profile-savebar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}.profile-savebar button{width:auto}.cert-shell{display:grid;gap:12px}.cert-toolbar{display:flex;align-items:end;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid var(--bd);border-radius:12px;padding:12px}.cert-toolbar>div{min-width:190px}.cert-form{background:#fff;border:1px solid var(--bd);border-radius:12px;padding:14px}.cert-patient{display:grid;grid-template-columns:1.35fr .8fr .72fr .62fr .8fr;gap:8px;margin-bottom:12px}.cert-read{border:1px solid var(--bd);border-radius:8px;background:#f8fafc;padding:8px;min-height:36px;font-size:12px}.cert-grid{display:grid;grid-template-columns:repeat(2,minmax(200px,1fr));gap:10px}.cert-rest{display:grid;grid-template-columns:1fr 1fr;gap:10px}.dx-list{display:grid;gap:7px;margin-top:12px}.dx-row{display:grid;grid-template-columns:130px 1fr;gap:8px}.cert-note{font-size:10px;color:var(--mu);margin-top:5px}.cert-status{padding:8px 10px;border-radius:8px;background:#f8fafc;border:1px solid var(--bd);font-size:11px}.cert-status.warn{background:#fff7ed;border-color:#fed7aa;color:#9a3412}.cert-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:13px}.cert-actions button{width:auto}@media(max-width:760px){.profile-grid,.cert-grid,.cert-rest,.cert-patient,.dx-row{grid-template-columns:1fr}}
+
+  
+    /* ===== Confirmación administrativa con contraseña ===== */
+    .confirm-pass-overlay{
+      position:fixed;inset:0;z-index:10000;
+      background:rgba(15,23,42,.48);
+      display:flex;align-items:center;justify-content:center;
+      padding:18px;
+    }
+    .confirm-pass-box{
+      width:min(430px,100%);
+      background:#fff;border:1px solid var(--bd);
+      border-radius:14px;padding:18px;
+      box-shadow:0 22px 60px rgba(15,23,42,.26);
+    }
+    .confirm-pass-box h3{margin:0 0 7px;font-size:16px}
+    .confirm-pass-box p{margin:0 0 13px;color:var(--mu);font-size:12px;line-height:1.45}
+    .confirm-pass-box label{margin-top:8px}
+    .confirm-pass-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+    .confirm-pass-actions button{width:auto}
+
+  
+    /* =====================================================================
+       UI PROFESIONAL MENTA · 2026
+       Capa visual. No altera la lógica funcional.
+       ===================================================================== */
+
+    :root{
+      --bg:#f3fbfc;
+      --card:#ffffff;
+      --tx:#0d2850;
+      --mu:#7184a3;
+      --bd:#d9e8ef;
+      --ac:#08a89b;
+      --ac2:#057f79;
+      --ac3:#12c6ae;
+      --soft:#ecfbf8;
+      --soft2:#f5fbff;
+      --navy:#0b2b59;
+      --err:#d14343;
+      --errbg:#fff0f0;
+      --ok:#0da979;
+      --okbg:#e8fbf4;
+      --warn:#c77a12;
+      --warnbg:#fff8e8;
+      --blue:#2874d8;
+      --bluebg:#eaf3ff;
+      --shadow:0 12px 34px rgba(39,83,111,.10);
+      --shadow-lg:0 24px 70px rgba(29,85,104,.14);
+      --radius:18px;
+    }
+
+    html{background:#f3fbfc}
+    body{
+      font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+      background:
+        radial-gradient(circle at 88% 8%,rgba(69,218,204,.18),transparent 23%),
+        radial-gradient(circle at 7% 72%,rgba(64,198,214,.12),transparent 24%),
+        linear-gradient(145deg,#f8fdff 0%,#f3fbfc 46%,#edf9fb 100%);
+      color:var(--tx);
+      font-size:13px;
+      min-height:100vh;
+    }
+
+    body::before{
+      content:"";
+      position:fixed;
+      pointer-events:none;
+      z-index:0;
+      width:560px;
+      height:220px;
+      right:-110px;
+      top:82px;
+      border-radius:50%;
+      border:46px solid rgba(58,210,196,.08);
+      transform:rotate(-12deg);
+    }
+
+    button,input,select,textarea{font-family:inherit}
+    button{
+      transition:transform .16s ease,box-shadow .16s ease,background .16s ease,border-color .16s ease;
+    }
+    button:hover:not(:disabled){transform:translateY(-1px)}
+    button:active:not(:disabled){transform:translateY(0)}
+    input,select,textarea{
+      min-height:42px;
+      border:1px solid #d7e5ee;
+      border-radius:10px;
+      color:var(--navy);
+      background:#fff;
+      outline:none;
+      transition:border-color .16s ease,box-shadow .16s ease,background .16s ease;
+    }
+    textarea{width:100%;padding:10px 12px;resize:vertical}
+    input:focus,select:focus,textarea:focus{
+      border-color:#69d6ca;
+      box-shadow:0 0 0 3px rgba(17,181,165,.10);
+    }
+
+    /* ---------- LOGIN / REGISTRO ---------- */
+    .center{
+      position:relative;
+      z-index:1;
+      min-height:100vh;
+      padding:34px 22px;
+    }
+
+    #auth::before,
+    #auth::after{
+      content:"";
+      position:absolute;
+      pointer-events:none;
+      border-radius:999px;
+      opacity:.85;
+    }
+    #auth::before{
+      width:720px;height:210px;
+      left:-190px;bottom:20px;
+      border:34px solid rgba(36,205,190,.16);
+      transform:rotate(12deg);
+    }
+    #auth::after{
+      width:390px;height:390px;
+      right:-160px;top:-155px;
+      background:rgba(43,212,197,.07);
+    }
+
+    .auth-shell{
+      display:grid;
+      grid-template-columns:minmax(0,1.3fr) minmax(300px,.7fr);
+      width:min(980px,100%);
+      border:1px solid rgba(211,231,238,.92);
+      border-radius:24px;
+      overflow:hidden;
+      background:rgba(255,255,255,.93);
+      box-shadow:var(--shadow-lg);
+      backdrop-filter:blur(12px);
+    }
+
+    .box{
+      max-width:none;
+      width:100%;
+      border:0;
+      border-radius:0;
+      box-shadow:none;
+      padding:38px 42px 34px;
+      background:transparent;
+    }
+
+    .auth-brand-mobile{
+      display:flex;
+      align-items:center;
+      gap:14px;
+      margin-bottom:30px;
+    }
+    .auth-brand-mobile strong{
+      display:block;
+      color:var(--navy);
+      font-size:19px;
+      line-height:1.2;
+    }
+    .auth-brand-mobile span{
+      display:block;
+      color:var(--mu);
+      margin-top:4px;
+      font-size:11px;
+    }
+
+    .medical-logo{
+      width:50px;height:50px;
+      display:grid;
+      place-items:center;
+      flex:0 0 auto;
+      border-radius:15px;
+      color:white;
+      font-size:29px;
+      font-weight:900;
+      line-height:1;
+      background:
+        linear-gradient(145deg,#15c8b5,#048f87);
+      box-shadow:
+        inset 0 0 0 7px rgba(255,255,255,.55),
+        0 8px 20px rgba(12,169,157,.18);
+    }
+    .medical-logo.large{width:58px;height:58px;border-radius:17px}
+    .medical-logo.header-logo{width:44px;height:44px;border-radius:13px;font-size:25px}
+
+    #auth h1{
+      color:var(--navy);
+      font-size:25px;
+      letter-spacing:-.02em;
+      margin-bottom:5px;
+    }
+    #auth .sub{
+      font-size:12px;
+      margin-bottom:22px;
+    }
+    #auth label{
+      color:var(--navy);
+      font-size:12px;
+      font-weight:700;
+      margin-top:14px;
+    }
+    #auth input,#auth select{
+      min-height:48px;
+      padding:11px 13px;
+      font-size:13px;
+      border-radius:11px;
+    }
+    #auth form>button{
+      min-height:50px;
+      margin-top:22px;
+      border-radius:11px;
+      background:linear-gradient(135deg,#10baa8,#058d87);
+      box-shadow:0 10px 22px rgba(7,145,135,.18);
+      font-size:14px;
+    }
+    #auth .link{
+      display:inline-block;
+      margin-right:18px;
+      margin-top:14px;
+      color:#078f86;
+      font-weight:650;
+      text-decoration:none;
+    }
+    #auth .link:hover{text-decoration:underline}
+
+    .auth-side{
+      position:relative;
+      display:flex;
+      flex-direction:column;
+      gap:13px;
+      padding:38px 30px;
+      background:
+        linear-gradient(150deg,rgba(245,254,253,.92),rgba(237,249,252,.96));
+      border-left:1px solid #e2eef3;
+      overflow:hidden;
+    }
+    .auth-side::before{
+      content:"+";
+      position:absolute;
+      right:-18px;top:28px;
+      font-size:150px;
+      font-weight:900;
+      line-height:1;
+      color:rgba(31,201,185,.08);
+    }
+    .auth-side-head{
+      display:flex;gap:13px;align-items:center;
+      margin-bottom:14px;
+      position:relative;z-index:1;
+    }
+    .auth-side-head strong{
+      display:block;color:var(--navy);font-size:16px;
+    }
+    .auth-side-head span{
+      display:block;color:var(--mu);font-size:10px;margin-top:3px;
+    }
+    .auth-feature{
+      position:relative;z-index:1;
+      display:flex;align-items:center;gap:13px;
+      padding:13px;
+      border-radius:14px;
+      background:rgba(255,255,255,.77);
+      border:1px solid rgba(219,237,241,.88);
+    }
+    .feature-icon{
+      display:grid;place-items:center;
+      width:46px;height:46px;
+      border-radius:13px;
+      flex:0 0 auto;
+      background:linear-gradient(145deg,#e1fbf5,#d6f5f2);
+      color:#07988d;
+      font-size:20px;
+      font-weight:800;
+    }
+    .auth-feature b{display:block;font-size:12px;color:var(--navy)}
+    .auth-feature span{display:block;font-size:10px;color:var(--mu);line-height:1.4;margin-top:3px}
+    .auth-security{
+      margin-top:auto;
+      padding-top:16px;
+      border-top:1px solid #dcebed;
+      color:#617899;
+      font-size:10px;
+      text-align:center;
+    }
+
+    /* ---------- HEADER ---------- */
+    #app{position:relative;z-index:1}
+    header{
+      width:min(1560px,calc(100% - 32px));
+      margin:14px auto 0;
+      padding:12px 16px;
+      border:1px solid rgba(215,231,238,.95);
+      border-radius:16px;
+      background:rgba(255,255,255,.94);
+      box-shadow:0 8px 26px rgba(43,88,114,.08);
+      backdrop-filter:blur(12px);
+      position:sticky;
+      top:10px;
+    }
+    .header-brand{display:flex;align-items:center;gap:12px;min-width:0}
+    .header-titles{min-width:0}
+    header b{
+      color:var(--navy);
+      font-size:16px;
+      letter-spacing:-.015em;
+    }
+    header span{font-size:11px;color:#6e84a3}
+    .header-actions{margin-left:auto}
+    .rolchip{
+      display:inline-flex;align-items:center;gap:6px;
+      min-height:36px;
+      padding:7px 15px;
+      background:#ddfaee;
+      color:#067d64!important;
+      border:1px solid #cbf2e4;
+      font-size:11px;
+      font-weight:800;
+    }
+    .rolchip::before{content:"○";font-size:15px;font-weight:900}
+    .rolchip.licenciada{background:#fff8e9;color:#a76609!important;border-color:#ffe9bf}
+    .rolchip.medico{background:#eaf5ff;color:#2169bb!important;border-color:#d6e9ff}
+    .salir{
+      min-height:36px;
+      border-radius:10px;
+      background:#fff!important;
+      color:var(--navy)!important;
+      border:1px solid #d9e6ee!important;
+      padding:8px 14px;
+      font-weight:700;
+    }
+
+    /* ---------- CONTENEDOR GENERAL ---------- */
+    main{
+      max-width:1560px;
+      padding:20px 16px 54px;
+    }
+    .app-nav{
+      gap:10px;
+      padding:0 2px 15px;
+      scrollbar-width:none;
+    }
+    .app-nav::-webkit-scrollbar{display:none}
+    .nav-btn{
+      display:inline-flex;
+      align-items:center;
+      gap:9px;
+      min-height:48px;
+      border-radius:12px;
+      padding:10px 18px;
+      border:1px solid #dce8ef;
+      background:rgba(255,255,255,.94);
+      color:#18375f;
+      box-shadow:0 4px 14px rgba(42,89,114,.04);
+      font-size:12px;
+      font-weight:750;
+    }
+    .nav-btn[data-icon]::before{
+      content:attr(data-icon);
+      display:grid;
+      place-items:center;
+      width:22px;height:22px;
+      color:#1e5b92;
+      font-size:16px;
+      font-weight:900;
+    }
+    .nav-btn.activo{
+      background:linear-gradient(135deg,#13b6a8,#038f88);
+      border-color:#099a90;
+      color:#fff;
+      box-shadow:0 9px 20px rgba(5,143,136,.18);
+    }
+    .nav-btn.activo::before{color:#fff}
+
+    .workspace{
+      position:relative;
+      overflow:hidden;
+      min-height:360px;
+      border:1px solid rgba(215,233,239,.98);
+      border-radius:20px;
+      padding:20px;
+      background:rgba(255,255,255,.92);
+      box-shadow:var(--shadow);
+    }
+    .workspace::after{
+      content:"";
+      position:absolute;
+      pointer-events:none;
+      z-index:0;
+      width:370px;height:170px;
+      right:-40px;top:-15px;
+      border:30px solid rgba(46,209,193,.055);
+      border-radius:50%;
+      transform:rotate(8deg);
+    }
+    .workspace>*{position:relative;z-index:1}
+
+    .section-hero{
+      display:flex;
+      align-items:center;
+      gap:13px;
+      padding:3px 1px 16px;
+      border-bottom:1px solid #e6eff3;
+      margin-bottom:16px;
+    }
+    .section-hero h2{
+      color:var(--navy);
+      font-size:22px;
+      letter-spacing:-.025em;
+    }
+    .section-icon{
+      display:grid;place-items:center;
+      width:46px;height:46px;
+      flex:0 0 auto;
+      border-radius:50%;
+      background:linear-gradient(145deg,#e2faf6,#d7f5f2);
+      color:#07978c;
+      font-size:20px;
+      font-weight:900;
+    }
+
+    /* ---------- ESPECIALIDADES / CONSULTORIOS ---------- */
+    .nav-title{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      margin:2px 0 8px;
+      color:#466488;
+      font-size:11px;
+      font-weight:850;
+      letter-spacing:.035em;
+    }
+    .nav-title::before{
+      content:"";
+      width:8px;height:8px;
+      border:2px solid #2e789e;
+      border-radius:50%;
+    }
+    .nav-strip{
+      gap:10px;
+      padding:0 0 18px;
+      scrollbar-width:none;
+    }
+    .nav-strip::-webkit-scrollbar{display:none}
+    .tab-btn{
+      min-height:43px;
+      padding:9px 18px;
+      border-radius:11px;
+      border:1px solid #d7e6ed;
+      background:#fff;
+      color:#25486e;
+      font-size:12px;
+      font-weight:750;
+      box-shadow:0 3px 10px rgba(44,91,115,.035);
+    }
+    .tab-btn.activo{
+      color:#fff;
+      background:linear-gradient(135deg,#12b5a7,#048d86);
+      border-color:#07968d;
+      box-shadow:0 8px 18px rgba(6,151,141,.17);
+    }
+    .tab-btn.add{
+      color:#078d84;
+      background:#fbfffe;
+      border:1px dashed #9fd8d2;
+    }
+    .peligro{
+      color:#bd3e45!important;
+      background:#fff7f7!important;
+      border:1px solid #ffd5d8!important;
+    }
+
+    /* ---------- AGENDA ---------- */
+    .agenda-toolbar{
+      margin:0 -20px 12px;
+      padding:16px 20px;
+      background:linear-gradient(90deg,rgba(245,253,252,.98),rgba(255,255,255,.96));
+      border-top:1px solid #edf4f6;
+      border-bottom:1px solid #e3edf1;
+    }
+    .agenda-toolbar h2{
+      color:var(--navy);
+      font-size:22px;
+      letter-spacing:-.03em;
+    }
+    .agenda-toolbar .mu{font-size:12px;margin-top:2px;color:#7690ae}
+    .fecha-nav button,.agenda-toolbar button{
+      min-height:40px;
+      border-radius:10px;
+    }
+    .agenda-toolbar input[type=date]{
+      min-height:40px;
+      border-radius:10px;
+      color:#173a62;
+      font-weight:650;
+    }
+
+    .agenda-wrap{
+      border-radius:15px;
+      border:1px solid #dce9ee;
+      box-shadow:none;
+      overflow:hidden;
+    }
+    .agenda-head{
+      min-height:47px;
+      padding:9px 12px;
+      background:linear-gradient(180deg,#eff8fb,#ebf5f7);
+      color:#496787;
+      font-size:9.5px;
+      letter-spacing:.02em;
+    }
+    .agenda-row{
+      padding:8px 12px;
+      min-height:59px;
+      border-top:1px solid #e5eef2;
+      transition:background .15s ease;
+    }
+    .agenda-row:hover{background:#fbfefe}
+    .agenda-row.preparado{background:#f1fcf8}
+    .agenda-row.atendido{background:#f8fbfc}
+    .agenda-row.almuerzo{
+      padding:13px;
+      background:linear-gradient(90deg,#f3f8fa,#f8fbfc);
+      color:#6d849e;
+    }
+    .hora{
+      color:#173a61;
+      font-size:12px;
+      font-weight:850;
+    }
+    .agenda-row input,.agenda-row select{
+      min-height:39px;
+      border-radius:9px;
+      background:#fff;
+    }
+    .agenda-row input::placeholder{color:#9bacbf}
+    .autosave.guardado::before,
+    .autosave:not(.guardando):not(.error)::before{
+      content:"✓";
+      display:inline-grid;
+      place-items:center;
+      width:16px;height:16px;
+      margin-right:5px;
+      border-radius:50%;
+      background:#3bc18d;
+      color:white;
+      font-size:10px;
+      font-weight:900;
+    }
+    .badge{
+      padding:5px 10px;
+      font-size:10px;
+    }
+    .badge.atendido{
+      background:#def8ec;
+      color:#078860;
+    }
+
+    /* ---------- SIGNOS VITALES ---------- */
+    .vital-panel{
+      padding:16px;
+      background:linear-gradient(180deg,#fbfefe,#f5fbfc);
+    }
+    .vital-grid{gap:11px}
+    .vital-read,.cert-read,.neuro-read{
+      border-color:#dce8ef;
+      background:#f9fcfd;
+    }
+
+    /* ---------- PACIENTES ATENDIDOS ---------- */
+    .history-filter{
+      padding:14px;
+      margin:0 0 16px;
+      border-radius:14px;
+      background:linear-gradient(180deg,#fff,#fbfefe);
+      border-color:#dbe9ef;
+      gap:12px;
+    }
+    .history-filter>div{min-width:210px}
+    .history-filter button{
+      min-width:140px;
+      min-height:42px;
+      background:linear-gradient(135deg,#13b6a7,#048f88);
+    }
+    .history-table-wrap{
+      border-radius:14px;
+      border-color:#dce9ee;
+    }
+    .history-table th{
+      padding:11px 10px;
+      background:#edf6f8;
+      color:#466486;
+      font-size:9.5px;
+      letter-spacing:.025em;
+    }
+    .history-table td{
+      padding:10px;
+      color:#355675;
+    }
+    .history-table tbody tr:hover td{background:#f9fdfd}
+    .signo-chip{
+      border:1px solid #dce9ee;
+      background:#fff;
+      border-radius:10px;
+      padding:8px 10px;
+    }
+
+    /* ---------- NEURODESARROLLO ---------- */
+    .neuro-subnav{gap:8px;margin:-4px 0 15px}
+    .neuro-subnav button{
+      min-height:39px;
+      padding:8px 15px;
+      border-radius:10px;
+      font-weight:750;
+    }
+    .neuro-top,.neuro-form,.neuro-stats-controls{
+      border-radius:15px;
+      border-color:#dbe9ee;
+      box-shadow:0 5px 18px rgba(44,91,115,.035);
+    }
+    .neuro-top{
+      padding:15px;
+      background:linear-gradient(180deg,#fff,#fbfefe);
+    }
+    .neuro-form{padding:18px}
+    .neuro-form h3{color:var(--navy);font-size:17px}
+    .neuro-existing{
+      border:1px solid #d6e9ff;
+      background:#f1f7ff;
+      border-radius:10px;
+      padding:10px 12px;
+    }
+    .neuro-identidad{
+      gap:11px;
+      margin:14px 0 18px;
+    }
+    .neuro-grid{gap:12px}
+    .neuro-field{
+      padding:11px;
+      border:1px solid #e1ebef;
+      border-radius:12px;
+      background:#fbfefe;
+    }
+    .neuro-kpis{gap:12px}
+    .neuro-kpi{
+      flex:1 1 160px;
+      border-radius:14px;
+      padding:15px;
+      border-color:#dce9ee;
+      background:linear-gradient(145deg,#f9fffe,#effaf8);
+    }
+    .neuro-kpi b{color:#087f78;font-size:26px}
+    .neuro-table-wrap{border-radius:14px}
+    .neuro-table th{
+      padding:10px;
+      background:#edf7f8;
+      color:#426580;
+    }
+    .neuro-table td{padding:10px;color:#345674}
+
+    /* ---------- PERFIL ---------- */
+    .profile-card{
+      position:relative;
+      overflow:hidden;
+      padding:20px;
+      border-radius:16px;
+      background:
+        linear-gradient(135deg,#f4fffc,#edfafa);
+      border-color:#d7ebe8;
+    }
+    .profile-card::after{
+      content:"○";
+      position:absolute;
+      right:20px;top:7px;
+      font-size:70px;
+      color:rgba(0,158,146,.07);
+    }
+    .profile-card h3{color:var(--navy);font-size:19px}
+    .profile-meta{font-size:12px;color:#67819e}
+    .panel{
+      max-width:none;
+      border-radius:16px;
+      padding:18px;
+      box-shadow:none;
+      border-color:#dbe9ee;
+    }
+    .panel h3{color:var(--navy)}
+    .profile-grid{gap:15px}
+    .img-editor{
+      padding:14px;
+      border-radius:14px;
+      background:#fbfefe;
+      border-color:#dbe9ef;
+    }
+    .img-editor-preview{
+      min-height:190px;
+      border-radius:12px;
+    }
+    .profile-savebar{
+      justify-content:flex-end;
+      padding-top:4px;
+    }
+    .profile-savebar button{
+      min-width:150px;
+      min-height:42px;
+    }
+
+    /* ---------- CERTIFICADOS ---------- */
+    .cert-shell{gap:14px}
+    .cert-toolbar{
+      padding:15px;
+      border-radius:15px;
+      border-color:#dce9ef;
+      background:linear-gradient(180deg,#fff,#fbfefe);
+    }
+    .cert-form{
+      padding:18px;
+      border-radius:16px;
+      border-color:#dce9ef;
+    }
+    .cert-patient{
+      gap:10px;
+      padding:13px;
+      border-radius:13px;
+      background:#f2fbf9;
+      border:1px solid #d9eee9;
+    }
+    .cert-status{
+      padding:11px 13px;
+      border-radius:11px;
+    }
+    .dx-row{
+      padding:7px;
+      border-radius:10px;
+      background:#fbfefe;
+    }
+    .cert-actions{
+      padding-top:4px;
+    }
+    .cert-actions button{
+      min-height:42px;
+    }
+
+    /* ---------- FORMULARIOS DE CONFIGURACIÓN ---------- */
+    .inline-form{
+      padding:17px;
+      border-radius:15px;
+      border-color:#dbe8ed;
+      background:linear-gradient(180deg,#fff,#fbfefe);
+    }
+    .inline-form h3{color:var(--navy);font-size:16px}
+    .inline-form .form-actions{
+      justify-content:flex-end;
+    }
+
+    /* ---------- MODAL CONTRASEÑA ---------- */
+    .confirm-pass-overlay{
+      background:rgba(10,39,61,.46);
+      backdrop-filter:blur(5px);
+    }
+    .confirm-pass-box{
+      width:min(440px,100%);
+      padding:22px;
+      border-radius:17px;
+      border-color:#dbe8ed;
+      box-shadow:0 30px 80px rgba(10,47,66,.22);
+    }
+    .confirm-pass-box h3{
+      color:var(--navy);
+      font-size:18px;
+    }
+
+    /* ---------- MENSAJES ---------- */
+    .toast{
+      top:92px;
+      border-radius:13px;
+      box-shadow:0 18px 50px rgba(24,74,96,.18);
+    }
+    .vacio,.neuro-empty{
+      border-radius:14px;
+      padding:28px;
+      background:#fbfefe;
+      border:1px dashed #cfe3e7;
+    }
+
+    /* ---------- RESPONSIVE ---------- */
+    @media(max-width:980px){
+      .auth-shell{grid-template-columns:1fr;width:min(560px,100%)}
+      .auth-side{display:none}
+      .workspace{padding:15px}
+      .agenda-toolbar{margin:0 -15px 12px;padding:14px 15px}
+      header{width:calc(100% - 20px)}
+      main{padding:15px 10px 45px}
+    }
+
+    @media(max-width:760px){
+      .box{padding:28px 22px}
+      .auth-brand-mobile{margin-bottom:24px}
+      header{
+        top:6px;
+        padding:10px 12px;
+      }
+      .header-logo{width:38px!important;height:38px!important}
+      header b{font-size:13px}
+      .header-actions{gap:5px}
+      .rolchip{padding:5px 9px;min-height:32px}
+      .salir{padding:6px 9px;min-height:32px}
+      .nav-btn{
+        min-height:44px;
+        padding:8px 13px;
+      }
+      .workspace{border-radius:16px}
+      .section-hero h2{font-size:19px}
+      .section-icon{width:40px;height:40px}
+      .agenda-toolbar h2{font-size:19px}
+      .history-filter>div{width:100%;min-width:0}
+      .history-filter input{width:100%}
+      .history-filter button{width:100%}
+      .profile-grid,.cert-grid,.cert-rest,.cert-patient,.dx-row{
+        grid-template-columns:1fr;
+      }
+    }
+
+    @media(max-width:560px){
+      body::before{display:none}
+      .center{padding:14px}
+      .auth-shell{border-radius:18px}
+      .box{padding:24px 18px}
+      .medical-logo{width:43px;height:43px}
+      #auth h1{font-size:22px}
+      main{padding-left:8px;padding-right:8px}
+      .workspace{padding:12px}
+      .agenda-toolbar{margin:0 -12px 10px;padding:12px}
+      .fecha-nav{width:100%}
+      .fecha-nav input{flex:1;min-width:0!important}
+      .tab-btn{padding:8px 13px}
+      .nav-title{font-size:10px}
+      .agenda-row{
+        padding:12px;
+        border-radius:0;
+      }
+    }
+
+  
+    /* ===== Buscador CIE-10 ===== */
+    .cie-dx-row{
+      display:grid;
+      grid-template-columns:minmax(125px,160px) minmax(240px,1fr) auto;
+      gap:8px;
+      align-items:start;
+      position:relative;
+    }
+
+    .cie-dx-row>input{
+      min-width:0;
+    }
+
+    .cie-suggestions{
+      grid-column:1/-1;
+      display:none;
+      max-height:260px;
+      overflow:auto;
+      border:1px solid #cfe3e7;
+      border-radius:11px;
+      background:#fff;
+      box-shadow:0 14px 36px rgba(27,77,96,.14);
+      padding:5px;
+      margin-top:-3px;
+      position:relative;
+      z-index:25;
+    }
+
+    .cie-suggestions.visible{
+      display:block;
+    }
+
+    .cie-option{
+      width:100%;
+      display:grid;
+      grid-template-columns:90px 1fr;
+      gap:10px;
+      align-items:start;
+      text-align:left;
+      padding:9px 10px;
+      border:0;
+      border-radius:8px;
+      color:#244866;
+      background:#fff;
+      font-weight:500;
+    }
+
+    .cie-option:hover,
+    .cie-option:focus{
+      background:#eefaf8;
+      color:#075f5a;
+      transform:none!important;
+    }
+
+    .cie-option-code{
+      color:#078f86;
+      font-weight:850;
+      letter-spacing:.02em;
+    }
+
+    .cie-option-desc{
+      line-height:1.35;
+      font-size:11px;
+    }
+
+    .cie-search-hint{
+      grid-column:1/-1;
+      font-size:10px;
+      color:var(--mu);
+      margin-top:-2px;
+    }
+
+    @media(max-width:760px){
+      .cie-dx-row{
+        grid-template-columns:1fr;
+      }
+
+      .cie-suggestions,
+      .cie-search-hint{
+        grid-column:1;
+      }
+    }
+
+  
+    /* ===== Buscador compacto de pacientes para certificados ===== */
+    .cert-patient-picker{
+      position:relative;
+      width:100%;
+    }
+
+    .cert-patient-search{
+      width:100%;
+      min-height:42px;
+      padding:9px 34px 9px 12px;
+      border:1px solid #d7e5ee;
+      border-radius:10px;
+      background:#fff;
+      color:var(--navy);
+      font-size:12px;
+    }
+
+    .cert-patient-search-wrap{
+      position:relative;
+    }
+
+    .cert-patient-search-icon{
+      position:absolute;
+      right:11px;
+      top:50%;
+      transform:translateY(-50%);
+      color:#6d879e;
+      font-size:15px;
+      pointer-events:none;
+    }
+
+    .cert-patient-menu{
+      position:absolute;
+      left:0;
+      right:0;
+      top:calc(100% + 5px);
+      z-index:70;
+      display:none;
+      max-height:185px;
+      overflow:auto;
+      padding:4px;
+      border:1px solid #d5e6eb;
+      border-radius:11px;
+      background:#fff;
+      box-shadow:0 14px 34px rgba(31,78,97,.15);
+    }
+
+    .cert-patient-menu.visible{
+      display:block;
+    }
+
+    .cert-patient-group{
+      padding:5px 8px 4px;
+      color:#7890a7;
+      font-size:9px;
+      font-weight:850;
+      letter-spacing:.05em;
+      text-transform:uppercase;
+      background:#f7fbfc;
+      border-radius:7px;
+      margin:2px 0;
+    }
+
+    .cert-patient-option{
+      width:100%;
+      min-height:36px;
+      display:grid;
+      grid-template-columns:auto minmax(0,1fr);
+      align-items:center;
+      gap:8px;
+      padding:6px 8px;
+      margin:1px 0;
+      border:0;
+      border-radius:8px;
+      background:#fff;
+      color:#214765;
+      text-align:left;
+      box-shadow:none;
+      font-size:11px;
+    }
+
+    .cert-patient-option:hover,
+    .cert-patient-option:focus{
+      background:#eefaf8;
+      color:#075f5a;
+      transform:none!important;
+    }
+
+    .cert-patient-time{
+      min-width:58px;
+      color:#078f86;
+      font-weight:850;
+      font-size:10px;
+      white-space:nowrap;
+    }
+
+    .cert-patient-main{
+      min-width:0;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+
+    .cert-patient-main b{
+      font-size:11px;
+    }
+
+    .cert-patient-meta{
+      color:#8194a9;
+      font-size:9px;
+      margin-left:5px;
+    }
+
+    .cert-patient-empty{
+      padding:12px 10px;
+      text-align:center;
+      color:#71869c;
+      font-size:10px;
+    }
+
+    .cert-patient-loading{
+      padding:10px;
+      text-align:center;
+      color:#078f86;
+      font-size:10px;
+    }
+
+    @media(max-width:760px){
+      .cert-patient-menu{
+        max-height:170px;
+      }
+    }
+
+  
+    /* =====================================================================
+       RESPONSIVE DESIGN COMPLETO · RURALITOS / SISTEMA CENTRO DE SALUD
+       Capa exclusivamente visual. No modifica la lógica JavaScript.
+       ===================================================================== */
+
+    html,
+    body{
+      width:100%;
+      max-width:100%;
+      overflow-x:hidden;
+    }
+
+    img,
+    canvas,
+    svg,
+    video{
+      max-width:100%;
+      height:auto;
+    }
+
+    main,
+    .workspace,
+    .panel,
+    .cert-shell,
+    .cert-form,
+    .profile-card,
+    .neuro-form,
+    .neuro-top,
+    .history-filter,
+    .agenda-wrap,
+    .agenda-item,
+    .vital-panel{
+      min-width:0;
+      max-width:100%;
+    }
+
+    input,
+    select,
+    textarea,
+    button{
+      max-width:100%;
+    }
+
+    .app-nav,
+    .nav-strip{
+      -webkit-overflow-scrolling:touch;
+      scroll-snap-type:x proximity;
+      overscroll-behavior-inline:contain;
+    }
+
+    .app-nav > *,
+    .nav-strip > *{
+      scroll-snap-align:start;
+      flex:0 0 auto;
+    }
+
+    .history-table-wrap,
+    .neuro-table-wrap{
+      -webkit-overflow-scrolling:touch;
+      overscroll-behavior-inline:contain;
+    }
+
+    /* ---------- Escritorio mediano / portátil ---------- */
+    @media (max-width:1180px){
+      header{
+        width:calc(100% - 24px);
+      }
+
+      main{
+        width:100%;
+        max-width:100%;
+        padding-left:12px;
+        padding-right:12px;
+      }
+
+      .workspace{
+        width:100%;
+      }
+
+      .agenda-head,
+      .agenda-row{
+        grid-template-columns:
+          94px
+          minmax(150px,1.2fr)
+          minmax(150px,.95fr)
+          minmax(110px,.8fr)
+          minmax(120px,.85fr)
+          minmax(135px,.9fr);
+      }
+
+      .cert-toolbar > div{
+        min-width:170px;
+      }
+    }
+
+    /* ---------- Tablet horizontal / vertical ---------- */
+    @media (max-width:900px){
+      body{
+        background-attachment:scroll;
+      }
+
+      header{
+        width:calc(100% - 16px);
+        margin-top:8px;
+        top:6px;
+        gap:10px;
+      }
+
+      .header-brand{
+        flex:1 1 260px;
+      }
+
+      .header-titles{
+        overflow:hidden;
+      }
+
+      #hUnidad,
+      #hUsuario{
+        max-width:100%;
+        overflow:hidden;
+        text-overflow:ellipsis;
+        white-space:nowrap;
+      }
+
+      .header-actions{
+        flex:0 0 auto;
+      }
+
+      main{
+        padding:14px 8px 42px;
+      }
+
+      .app-nav{
+        gap:7px;
+        margin:0 -2px;
+        padding:2px 2px 11px;
+      }
+
+      .nav-btn{
+        min-height:44px;
+        padding:9px 14px;
+      }
+
+      .workspace{
+        padding:14px;
+      }
+
+      .nav-strip{
+        margin-right:-4px;
+        padding-right:4px;
+      }
+
+      .tab-btn{
+        min-height:42px;
+        padding:8px 14px;
+      }
+
+      /* Agenda pasa de tabla rígida a tarjetas. */
+      .agenda-wrap{
+        overflow:visible;
+        border:0;
+        background:transparent;
+        box-shadow:none;
+      }
+
+      .agenda-head{
+        display:none !important;
+      }
+
+      .agenda-item{
+        margin-bottom:10px;
+        border:1px solid #dce9ee;
+        border-radius:14px;
+        overflow:hidden;
+        background:#fff;
+        box-shadow:0 5px 16px rgba(40,83,103,.045);
+      }
+
+      .agenda-row{
+        display:grid !important;
+        grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+        align-items:start;
+        gap:9px;
+        min-height:0;
+        padding:12px;
+        border-top:0;
+      }
+
+      .agenda-row.almuerzo{
+        display:flex !important;
+        flex-direction:row !important;
+        align-items:center;
+        justify-content:center;
+        min-height:48px;
+        margin-bottom:10px;
+        border:1px solid #dce9ee;
+        border-radius:13px;
+      }
+
+      .agenda-row > *{
+        width:100%;
+        min-width:0;
+      }
+
+      .agenda-row > .hora{
+        grid-column:1/-1;
+        width:auto;
+        padding:6px 9px;
+        border-radius:8px;
+        background:#edf8f7;
+        color:#087c75;
+        font-size:13px;
+        font-weight:850;
+      }
+
+      .agenda-row > .acciones,
+      .agenda-row > :last-child{
+        grid-column:1/-1;
+      }
+
+      .agenda-row input,
+      .agenda-row select{
+        width:100%;
+        min-height:42px;
+      }
+
+      .agenda-row .paciente-cell{
+        min-height:42px;
+      }
+
+      .acciones{
+        align-items:center;
+      }
+
+      .acciones button{
+        min-height:38px;
+        padding:7px 10px;
+      }
+
+      .vital-panel{
+        border-top:1px solid #e1ecef;
+        padding:13px;
+      }
+
+      .vital-grid{
+        grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+      }
+
+      .agenda-toolbar{
+        margin:0 -14px 12px;
+        padding:13px 14px;
+      }
+
+      .agenda-toolbar > div:first-child{
+        min-width:200px;
+      }
+
+      .agenda-toolbar .fecha-nav{
+        flex:1 1 340px;
+        justify-content:flex-end;
+      }
+
+      .agenda-toolbar input[type=date]{
+        min-width:145px;
+        flex:1 1 160px;
+      }
+
+      /* Pacientes atendidos */
+      .history-filter{
+        align-items:stretch;
+      }
+
+      .history-filter > div{
+        flex:1 1 220px;
+        min-width:0;
+      }
+
+      .history-filter input,
+      .history-filter select{
+        width:100%;
+        min-width:0;
+      }
+
+      .history-table{
+        min-width:800px;
+      }
+
+      .signos-linea{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+      }
+
+      /* Neurodesarrollo */
+      .neuro-kpis{
+        display:grid;
+        grid-template-columns:repeat(2,minmax(0,1fr));
+      }
+
+      .neuro-kpi{
+        min-width:0;
+      }
+
+      .neuro-stats-controls,
+      .neuro-top{
+        align-items:stretch;
+      }
+
+      /* Certificados */
+      .cert-toolbar{
+        align-items:stretch;
+      }
+
+      .cert-toolbar > div{
+        flex:1 1 260px;
+        min-width:0 !important;
+      }
+
+      .cert-patient-picker,
+      .cert-patient-search-wrap{
+        width:100%;
+      }
+
+      .cert-patient-menu{
+        width:100%;
+        max-width:100%;
+      }
+
+      .cert-patient{
+        grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+      }
+
+      .cie-dx-row{
+        grid-template-columns:minmax(110px,145px) minmax(0,1fr) auto;
+      }
+
+      /* Perfil */
+      .profile-grid{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+      }
+
+      .img-editor-preview{
+        min-height:145px;
+      }
+
+      /* Modales */
+      .confirm-pass-overlay{
+        padding:16px;
+      }
+
+      .confirm-pass-box{
+        width:min(460px,100%);
+        max-height:calc(100vh - 32px);
+        overflow:auto;
+      }
+    }
+
+    /* ---------- Teléfono grande / tablet pequeña ---------- */
+    @media (max-width:700px){
+      body{
+        font-size:13px;
+      }
+
+      header{
+        position:sticky;
+        width:calc(100% - 12px);
+        margin-top:6px;
+        padding:9px 10px;
+        border-radius:14px;
+      }
+
+      .medical-logo.header-logo{
+        width:38px !important;
+        height:38px !important;
+        font-size:22px !important;
+        border-radius:11px !important;
+      }
+
+      .header-brand{
+        gap:9px;
+        flex:1 1 190px;
+      }
+
+      header b{
+        font-size:12px;
+      }
+
+      header span{
+        font-size:10px;
+      }
+
+      .header-actions{
+        gap:4px;
+      }
+
+      .rolchip{
+        min-height:31px;
+        padding:5px 8px;
+        font-size:10px;
+      }
+
+      .salir{
+        min-height:31px;
+        padding:6px 9px;
+        font-size:10px;
+      }
+
+      main{
+        padding:11px 6px 38px;
+      }
+
+      .app-nav{
+        margin-left:-1px;
+        margin-right:-1px;
+        padding-bottom:9px;
+      }
+
+      .nav-btn{
+        min-height:42px;
+        padding:8px 12px;
+        border-radius:10px;
+        font-size:11px;
+      }
+
+      .nav-btn[data-icon]::before{
+        width:19px;
+        height:19px;
+        font-size:14px;
+      }
+
+      .workspace{
+        padding:11px;
+        border-radius:15px;
+      }
+
+      .workspace::after{
+        display:none;
+      }
+
+      .section-hero{
+        gap:10px;
+        padding-bottom:12px;
+        margin-bottom:13px;
+      }
+
+      .section-icon{
+        width:39px;
+        height:39px;
+        font-size:17px;
+      }
+
+      .section-hero h2{
+        font-size:18px;
+      }
+
+      .nav-title{
+        margin-top:8px;
+      }
+
+      .nav-strip{
+        gap:6px;
+      }
+
+      .tab-btn{
+        min-height:40px;
+        padding:8px 12px;
+        font-size:11px;
+      }
+
+      /* Agenda, una tarjeta = una cita. */
+      .agenda-toolbar{
+        display:grid;
+        grid-template-columns:1fr;
+        gap:10px;
+        margin:0 -11px 11px;
+        padding:12px 11px;
+      }
+
+      .agenda-toolbar > *{
+        width:100%;
+      }
+
+      .agenda-toolbar .fecha-nav{
+        width:100%;
+        display:grid;
+        grid-template-columns:auto minmax(0,1fr) auto auto;
+        gap:6px;
+      }
+
+      .agenda-toolbar .fecha-nav button{
+        min-width:40px;
+        min-height:40px;
+        padding:7px 9px;
+      }
+
+      .agenda-toolbar input[type=date]{
+        width:100%;
+        min-width:0;
+      }
+
+      .agenda-row{
+        grid-template-columns:1fr !important;
+        gap:8px;
+        padding:11px;
+      }
+
+      .agenda-row > .hora,
+      .agenda-row > .acciones,
+      .agenda-row > :last-child{
+        grid-column:1;
+      }
+
+      .agenda-row input,
+      .agenda-row select{
+        min-height:44px;
+        font-size:16px; /* evita zoom automático en iOS */
+      }
+
+      .agenda-row .acciones{
+        padding-top:3px;
+      }
+
+      .agenda-row .acciones button{
+        flex:1 1 145px;
+        min-height:40px;
+      }
+
+      .agenda-row.almuerzo{
+        flex-wrap:wrap;
+        gap:5px;
+        padding:10px;
+        text-align:center;
+      }
+
+      .vital-title{
+        align-items:flex-start;
+        flex-direction:column;
+      }
+
+      .vital-grid{
+        grid-template-columns:1fr !important;
+      }
+
+      .vital-field input{
+        min-height:44px;
+        font-size:16px;
+      }
+
+      .vital-actions{
+        align-items:stretch;
+      }
+
+      .vital-actions button{
+        flex:1 1 150px;
+        min-height:42px;
+      }
+
+      /* Historial mensual */
+      .history-filter{
+        display:grid;
+        grid-template-columns:1fr;
+        padding:11px;
+      }
+
+      .history-filter > div,
+      .history-filter button{
+        width:100%;
+        min-width:0;
+      }
+
+      .history-filter button{
+        min-height:42px;
+      }
+
+      .history-table{
+        min-width:720px;
+      }
+
+      .history-table th,
+      .history-table td{
+        padding:8px;
+        font-size:10px;
+      }
+
+      .signos-linea{
+        grid-template-columns:1fr !important;
+      }
+
+      /* Neuro */
+      .neuro-identidad,
+      .neuro-grid{
+        grid-template-columns:1fr !important;
+      }
+
+      .neuro-kpis{
+        grid-template-columns:1fr;
+      }
+
+      .neuro-form,
+      .neuro-top,
+      .neuro-stats-controls{
+        padding:12px;
+      }
+
+      .neuro-field{
+        padding:10px;
+      }
+
+      .neuro-field input,
+      .neuro-field select,
+      .neuro-field textarea{
+        font-size:16px;
+      }
+
+      .neuro-subnav{
+        overflow-x:auto;
+        flex-wrap:nowrap;
+        padding-bottom:4px;
+        -webkit-overflow-scrolling:touch;
+      }
+
+      .neuro-subnav button{
+        flex:0 0 auto;
+      }
+
+      /* Certificados */
+      .cert-toolbar{
+        display:grid;
+        grid-template-columns:1fr;
+        padding:11px;
+      }
+
+      .cert-toolbar > div{
+        width:100%;
+        min-width:0 !important;
+      }
+
+      .cert-patient{
+        grid-template-columns:1fr !important;
+        gap:7px;
+      }
+
+      .cert-grid,
+      .cert-rest{
+        grid-template-columns:1fr !important;
+      }
+
+      .cie-dx-row{
+        grid-template-columns:1fr !important;
+      }
+
+      .cie-suggestions,
+      .cie-search-hint{
+        grid-column:1 !important;
+      }
+
+      .cert-patient-menu{
+        position:absolute;
+        max-height:190px;
+      }
+
+      .cert-patient-option{
+        grid-template-columns:76px minmax(0,1fr);
+      }
+
+      .cert-patient-time{
+        min-width:0;
+        font-size:9px;
+      }
+
+      .cert-patient-main{
+        white-space:normal;
+        line-height:1.25;
+      }
+
+      .cert-patient-meta{
+        display:block;
+        margin-left:0;
+        margin-top:2px;
+      }
+
+      .cert-form input,
+      .cert-form select,
+      .cert-form textarea,
+      .cert-toolbar input,
+      .cert-toolbar select{
+        font-size:16px;
+      }
+
+      .cert-actions{
+        align-items:stretch;
+      }
+
+      .cert-actions button{
+        flex:1 1 150px;
+        min-height:42px;
+      }
+
+      /* Perfil */
+      .profile-grid{
+        grid-template-columns:1fr !important;
+      }
+
+      .profile-card,
+      .panel{
+        width:100%;
+        max-width:100%;
+      }
+
+      .profile-savebar{
+        align-items:stretch;
+      }
+
+      .profile-savebar button{
+        width:100%;
+        min-height:42px;
+      }
+
+      .img-editor-actions{
+        align-items:stretch;
+      }
+
+      .img-editor-actions button{
+        flex:1 1 140px;
+        min-height:40px;
+      }
+
+      /* Formularios de administración */
+      .fila-form{
+        flex-direction:column;
+      }
+
+      .inline-form{
+        padding:12px;
+      }
+
+      .inline-form .form-actions{
+        display:grid;
+        grid-template-columns:1fr;
+      }
+
+      .inline-form .form-actions button{
+        width:100%;
+      }
+
+      /* Mensajes */
+      .toast{
+        left:10px;
+        right:10px;
+        top:auto;
+        bottom:12px;
+        max-width:none;
+      }
+    }
+
+    /* ---------- Teléfono compacto ---------- */
+    @media (max-width:480px){
+      .center{
+        padding:10px;
+        align-items:flex-start;
+      }
+
+      .auth-shell{
+        margin-top:8px;
+        border-radius:17px;
+      }
+
+      .box{
+        padding:21px 15px;
+      }
+
+      .auth-brand-mobile{
+        gap:10px;
+        margin-bottom:20px;
+      }
+
+      .auth-brand-mobile strong{
+        font-size:15px;
+      }
+
+      .auth-brand-mobile span{
+        font-size:10px;
+      }
+
+      #auth h1{
+        font-size:20px;
+      }
+
+      #auth input,
+      #auth select{
+        min-height:46px;
+        font-size:16px;
+      }
+
+      #auth form > button{
+        min-height:47px;
+      }
+
+      header{
+        display:grid;
+        grid-template-columns:minmax(0,1fr) auto;
+        align-items:center;
+      }
+
+      .header-brand{
+        min-width:0;
+      }
+
+      .header-actions{
+        margin-left:0;
+      }
+
+      .rolchip{
+        display:none;
+      }
+
+      .salir{
+        white-space:nowrap;
+      }
+
+      .header-titles #hUsuario{
+        max-width:190px;
+      }
+
+      .app-nav{
+        gap:5px;
+      }
+
+      .nav-btn{
+        padding:8px 10px;
+      }
+
+      .workspace{
+        padding:9px;
+        border-radius:13px;
+      }
+
+      .section-hero{
+        align-items:flex-start;
+      }
+
+      .section-hero h2{
+        font-size:17px;
+      }
+
+      .agenda-toolbar{
+        margin-left:-9px;
+        margin-right:-9px;
+        padding-left:9px;
+        padding-right:9px;
+      }
+
+      .agenda-toolbar .fecha-nav{
+        grid-template-columns:38px minmax(0,1fr) 38px;
+      }
+
+      /*
+       * El botón "Hoy" baja a una segunda línea si existe.
+       * Evita comprimir la fecha en teléfonos estrechos.
+       */
+      .agenda-toolbar .fecha-nav > button:nth-last-child(1):not(:first-child){
+        min-width:38px;
+      }
+
+      .agenda-row{
+        padding:10px;
+        border-radius:0;
+      }
+
+      .agenda-row > .hora{
+        font-size:12px;
+      }
+
+      .acciones{
+        display:grid;
+        grid-template-columns:1fr;
+      }
+
+      .acciones > *{
+        width:100%;
+        max-width:100%;
+      }
+
+      .acciones .badge,
+      .acciones .autosave,
+      .acciones .estado-pendiente{
+        width:auto;
+        justify-self:start;
+      }
+
+      .check-wrap{
+        width:auto !important;
+      }
+
+      .history-table{
+        min-width:680px;
+      }
+
+      .cert-patient-menu{
+        max-height:170px;
+      }
+
+      .cert-patient-option{
+        padding:7px;
+      }
+
+      .cert-patient-time{
+        width:70px;
+      }
+
+      .neuro-kpi b{
+        font-size:22px;
+      }
+
+      .confirm-pass-box{
+        padding:17px;
+        border-radius:14px;
+      }
+
+      .confirm-pass-actions{
+        display:grid;
+        grid-template-columns:1fr;
+      }
+
+      .confirm-pass-actions button{
+        width:100%;
+      }
+    }
+
+    /* ---------- Pantallas extremadamente estrechas ---------- */
+    @media (max-width:360px){
+      .medical-logo.header-logo{
+        display:none;
+      }
+
+      .header-titles #hUsuario{
+        max-width:165px;
+      }
+
+      .nav-btn[data-icon]::before{
+        display:none;
+      }
+
+      .nav-btn{
+        padding-left:9px;
+        padding-right:9px;
+      }
+
+      .agenda-toolbar h2{
+        font-size:17px;
+      }
+
+      .cert-patient-option{
+        grid-template-columns:1fr;
+        gap:2px;
+      }
+
+      .cert-patient-time{
+        width:auto;
+      }
+    }
+
+    /* ---------- Móvil en horizontal ---------- */
+    @media (max-height:520px) and (orientation:landscape){
+      header{
+        position:relative;
+        top:auto;
+      }
+
+      .center{
+        min-height:auto;
+        padding-top:10px;
+        padding-bottom:10px;
+      }
+
+      .auth-side{
+        display:none;
+      }
+
+      .confirm-pass-box{
+        max-height:calc(100vh - 20px);
+      }
+
+      .cert-patient-menu{
+        max-height:140px;
+      }
+    }
+
+    /* ---------- Accesibilidad táctil ---------- */
+    @media (pointer:coarse){
+      button,
+      .tab-btn,
+      .nav-btn{
+        min-height:42px;
+      }
+
+      input[type="checkbox"]{
+        min-width:22px;
+        min-height:22px;
+      }
+
+      .history-table-wrap,
+      .nav-strip,
+      .app-nav,
+      .neuro-subnav{
+        scrollbar-width:none;
+      }
+
+      .history-table-wrap::-webkit-scrollbar,
+      .nav-strip::-webkit-scrollbar,
+      .app-nav::-webkit-scrollbar,
+      .neuro-subnav::-webkit-scrollbar{
+        display:none;
+      }
+    }
+
+  </style>
+</head>
+<body>
+<div id="auth" class="center">
+  <div class="auth-shell">
+    <div class="box">
+      <div class="auth-brand-mobile">
+        <div class="medical-logo">+</div>
+        <div>
+          <strong><?= unidad ?></strong>
+          <span>Sistema de agenda y atención médica</span>
+        </div>
+      </div>
+    <div class="vista activa" id="vLogin">
+      <h1>Iniciar sesión</h1><p class="sub"><?= unidad ?></p>
+      <form id="formLogin"><label>Correo</label><input type="email" id="loginCorreo" required autocomplete="username"><label>Contraseña</label><input type="password" id="loginPassword" required autocomplete="current-password"><button type="submit">Entrar</button></form>
+      <button type="button" class="link" data-ir="vRegistro">¿No tienes cuenta? Crear una</button>
+      <button type="button" class="link" data-ir="vOlvide">¿Olvidaste tu contraseña?</button>
+    </div>
+    <div class="vista" id="vRegistro">
+      <h1>Crear cuenta</h1><p class="sub"><?= unidad ?></p>
+      <form id="formRegistro">
+        <label>Rol</label>
+        <select id="regPerfil" required>
+          <option value="" disabled selected>Cargando roles...</option>
+        </select>
+        <label>Nombre completo</label><input type="text" id="regNombre" required>
+        <label>Cédula</label><input type="text" id="regCedula" required inputmode="numeric" maxlength="10" pattern="[0-9]{10}" placeholder="10 dígitos" autocomplete="off">
+        <label>Correo</label><input type="email" id="regCorreo" required autocomplete="username">
+        <label>Contraseña</label><input type="password" id="regPassword" required minlength="6" autocomplete="new-password">
+        <div id="regMedicoExtras" style="display:none;margin-top:12px"></div>
+        <button type="submit">Crear cuenta</button>
+      </form>
+      <button type="button" class="link" data-ir="vLogin">¿Ya tienes cuenta? Entrar</button>
+    </div>
+    <div class="vista" id="vOlvide"><h1>Recuperar contraseña</h1><p class="sub">Te enviaremos un enlace a tu correo</p><form id="formOlvide"><label>Correo</label><input type="email" id="olvideCorreo" required><button type="submit">Enviar enlace</button></form><button type="button" class="link" data-ir="vLogin">Volver</button></div>
+    <div class="vista" id="vRestablecer"><h1>Nueva contraseña</h1><p class="sub"><?= unidad ?></p><form id="formRestablecer"><label>Nueva contraseña</label><input type="password" id="nuevaPassword" required minlength="6"><button type="submit">Guardar contraseña</button></form></div>
+    <div id="authMsg"></div>
+    </div>
+
+    <aside class="auth-side" aria-hidden="true">
+      <div class="auth-side-head">
+        <div class="medical-logo large">+</div>
+        <div>
+          <strong><?= unidad ?></strong>
+          <span>Sistema inteligente de agenda y atención médica</span>
+        </div>
+      </div>
+
+      <div class="auth-feature">
+        <div class="feature-icon">▦</div>
+        <div>
+          <b>Agenda médica</b>
+          <span>Organiza horarios, consultorios y pacientes.</span>
+        </div>
+      </div>
+
+      <div class="auth-feature">
+        <div class="feature-icon">◎</div>
+        <div>
+          <b>Pacientes atendidos</b>
+          <span>Consulta mensual e historial asistencial.</span>
+        </div>
+      </div>
+
+      <div class="auth-feature">
+        <div class="feature-icon">✦</div>
+        <div>
+          <b>Neurodesarrollo</b>
+          <span>Registro y seguimiento especializado.</span>
+        </div>
+      </div>
+
+      <div class="auth-feature">
+        <div class="feature-icon">▤</div>
+        <div>
+          <b>Certificados</b>
+          <span>Generación segura de documentos médicos.</span>
+        </div>
+      </div>
+
+      <div class="auth-security">Acceso seguro para personal autorizado</div>
+    </aside>
+  </div>
+</div>
+
+<div id="app">
+  <header>
+    <div class="header-brand">
+      <div class="medical-logo header-logo">+</div>
+      <div class="header-titles">
+        <b id="hUnidad"></b>
+        <span id="hUsuario"></span>
+      </div>
+    </div>
+    <div class="toolbar header-actions">
+      <span class="rolchip" id="hRol"></span>
+      <button class="salir" id="salir">Salir</button>
+    </div>
+  </header>
+  <main id="main"></main>
+</div>
+<div id="appToast" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+const TOKEN_KEY='agenda_token', RESET_TOKEN='<?= resetToken ?>';
+let SESION=null, ESPECIALIDADES=[];
+let PERFILES_REGISTRO=[];
+let REG_EDITORES_PERFIL={firma:null,sello:null};
+let AUTO_SYNC_TIMER=null, AUTO_SYNC_NOW=null, AUTO_SYNC_GENERACION=0;
+
+const AGENDA_SYNC_STORAGE_KEY='agenda_sync_event_v4';
+let AGENDA_SYNC_CHANNEL=null;
+
+try{
+  if('BroadcastChannel' in window){
+    AGENDA_SYNC_CHANNEL=new BroadcastChannel('agenda_consulta_sync_v4');
+    AGENDA_SYNC_CHANNEL.onmessage=e=>recibirEventoAgenda_(e&&e.data);
+  }
+}catch(e){
+  AGENDA_SYNC_CHANNEL=null;
+}
+
+function recibirEventoAgenda_(evento){
+  if(typeof AUTO_SYNC_NOW==='function'){
+    AUTO_SYNC_NOW(evento||null);
+  }
+}
+
+function emitirEventoAgenda_(consultorioId,fecha){
+  const evento={
+    consultorioId:String(consultorioId||''),
+    fecha:String(fecha||''),
+    ts:Date.now(),
+    nonce:String(Math.random()).slice(2)
+  };
+
+  try{
+    if(AGENDA_SYNC_CHANNEL)AGENDA_SYNC_CHANNEL.postMessage(evento);
+  }catch(e){}
+
+  // Respaldo para navegadores/pestañas sin BroadcastChannel.
+  // localStorage se usa SOLO como señal; los tokens siguen en sessionStorage.
+  try{
+    localStorage.setItem(
+      AGENDA_SYNC_STORAGE_KEY,
+      JSON.stringify(evento)
+    );
+  }catch(e){}
+}
+
+window.addEventListener('storage',e=>{
+  if(e.key!==AGENDA_SYNC_STORAGE_KEY||!e.newValue)return;
+  try{
+    recibirEventoAgenda_(JSON.parse(e.newValue));
+  }catch(err){}
+});
+
+function detenerAutoSync(){AUTO_SYNC_GENERACION++;if(AUTO_SYNC_TIMER){clearInterval(AUTO_SYNC_TIMER);AUTO_SYNC_TIMER=null}AUTO_SYNC_NOW=null}
+document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden){
+    if(typeof AUTO_SYNC_NOW==='function')AUTO_SYNC_NOW();
+    revisarCatalogoConsultorios_(false);
+  }
+});
+window.addEventListener('focus',()=>{
+  if(typeof AUTO_SYNC_NOW==='function')AUTO_SYNC_NOW();
+  revisarCatalogoConsultorios_(false);
+});
+const PERTENENCIA=['CONTROL','POSTPARTO','CONTROL PCD','CUIDADOR PCD','TAMIZAJE','CAPTACION','EMBARAZADA'];
+const COBERTURA=['NO APORTA','IESS GENERAL','IESS DEPENDIENTE','IESS CAMPESINO','IESS JUBILADO','IESS PENSIONISTA','IESS VOLUNTARIO','MONTEPIO'];
+const ESTADO_LABEL={agendado:'Agendado',pendiente_signos:'Pendiente signos',listo_consulta:'Listo para consulta',en_consulta:'En consulta',atendido:'Atendido',cancelado:'Cancelado'};
+const h=(t,a={},...k)=>{const e=document.createElement(t);for(const[x,v]of Object.entries(a)){if(x==='class')e.className=v;else if(x==='text')e.textContent=v;else if(x.startsWith('on'))e[x]=v;else if(v===true)e.setAttribute(x,'');else if(v!==false&&v!=null)e.setAttribute(x,v)}k.flat().forEach(c=>{if(c!=null&&c!==false)e.append(c instanceof Node?c:document.createTextNode(c))});return e};
+const run=(fn,...args)=>new Promise((ok,fail)=>google.script.run.withSuccessHandler(ok).withFailureHandler(fail)[fn](...args));
+const isoHoy=()=>new Date().toLocaleDateString('sv-SE');
+const errorTexto=e=>e&&e.message?e.message:String(e||'Error desconocido');
+function irA(id){detenerAutoSync();document.querySelectorAll('.vista').forEach(v=>v.classList.remove('activa'));document.getElementById(id).classList.add('activa');limpiarMsg()}
+document.querySelectorAll('[data-ir]').forEach(b=>b.onclick=()=>irA(b.dataset.ir));
+function mostrarMsg(t,tipo){const el=document.getElementById('authMsg');el.textContent=t;el.className='msg '+tipo}function limpiarMsg(){const el=document.getElementById('authMsg');el.textContent='';el.className=''}
+function iconoNav_(texto){
+  const t=String(texto||'').toLowerCase();
+  if(t.includes('agenda'))return '▣';
+  if(t.includes('paciente'))return '◎';
+  if(t.includes('neuro'))return '✦';
+  if(t.includes('certificado'))return '▤';
+  if(t.includes('perfil'))return '○';
+  return '';
+}
+
+function btn(texto,onclick,clase=''){
+  const attrs={type:'button',class:clase,onclick};
+  if(String(clase||'').includes('nav-btn')){
+    const icono=iconoNav_(texto);
+    if(icono)attrs['data-icon']=icono;
+  }
+  return h('button',attrs,texto);
+}
+function notificar(texto,tipo='err'){const el=document.getElementById('appToast');el.textContent=texto;el.className='toast visible '+tipo;clearTimeout(el._t);el._t=setTimeout(()=>{el.className='toast'},4500)}
+function minutosHora(hora){const m=/^(\d{2}):(\d{2})$/.exec(String(hora||''));return m?Number(m[1])*60+Number(m[2]):null}
+function horaMasMinutos(hora,minutos){const base=minutosHora(hora);if(base===null)return '';const total=base+Number(minutos||0);if(total<0||total>=1440)return '';return String(Math.floor(total/60)).padStart(2,'0')+':'+String(total%60).padStart(2,'0')}
+function duracionHoras(inicio,fin){const a=minutosHora(inicio),b=minutosHora(fin);return a===null||b===null||b<=a?0:b-a}
+
+
+
+function esPerfilMedicoRegistro_(valor){
+  const p=PERFILES_REGISTRO.find(x=>String(x.value)===String(valor));
+  return !!(p&&p.tipo==='medico');
+}
+
+function crearEditorImagenPerfil_(titulo,imagenInicial=''){
+  const estado={
+    imagen:null,
+    original:null,
+    dirty:false,
+    removed:false,
+    cargando:false
+  };
+
+  const file=h('input',{type:'file',accept:'image/png,image/jpeg,image/webp'});
+  const canvas=h('canvas',{});
+  const empty=h('div',{class:'img-editor-empty'},'Sin imagen cargada');
+  const preview=h('div',{class:'img-editor-preview'},empty);
+  const slider=h('input',{type:'range',min:'0',max:'100',value:'0',disabled:true});
+  const valor=h('span',{class:'mu'},'0');
+  const quitar=btn('Quitar imagen',()=>{
+    estado.imagen=null;
+    estado.original=null;
+    estado.dirty=true;
+    estado.removed=true;
+    file.value='';
+    slider.disabled=true;
+    preview.replaceChildren(h('div',{class:'img-editor-empty'},'Sin imagen cargada'));
+  },'secundario');
+
+  async function cargarDataUrl(dataUrl,marcarDirty){
+    if(!dataUrl)return;
+    estado.cargando=true;
+    try{
+      const img=new Image();
+      await new Promise((ok,fail)=>{
+        img.onload=ok;
+        img.onerror=()=>fail(new Error('No se pudo abrir la imagen.'));
+        img.src=dataUrl;
+      });
+
+      const maxW=900,maxH=420;
+      const escala=Math.min(maxW/img.naturalWidth,maxH/img.naturalHeight,1);
+      canvas.width=Math.max(1,Math.round(img.naturalWidth*escala));
+      canvas.height=Math.max(1,Math.round(img.naturalHeight*escala));
+      const ctx=canvas.getContext('2d',{willReadFrequently:true});
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.drawImage(img,0,0,canvas.width,canvas.height);
+      estado.original=ctx.getImageData(0,0,canvas.width,canvas.height);
+      estado.imagen=true;
+      estado.removed=false;
+      estado.dirty=!!marcarDirty;
+      slider.disabled=false;
+      slider.value='0';
+      valor.textContent='0';
+      preview.replaceChildren(canvas);
+      aplicarTransparencia(false);
+    }finally{
+      estado.cargando=false;
+    }
+  }
+
+  function aplicarTransparencia(marcarDirty=true){
+    if(!estado.original||!canvas.width)return;
+    const ctx=canvas.getContext('2d',{willReadFrequently:true});
+    const copia=new ImageData(
+      new Uint8ClampedArray(estado.original.data),
+      estado.original.width,
+      estado.original.height
+    );
+    const nivel=Number(slider.value||0);
+    const umbral=nivel*2.35;
+    const suavidad=28;
+
+    for(let i=0;i<copia.data.length;i+=4){
+      const r=copia.data[i],g=copia.data[i+1],b=copia.data[i+2];
+      const dist=Math.sqrt((255-r)**2+(255-g)**2+(255-b)**2);
+      if(nivel>0){
+        if(dist<=umbral){
+          copia.data[i+3]=0;
+        }else if(dist<umbral+suavidad){
+          copia.data[i+3]=Math.round(255*(dist-umbral)/suavidad);
+        }
+      }
+    }
+
+    ctx.putImageData(copia,0,0);
+    if(marcarDirty)estado.dirty=true;
+  }
+
+  file.addEventListener('change',async()=>{
+    const f=file.files&&file.files[0];
+    if(!f)return;
+    if(!/^image\//.test(f.type||'')){
+      notificar('Selecciona una imagen válida.');
+      return;
+    }
+    if(f.size>8*1024*1024){
+      notificar('La imagen original no debe superar 8 MB.');
+      file.value='';
+      return;
+    }
+    const data=await new Promise((ok,fail)=>{
+      const r=new FileReader();
+      r.onload=()=>ok(r.result);
+      r.onerror=fail;
+      r.readAsDataURL(f);
+    });
+    try{await cargarDataUrl(data,true)}catch(e){notificar(errorTexto(e))}
+  });
+
+  slider.addEventListener('input',()=>{
+    valor.textContent=slider.value;
+    aplicarTransparencia(true);
+  });
+
+  function dataUrl(){
+    if(!estado.imagen||estado.removed)return '';
+    return canvas.toDataURL('image/png');
+  }
+
+  function reset(){
+    estado.imagen=null;
+    estado.original=null;
+    estado.dirty=false;
+    estado.removed=false;
+    file.value='';
+    slider.disabled=true;
+    slider.value='0';
+    valor.textContent='0';
+    preview.replaceChildren(h('div',{class:'img-editor-empty'},'Sin imagen cargada'));
+  }
+
+  const root=h('div',{class:'img-editor'},
+    h('div',{class:'img-editor-head'},h('b',{},titulo),file),
+    preview,
+    h('div',{class:'img-slider'},
+      h('span',{class:'mu'},'Fondo'),
+      slider,
+      valor
+    ),
+    h('div',{class:'cert-note'},'Mueve el control hacia la derecha para hacer transparente el fondo blanco.'),
+    h('div',{class:'img-editor-actions'},quitar)
+  );
+
+  if(imagenInicial){
+    setTimeout(()=>cargarDataUrl(imagenInicial,false).catch(()=>{}),0);
+  }
+
+  return {
+    root,
+    getDataUrl:dataUrl,
+    isDirty:()=>estado.dirty,
+    isRemoved:()=>estado.removed,
+    reset,
+    setDataUrl:(url)=>cargarDataUrl(url,false)
+  };
+}
+
+function inicializarExtrasRegistroMedico_(){
+  const box=document.getElementById('regMedicoExtras');
+  if(!box||REG_EDITORES_PERFIL.firma)return;
+  REG_EDITORES_PERFIL.firma=crearEditorImagenPerfil_('Firma (opcional al registrarse)');
+  REG_EDITORES_PERFIL.sello=crearEditorImagenPerfil_('Sello (opcional al registrarse)');
+  box.replaceChildren(
+    h('div',{class:'profile-grid'},
+      REG_EDITORES_PERFIL.firma.root,
+      REG_EDITORES_PERFIL.sello.root
+    )
+  );
+  regPerfil.addEventListener('change',actualizarExtrasRegistroMedico_);
+}
+
+function actualizarExtrasRegistroMedico_(){
+  const box=document.getElementById('regMedicoExtras');
+  if(!box)return;
+  box.style.display=esPerfilMedicoRegistro_(regPerfil.value)?'block':'none';
+}
+
+async function cargarPerfilesRegistro(){
+  const sel=document.getElementById('regPerfil');
+  try{
+    const perfiles=await run('listarPerfilesRegistro');
+    PERFILES_REGISTRO=Array.isArray(perfiles)?perfiles:[];
+    sel.replaceChildren(
+      h('option',{value:'',disabled:true,selected:true},'Selecciona tu rol'),
+      ...PERFILES_REGISTRO.map(p=>h('option',{value:p.value},p.label))
+    );
+    actualizarExtrasRegistroMedico_();
+  }catch(e){
+    sel.replaceChildren(h('option',{value:'',disabled:true,selected:true},'No se pudieron cargar los roles'));
+    mostrarMsg(errorTexto(e),'err');
+  }
+}
+
+document.getElementById('formLogin').onsubmit=async e=>{e.preventDefault();limpiarMsg();const b=e.target.querySelector('button');b.disabled=true;try{const res=await run('iniciarSesion',loginCorreo.value,loginPassword.value);sessionStorage.setItem(TOKEN_KEY,res.token);await entrarApp(res.token,res.usuario,res.unidad)}catch(err){mostrarMsg(errorTexto(err),'err')}finally{b.disabled=false}};
+document.getElementById('formRegistro').onsubmit=async e=>{
+  e.preventDefault();
+  limpiarMsg();
+  const b=e.target.querySelector('button');
+  b.disabled=true;
+
+  const correo=regCorreo.value;
+  const password=regPassword.value;
+  const perfil=regPerfil.value;
+  const esMedico=esPerfilMedicoRegistro_(perfil);
+  const firma=esMedico&&REG_EDITORES_PERFIL.firma?REG_EDITORES_PERFIL.firma.getDataUrl():'';
+  const sello=esMedico&&REG_EDITORES_PERFIL.sello?REG_EDITORES_PERFIL.sello.getDataUrl():'';
+
+  try{
+    const res=await run(
+      'registrar',
+      correo,
+      regNombre.value,
+      password,
+      perfil,
+      '',
+      regCedula.value
+    );
+    let aviso='';
+
+    if(esMedico&&(firma||sello)){
+      try{
+        const ses=await run('iniciarSesion',correo,password);
+        await run('guardarPerfilMedico',ses.token,{
+          firmaDataUrl:firma,
+          selloDataUrl:sello
+        });
+        await run('cerrarSesion',ses.token);
+      }catch(imgErr){
+        aviso=' La cuenta fue creada, pero la firma/sello no pudieron guardarse. Puedes cargarlos luego desde Perfil.';
+      }
+    }
+
+    mostrarMsg(res.mensaje+aviso,'ok');
+    e.target.reset();
+    if(REG_EDITORES_PERFIL.firma)REG_EDITORES_PERFIL.firma.reset();
+    if(REG_EDITORES_PERFIL.sello)REG_EDITORES_PERFIL.sello.reset();
+    await cargarPerfilesRegistro();
+  }catch(err){
+    mostrarMsg(errorTexto(err),'err');
+  }finally{
+    b.disabled=false;
+  }
+};
+document.getElementById('formOlvide').onsubmit=async e=>{e.preventDefault();const b=e.target.querySelector('button');b.disabled=true;try{const r=await run('solicitarRecuperacion',olvideCorreo.value);mostrarMsg(r.mensaje,'ok');e.target.reset()}catch(err){mostrarMsg(errorTexto(err),'err')}finally{b.disabled=false}};
+document.getElementById('formRestablecer').onsubmit=async e=>{e.preventDefault();const b=e.target.querySelector('button');b.disabled=true;try{const r=await run('restablecerPassword',RESET_TOKEN,nuevaPassword.value);mostrarMsg(r.mensaje+' Ya puedes iniciar sesión.','ok');setTimeout(()=>irA('vLogin'),1200)}catch(err){mostrarMsg(errorTexto(err),'err')}finally{b.disabled=false}};
+document.getElementById('salir').onclick=()=>{detenerAutoSync();detenerSyncCatalogo_();if(SESION)google.script.run.cerrarSesion(SESION.token);sessionStorage.removeItem(TOKEN_KEY);SESION=null;app.style.display='none';auth.style.display='flex';irA('vLogin')};
+
+let APP_SECCION='agenda';
+let NEURO_SUBSECCION='formulario';
+let CERTIFICADO_TIPO_ACTIVO='certificado_general';
+let ESPECIALIDAD_ACTIVA_ID='';
+let CONSULTORIO_ACTIVO_ID='';
+const CONSULTORIOS_CACHE={};
+const CONSULTORIOS_CACHE_TS={};
+const HORARIOS_CACHE={};
+const CONSULTORIOS_CACHE_TTL_MS=15000;
+
+/* Sincronización independiente del catálogo Especialidades/Consultorios. */
+let CATALOGO_SYNC_TIMER=null;
+let CATALOGO_SYNC_EN_CURSO=false;
+let CATALOGO_REVISION='';
+let CATALOGO_REFRESCO_PENDIENTE=false;
+
+function firmaCatalogo_(lista){
+  try{
+    return JSON.stringify(
+      (Array.isArray(lista)?lista:[]).map(x=>({
+        id:String(x.id||''),
+        nombre:String(x.nombre||''),
+        medicoId:String(x.medicoId||''),
+        especialidadId:String(x.especialidadId||''),
+        horaInicio:String(x.horaInicio||''),
+        horaFin:String(x.horaFin||''),
+        minutosPorPaciente:Number(x.minutosPorPaciente||0),
+        almuerzoInicio:String(x.almuerzoInicio||''),
+        almuerzoFin:String(x.almuerzoFin||'')
+      }))
+    );
+  }catch(e){
+    return '';
+  }
+}
+
+function limpiarCacheConsultorios_(){
+  Object.keys(CONSULTORIOS_CACHE).forEach(
+    k=>delete CONSULTORIOS_CACHE[k]
+  );
+
+  Object.keys(CONSULTORIOS_CACHE_TS).forEach(
+    k=>delete CONSULTORIOS_CACHE_TS[k]
+  );
+
+  Object.keys(HORARIOS_CACHE).forEach(
+    k=>delete HORARIOS_CACHE[k]
+  );
+}
+
+function detenerSyncCatalogo_(){
+  if(CATALOGO_SYNC_TIMER){
+    clearInterval(CATALOGO_SYNC_TIMER);
+    CATALOGO_SYNC_TIMER=null;
+  }
+}
+
+function hayBorradorLocalActivo_(){
+  return !!document.querySelector(
+    '#agendaBody [data-dirty="1"]'
+  );
+}
+
+async function revisarCatalogoConsultorios_(forzar=false){
+  if(
+    !SESION ||
+    CATALOGO_SYNC_EN_CURSO ||
+    document.hidden
+  ){
+    return;
+  }
+
+  /*
+   * Si hubo una actualización mientras Enfermería estaba editando signos,
+   * esperamos hasta que termine el borrador para no destruir su trabajo.
+   */
+  if(
+    CATALOGO_REFRESCO_PENDIENTE &&
+    !hayBorradorLocalActivo_()
+  ){
+    CATALOGO_REFRESCO_PENDIENTE=false;
+
+    if(APP_SECCION==='agenda'){
+      await pintarAplicacion();
+    }
+
+    return;
+  }
+
+  CATALOGO_SYNC_EN_CURSO=true;
+
+  try{
+    const revision=String(
+      await run(
+        'revisionCatalogoConsultorios',
+        SESION.token
+      ) || '0'
+    );
+
+    if(
+      !forzar &&
+      CATALOGO_REVISION &&
+      revision===CATALOGO_REVISION
+    ){
+      return;
+    }
+
+    CATALOGO_REVISION=revision;
+
+    const firmaEspAnterior=firmaCatalogo_(
+      ESPECIALIDADES
+    );
+
+    const nuevasEspecialidades=await run(
+      'listarEspecialidades',
+      SESION.token
+    );
+
+    const especialidadesNuevas=
+      Array.isArray(nuevasEspecialidades)
+        ? nuevasEspecialidades
+        : [];
+
+    const firmaEspNueva=firmaCatalogo_(
+      especialidadesNuevas
+    );
+
+    const activaAnterior=
+      String(ESPECIALIDAD_ACTIVA_ID||'');
+
+    const cacheAnterior=
+      CONSULTORIOS_CACHE[activaAnterior];
+
+    let consultoriosNuevos=null;
+
+    if(
+      APP_SECCION==='agenda' &&
+      activaAnterior &&
+      especialidadesNuevas.some(
+        e=>String(e.id)===activaAnterior
+      )
+    ){
+      consultoriosNuevos=await run(
+        'listarConsultorios',
+        SESION.token,
+        activaAnterior
+      );
+
+      consultoriosNuevos=
+        Array.isArray(consultoriosNuevos)
+          ? consultoriosNuevos
+          : [];
+    }
+
+    const cambioEspecialidades=
+      firmaEspAnterior!==firmaEspNueva;
+
+    const cambioConsultorios=
+      consultoriosNuevos!==null &&
+      firmaCatalogo_(cacheAnterior||[])!==
+      firmaCatalogo_(consultoriosNuevos);
+
+    ESPECIALIDADES=especialidadesNuevas;
+
+    /*
+     * Todas las especialidades se invalidan porque una reasignación puede
+     * retirar el consultorio de un médico y asignarlo a otro.
+     */
+    limpiarCacheConsultorios_();
+
+    if(consultoriosNuevos!==null){
+      CONSULTORIOS_CACHE[activaAnterior]=
+        consultoriosNuevos;
+
+      CONSULTORIOS_CACHE_TS[activaAnterior]=
+        Date.now();
+    }
+
+    if(
+      !ESPECIALIDADES.some(
+        e=>String(e.id)===
+          String(ESPECIALIDAD_ACTIVA_ID)
+      )
+    ){
+      ESPECIALIDAD_ACTIVA_ID=
+        ESPECIALIDADES.length
+          ? String(ESPECIALIDADES[0].id)
+          : '';
+
+      CONSULTORIO_ACTIVO_ID='';
+    }
+
+    if(
+      APP_SECCION==='agenda' &&
+      (
+        cambioEspecialidades ||
+        cambioConsultorios
+      )
+    ){
+      if(hayBorradorLocalActivo_()){
+        CATALOGO_REFRESCO_PENDIENTE=true;
+      }else{
+        await pintarAplicacion();
+      }
+    }
+
+  }catch(e){
+    /*
+     * Una falla momentánea de catálogo no debe interrumpir la agenda.
+     * Se vuelve a intentar en el siguiente ciclo.
+     */
+  }finally{
+    CATALOGO_SYNC_EN_CURSO=false;
+  }
+}
+
+async function iniciarSyncCatalogo_(){
+  detenerSyncCatalogo_();
+
+  try{
+    CATALOGO_REVISION=String(
+      await run(
+        'revisionCatalogoConsultorios',
+        SESION.token
+      ) || '0'
+    );
+  }catch(e){
+    CATALOGO_REVISION='';
+  }
+
+  CATALOGO_SYNC_TIMER=setInterval(
+    ()=>revisarCatalogoConsultorios_(false),
+    6500
+  );
+}
+
+async function entrarApp(token,usuario,unidad){
+  SESION={token,usuario};
+  auth.style.display='none';
+  app.style.display='block';
+  hUnidad.textContent=unidad||'<?= unidad ?>';
+  hUsuario.textContent=usuario.nombre;
+  hRol.textContent=usuario.perfilNombre||(usuario.rol==='admisionista'?'Admisionista':usuario.rol==='licenciada'?'Enfermería':'Médico');
+  hRol.className='rolchip '+usuario.rol;
+
+  ESPECIALIDADES=await run('listarEspecialidades',token);
+  ESPECIALIDAD_ACTIVA_ID=ESPECIALIDADES.length?String(ESPECIALIDADES[0].id):'';
+  APP_SECCION='agenda';
+  await pintarAplicacion();
+
+  // Desde este momento Enfermería y Médico reciben consultorios nuevos
+  // o reasignados sin refrescar manualmente la página.
+  await iniciarSyncCatalogo_();
+}
+
+function etiquetaPacientesMenu_(){
+  if(SESION.usuario.rol==='admisionista')return 'Pacientes atendidos';
+  if(SESION.usuario.rol==='licenciada')return 'Mis pacientes';
+  return 'Mis pacientes';
+}
+
+
+function normalizarEspecialidadUI_(valor){
+  return String(valor||'')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'')
+    .trim()
+    .toLowerCase();
+}
+
+function especialidadSinNeurodesarrolloUI_(){
+  if(
+    !SESION ||
+    !SESION.usuario ||
+    SESION.usuario.rol!=='medico'
+  ){
+    return false;
+  }
+
+  const nombre=
+    normalizarEspecialidadUI_(
+      SESION.usuario.perfilNombre||''
+    );
+
+  return (
+    nombre==='odontologia' ||
+    nombre==='obstetricia'
+  );
+}
+
+
+function pintarMenuSuperior_(contenedor){
+  const nav=h('div',{class:'app-nav'},
+    btn('Agenda',()=>{APP_SECCION='agenda';pintarAplicacion()},'nav-btn '+(APP_SECCION==='agenda'?'activo':'')),
+    btn(etiquetaPacientesMenu_(),()=>{APP_SECCION='pacientes';pintarAplicacion()},'nav-btn '+(APP_SECCION==='pacientes'?'activo':''))
+  );
+
+  // Neurodesarrollo:
+  // - Admisionista: estadística.
+  // - Médico: excepto Odontología y Obstetricia.
+  if(
+    SESION.usuario.rol==='admisionista' ||
+    (
+      SESION.usuario.rol==='medico' &&
+      !especialidadSinNeurodesarrolloUI_()
+    )
+  ){
+    nav.append(
+      btn(
+        'Neurodesarrollo',
+        ()=>{
+          APP_SECCION='neurodesarrollo';
+          NEURO_SUBSECCION=
+            SESION.usuario.rol==='medico'
+              ? 'formulario'
+              : 'estadistica';
+          pintarAplicacion();
+        },
+        'nav-btn '+(APP_SECCION==='neurodesarrollo'?'activo':'')
+      )
+    );
+  }
+
+  if(SESION.usuario.rol==='medico'){
+    nav.append(
+      btn(
+        'Certificados',
+        ()=>{APP_SECCION='certificados';pintarAplicacion()},
+        'nav-btn '+(APP_SECCION==='certificados'?'activo':'')
+      )
+    );
+  }
+
+  // Perfil está disponible para todos los roles.
+  nav.append(
+    btn(
+      'Perfil',
+      ()=>{APP_SECCION='perfil';pintarAplicacion()},
+      'nav-btn '+(APP_SECCION==='perfil'?'activo':'')
+    )
+  );
+
+  contenedor.append(nav);
+}
+
+async function pintarAplicacion(){
+  detenerAutoSync();
+  const main=document.getElementById('main');
+  main.replaceChildren();
+  pintarMenuSuperior_(main);
+  const workspace=h('div',{class:'workspace',id:'workspace'});
+  main.append(workspace);
+
+  if(APP_SECCION==='pacientes'){
+    pintarListadoMensual_(workspace);
+    return;
+  }
+
+  if(APP_SECCION==='neurodesarrollo'){
+    if(
+      (
+        SESION.usuario.rol!=='medico' &&
+        SESION.usuario.rol!=='admisionista'
+      ) ||
+      (
+        SESION.usuario.rol==='medico' &&
+        especialidadSinNeurodesarrolloUI_()
+      )
+    ){
+      APP_SECCION='agenda';
+      await pintarAgendaPrincipal_(workspace);
+      return;
+    }
+
+    await pintarNeurodesarrollo_(workspace);
+    return;
+  }
+
+  if(APP_SECCION==='certificados'){
+    if(SESION.usuario.rol!=='medico'){
+      APP_SECCION='agenda';
+      await pintarAgendaPrincipal_(workspace);
+      return;
+    }
+    await pintarCertificadosMedico_(workspace);
+    return;
+  }
+
+  if(APP_SECCION==='perfil'){
+    await pintarPerfilUsuario_(workspace);
+    return;
+  }
+
+  await pintarAgendaPrincipal_(workspace);
+}
+
+function especialidadActiva_(){
+  return ESPECIALIDADES.find(e=>String(e.id)===String(ESPECIALIDAD_ACTIVA_ID))||null;
+}
+
+async function obtenerConsultoriosEspecialidad_(especialidadId,forzar=false){
+  const key=String(especialidadId||'');
+  const ahora=Date.now();
+
+  if(
+    !forzar &&
+    CONSULTORIOS_CACHE[key] &&
+    (
+      ahora-
+      Number(CONSULTORIOS_CACHE_TS[key]||0)
+    )<CONSULTORIOS_CACHE_TTL_MS
+  ){
+    return CONSULTORIOS_CACHE[key];
+  }
+
+  const datos=await run(
+    'listarConsultorios',
+    SESION.token,
+    key
+  );
+
+  CONSULTORIOS_CACHE[key]=
+    Array.isArray(datos)?datos:[];
+
+  CONSULTORIOS_CACHE_TS[key]=
+    Date.now();
+
+  return CONSULTORIOS_CACHE[key];
+}
+
+function invalidarConsultorios_(especialidadId){
+  const key=
+    String(especialidadId||'');
+
+  delete CONSULTORIOS_CACHE[key];
+  delete CONSULTORIOS_CACHE_TS[key];
+
+  /*
+   * El horario depende de la configuración del consultorio.
+   * Si cambia un consultorio, se invalida esta caché ligera.
+   */
+  Object.keys(HORARIOS_CACHE).forEach(
+    k=>delete HORARIOS_CACHE[k]
+  );
+}
+
+
+/**
+ * Solicita la contraseña actual para una operación administrativa sensible.
+ * Devuelve la contraseña únicamente a la llamada que abrió la ventana.
+ * Nunca se persiste en localStorage/sessionStorage.
+ */
+function pedirPasswordEliminacion_(titulo,mensaje){
+  return new Promise(resolve=>{
+    const overlay=h(
+      'div',
+      {class:'confirm-pass-overlay'}
+    );
+
+    const input=h(
+      'input',
+      {
+        type:'password',
+        autocomplete:'current-password',
+        placeholder:'Contraseña de tu cuenta'
+      }
+    );
+
+    const cerrar=(valor)=>{
+      overlay.remove();
+      resolve(valor);
+    };
+
+    const cancelar=btn(
+      'Cancelar',
+      ()=>cerrar(null),
+      'secundario'
+    );
+
+    const eliminar=btn(
+      'Eliminar',
+      ()=>{
+        const password=
+          String(input.value||'');
+
+        if(!password){
+          input.focus();
+          return;
+        }
+
+        cerrar(password);
+      },
+      'peligro'
+    );
+
+    const box=h(
+      'div',
+      {class:'confirm-pass-box'},
+      h('h3',{},titulo),
+      h('p',{},mensaje),
+      h('label',{},'Contraseña'),
+      input,
+      h(
+        'div',
+        {class:'confirm-pass-actions'},
+        cancelar,
+        eliminar
+      )
+    );
+
+    overlay.append(box);
+
+    overlay.addEventListener(
+      'click',
+      e=>{
+        if(e.target===overlay){
+          cerrar(null);
+        }
+      }
+    );
+
+    input.addEventListener(
+      'keydown',
+      e=>{
+        if(e.key==='Enter'){
+          e.preventDefault();
+          eliminar.click();
+        }
+
+        if(e.key==='Escape'){
+          e.preventDefault();
+          cerrar(null);
+        }
+      }
+    );
+
+    document.body.append(overlay);
+
+    setTimeout(
+      ()=>input.focus(),
+      0
+    );
+  });
+}
+
+
+async function eliminarEspecialidadActiva_(especialidad){
+  if(
+    !especialidad ||
+    SESION.usuario.rol!=='admisionista'
+  ){
+    return;
+  }
+
+  const password=
+    await pedirPasswordEliminacion_(
+      'Eliminar especialidad',
+      'Se eliminará "'+
+      especialidad.nombre+
+      '" del catálogo. No se borrarán citas, pacientes, atenciones ni los registros históricos de sus consultorios.'
+    );
+
+  if(password===null)return;
+
+  try{
+    const r=await run(
+      'eliminarEspecialidadSeguro',
+      SESION.token,
+      especialidad.id,
+      password
+    );
+
+    invalidarConsultorios_(
+      especialidad.id
+    );
+
+    ESPECIALIDADES=
+      await run(
+        'listarEspecialidades',
+        SESION.token
+      );
+
+    ESPECIALIDAD_ACTIVA_ID=
+      ESPECIALIDADES.length
+        ? String(
+            ESPECIALIDADES[0].id
+          )
+        : '';
+
+    CONSULTORIO_ACTIVO_ID='';
+
+    await revisarCatalogoConsultorios_(
+      true
+    );
+
+    await pintarAplicacion();
+
+    notificar(
+      r&&r.mensaje
+        ? r.mensaje
+        : 'Especialidad eliminada.',
+      'ok'
+    );
+
+  }catch(e){
+    notificar(
+      errorTexto(e)
+    );
+  }
+}
+
+
+async function eliminarConsultorioActual_(
+  consultorio,
+  especialidad
+){
+  if(
+    !consultorio ||
+    SESION.usuario.rol!=='admisionista'
+  ){
+    return;
+  }
+
+  const password=
+    await pedirPasswordEliminacion_(
+      'Eliminar consultorio',
+      'Se eliminará "'+
+      consultorio.nombre+
+      '" del catálogo. Las citas y pacientes de hoy y de fechas anteriores NO se borrarán.'
+    );
+
+  if(password===null)return;
+
+  try{
+    const r=await run(
+      'eliminarConsultorioSeguro',
+      SESION.token,
+      consultorio.id,
+      password
+    );
+
+    invalidarConsultorios_(
+      especialidad.id
+    );
+
+    CONSULTORIO_ACTIVO_ID='';
+
+    await revisarCatalogoConsultorios_(
+      true
+    );
+
+    await pintarAplicacion();
+
+    notificar(
+      r&&r.mensaje
+        ? r.mensaje
+        : 'Consultorio eliminado.',
+      'ok'
+    );
+
+  }catch(e){
+    notificar(
+      errorTexto(e)
+    );
+  }
+}
+
+
+async function pintarAgendaPrincipal_(workspace){
+  if(!ESPECIALIDADES.length){
+    const vacio=h('div',{class:'vacio'},'No hay especialidades disponibles.');
+    workspace.append(vacio);
+    if(SESION.usuario.rol==='admisionista'){
+      workspace.append(btn('+ Crear especialidad',crearEspecialidadRapida_,'tab-btn add'));
+    }
+    return;
+  }
+
+  if(!especialidadActiva_())ESPECIALIDAD_ACTIVA_ID=String(ESPECIALIDADES[0].id);
+
+  workspace.append(h('div',{class:'nav-title'},'Especialidades'));
+  const barraEsp=h('div',{class:'nav-strip'});
+  ESPECIALIDADES.forEach(esp=>{
+    barraEsp.append(btn(
+      esp.nombre,
+      async()=>{
+        ESPECIALIDAD_ACTIVA_ID=String(esp.id);
+        CONSULTORIO_ACTIVO_ID='';
+        await pintarAplicacion();
+      },
+      'tab-btn '+(String(esp.id)===String(ESPECIALIDAD_ACTIVA_ID)?'activo':'')
+    ));
+  });
+  if(SESION.usuario.rol==='admisionista'){
+    barraEsp.append(
+      btn(
+        '+ Especialidad',
+        crearEspecialidadRapida_,
+        'tab-btn add'
+      )
+    );
+
+    const actualParaEliminar=
+      especialidadActiva_();
+
+    if(actualParaEliminar){
+      barraEsp.append(
+        btn(
+          'Eliminar especialidad',
+          ()=>eliminarEspecialidadActiva_(
+            actualParaEliminar
+          ),
+          'peligro'
+        )
+      );
+    }
+  }
+
+  workspace.append(barraEsp);
+
+  const esp=especialidadActiva_();
+  let consultorios=[];
+  try{
+    consultorios=await obtenerConsultoriosEspecialidad_(esp.id);
+  }catch(e){
+    notificar(errorTexto(e));
+    return;
+  }
+
+  workspace.append(h('div',{class:'nav-title'},'Consultorios'));
+  const barraCons=h('div',{class:'nav-strip'});
+
+  if(consultorios.length&&!consultorios.some(c=>String(c.id)===String(CONSULTORIO_ACTIVO_ID))){
+    CONSULTORIO_ACTIVO_ID=String(consultorios[0].id);
+  }
+
+  consultorios.forEach(c=>{
+    barraCons.append(btn(
+      c.nombre,
+      async()=>{
+        CONSULTORIO_ACTIVO_ID=String(c.id);
+        await pintarAplicacion();
+      },
+      'tab-btn '+(String(c.id)===String(CONSULTORIO_ACTIVO_ID)?'activo':'')
+    ));
+  });
+
+  if(SESION.usuario.rol==='admisionista'){
+    barraCons.append(btn('+ Consultorio',()=>mostrarFormularioConsultorio_(workspace,esp,null),'tab-btn add'));
+  }
+  workspace.append(barraCons);
+
+  if(!consultorios.length){
+    workspace.append(h('div',{class:'vacio'},SESION.usuario.rol==='admisionista'?'Crea el primer consultorio de esta especialidad.':'No hay consultorios disponibles en esta especialidad.'));
+    return;
+  }
+
+  const c=consultorios.find(x=>String(x.id)===String(CONSULTORIO_ACTIVO_ID))||consultorios[0];
+  CONSULTORIO_ACTIVO_ID=String(c.id);
+
+  const zona=h('div',{id:'agendaBody'});
+  workspace.append(zona);
+  await montarAgendaConsultorio_(zona,c,esp);
+}
+
+async function crearEspecialidadRapida_(){
+  const nombre=prompt('Nombre de la especialidad:');
+  if(!nombre)return;
+  try{
+    const r=await run('crearEspecialidad',SESION.token,nombre);
+    ESPECIALIDADES=await run('listarEspecialidades',SESION.token);
+    ESPECIALIDAD_ACTIVA_ID=String(r.id||'');
+    CONSULTORIO_ACTIVO_ID='';
+    await pintarAplicacion();
+  }catch(e){notificar(errorTexto(e))}
+}
+
+async function mostrarFormularioConsultorio_(workspace,especialidad,existente){
+  detenerAutoSync();
+  let medicos=[];
+  try{
+    medicos=await run('listarMedicosDeEspecialidad',SESION.token,especialidad.id);
+  }catch(e){return notificar(errorTexto(e))}
+  if(!medicos.length)return notificar('No hay profesionales activos registrados en '+especialidad.nombre+'.');
+
+  let host=document.getElementById('agendaBody');
+  if(!host){host=h('div',{id:'agendaBody'});workspace.append(host)}
+
+  const d=existente||{medicoId:'',horaInicio:'08:00',horaFin:'16:30',minutosPorPaciente:20,almuerzoInicio:'13:00',almuerzoFin:'14:00'};
+  const inicioAlmuerzo=existente?(d.almuerzoInicio||''):'13:00';
+  const duracionAlmuerzo=existente?duracionHoras(d.almuerzoInicio,d.almuerzoFin):60;
+
+  const nombreCortoUI=(nombre)=>{
+    const partes=String(nombre||'')
+      .trim()
+      .replace(/^(DR|DRA|DR\.|DRA\.)\s+/i,'')
+      .replace(/\s+/g,' ')
+      .split(/\s+/)
+      .filter(Boolean);
+
+    if(partes.length>=4)return (partes[0]+' '+partes[2]).toUpperCase();
+    if(partes.length>=2)return (partes[0]+' '+partes[1]).toUpperCase();
+    return (partes[0]||'MÉDICO').toUpperCase();
+  };
+
+  const sel=h('select',{id:'cMedico'},...medicos.map(m=>h('option',{value:m.id,selected:String(m.id)===String(d.medicoId)},m.nombre)));
+
+  const medicoSeleccionadoInicial=
+    medicos.find(m=>String(m.id)===String(d.medicoId))||
+    medicos[0]||
+    null;
+
+  const nombreAuto=h(
+    'div',
+    {class:'cert-read'},
+    nombreCortoUI(
+      medicoSeleccionadoInicial
+        ? medicoSeleccionadoInicial.nombre
+        : ''
+    )
+  );
+
+  sel.addEventListener('change',()=>{
+    const elegido=
+      medicos.find(m=>String(m.id)===String(sel.value));
+    nombreAuto.textContent=
+      nombreCortoUI(
+        elegido?elegido.nombre:''
+      );
+  });
+
+  const form=h('div',{class:'inline-form'},
+    h('h3',{},existente?'Editar consultorio':'Nuevo consultorio'),
+    h('div',{class:'fila-form'},
+      h(
+        'div',
+        {},
+        h('label',{},'Nombre automático'),
+        nombreAuto,
+        h(
+          'div',
+          {class:'mu'},
+          'Se genera con el primer nombre y primer apellido del profesional.'
+        )
+      ),
+      h('div',{},h('label',{},'Profesional'),sel)
+    ),
+    h('div',{class:'fila-form'},
+      h('div',{},h('label',{},'Hora inicio'),h('input',{id:'cHoraInicio',type:'time',value:d.horaInicio||'08:00'})),
+      h('div',{},h('label',{},'Hora fin'),h('input',{id:'cHoraFin',type:'time',value:d.horaFin||'16:30'})),
+      h('div',{},h('label',{},'Min/paciente'),h('input',{id:'cMinutos',type:'number',min:'5',max:'240',value:d.minutosPorPaciente||20}))
+    ),
+    h('div',{class:'fila-form'},
+      h('div',{},h('label',{},'Almuerzo desde'),h('input',{id:'cAlmInicio',type:'time',value:inicioAlmuerzo})),
+      h('div',{},h('label',{},'Duración (min)'),h('input',{id:'cAlmDur',type:'number',min:'0',max:'240',value:duracionAlmuerzo}))
+    ),
+    h('div',{class:'form-actions'},
+      btn('Cancelar',()=>pintarAplicacion(),'secundario'),
+      btn(existente?'Guardar cambios':'Crear',async()=>{
+        const ini=cAlmInicio.value;
+        const dur=Number(cAlmDur.value||0);
+        const fin=ini&&dur>0?horaMasMinutos(ini,dur):'';
+        const payload={
+          especialidadId:especialidad.id,
+          medicoId:cMedico.value,
+          horaInicio:cHoraInicio.value,
+          horaFin:cHoraFin.value,
+          minutosPorPaciente:Number(cMinutos.value),
+          almuerzoInicio:fin?ini:'',
+          almuerzoFin:fin
+        };
+        try{
+          let r;
+          if(existente)r=await run('editarConsultorio',SESION.token,existente.id,payload);
+          else r=await run('crearConsultorio',SESION.token,payload);
+          invalidarConsultorios_(especialidad.id);
+          if(!existente&&r&&r.id)CONSULTORIO_ACTIVO_ID=String(r.id);
+
+          /*
+           * La sesión del Admisionista se actualiza inmediatamente.
+           * Las demás sesiones detectarán la revisión compartida.
+           */
+          revisarCatalogoConsultorios_(true);
+          await pintarAplicacion();
+        }catch(e){notificar(errorTexto(e))}
+      })
+    )
+  );
+  host.replaceChildren(form);
+}
+
+function estadoFechaAgenda_(fecha){
+  const hoy=isoHoy();
+  if(fecha<hoy)return 'pasada';
+  if(fecha>hoy)return 'futura';
+  return 'hoy';
+}
+
+async function montarAgendaConsultorio_(host,consultorio,especialidad){
+  detenerAutoSync();
+
+  let fecha=isoHoy();
+  const miGeneracion=++AUTO_SYNC_GENERACION;
+  let bloquesCache=[];
+  let firmaCitas='';
+  let sincronizando=false;
+  let escriturasPendientes=0;
+  let citasPendientesSync=null;
+  const vitalesAbiertos=new Set();
+
+  const CAMPOS_VITALES=[
+    {key:'frecuenciaCardiaca',label:'Frecuencia cardiaca',step:'1'},
+    {key:'presionSistolica',label:'Presión arterial sistólica',step:'1'},
+    {key:'presionDiastolica',label:'Presión arterial diastólica',step:'1'},
+    {key:'temperatura',label:'Temperatura',step:'0.1'},
+    {key:'frecuenciaRespiratoria',label:'Frecuencia respiratoria',step:'1'},
+    {key:'altura',label:'Altura',step:'0.1'},
+    {key:'peso',label:'Peso',step:'0.1'},
+    {key:'perimetroCefalico',label:'Perímetro cefálico',step:'0.1'},
+    {key:'perimetroAbdominal',label:'Perímetro abdominal',step:'0.1'}
+  ];
+
+  function firma(obj){try{return JSON.stringify(obj||{})}catch(e){return String(Date.now())}}
+  function citasSeguras(v){return v&&typeof v==='object'&&!Array.isArray(v)?v:{}}
+  function hayEdicionLocalPendiente(){return !!host.querySelector('[data-dirty="1"]')}
+  function marcarDirty(el,valor){if(!el)return;valor?el.setAttribute('data-dirty','1'):el.removeAttribute('data-dirty')}
+  function programarRefresco(){setTimeout(()=>sincronizar(true),0);emitirEventoAgenda_(consultorio.id,fecha)}
+
+  function signosDeInputs(panel){
+    const salida={};
+    CAMPOS_VITALES.forEach(c=>{
+      const input=panel.querySelector('[data-vital-key="'+c.key+'"]');
+      salida[c.key]=input?input.value:'';
+    });
+    return salida;
+  }
+
+  function crearPanelVitales(cita,hora,rol,estadoFecha,checkRef){
+    if(!cita.nombre||rol==='admisionista')return null;
+    const editable=rol==='licenciada'&&estadoFecha==='hoy'&&cita.estado!=='atendido';
+    const panel=h('div',{class:'vital-panel '+(vitalesAbiertos.has(hora)?'visible':''),'data-vital-panel':hora});
+    const grid=h('div',{class:'vital-grid'});
+    let invalidacionEnviada=false;
+
+    CAMPOS_VITALES.forEach(c=>{
+      const valor=cita[c.key]===null||cita[c.key]===undefined?'':cita[c.key];
+      const field=h('div',{class:'vital-field'},h('label',{},c.label));
+      if(editable){
+        const input=h('input',{type:'number',step:c.step,value:valor,'data-vital-key':c.key});
+        input.addEventListener('input',async()=>{
+          marcarDirty(input,true);
+          const aviso=panel.querySelector('.draft-note');
+          if(aviso)aviso.textContent='Cambios pendientes. Marca nuevamente Listo para guardar y sincronizar.';
+
+          if(checkRef&&checkRef.checked){
+            checkRef.checked=false;
+          }
+
+          if(cita.preparado&&!invalidacionEnviada){
+            invalidacionEnviada=true;
+            try{
+              await run('invalidarPreparacionPorEdicion',SESION.token,consultorio.id,fecha,hora);
+              emitirEventoAgenda_(consultorio.id,fecha);
+            }catch(e){notificar(errorTexto(e))}
+          }
+        });
+        field.append(input);
+      }else{
+        field.append(
+          h(
+            'div',
+            {class:'vital-read'},
+            valor===''?'—':String(valor)
+          )
+        );
+      }
+      grid.append(field);
+    });
+
+    panel.append(
+      h('div',{class:'vital-title'},h('b',{},editable?'Signos vitales y antropometría · borrador local':'Signos vitales y antropometría')),
+      grid
+    );
+    if(editable){
+      panel.append(h('div',{class:'vital-actions'},h('span',{class:'draft-note'},cita.preparado?'Guardado. Si editas un valor, deberás volver a marcar Listo.':'Los valores se guardan únicamente al marcar Listo.')));
+    }
+    return panel;
+  }
+
+  function botonVitales(hora,panel){
+    return btn(vitalesAbiertos.has(hora)?'Ocultar signos':'Signos vitales',()=>{
+      if(vitalesAbiertos.has(hora))vitalesAbiertos.delete(hora);else vitalesAbiertos.add(hora);
+      panel.classList.toggle('visible');
+    },'vital-toggle');
+  }
+
+  async function cargarDatos(){
+    const claveHorario=
+      [
+        consultorio.id,
+        consultorio.horaInicio,
+        consultorio.horaFin,
+        consultorio.minutosPorPaciente,
+        consultorio.almuerzoInicio,
+        consultorio.almuerzoFin
+      ].join('|');
+
+    let bloques=
+      HORARIOS_CACHE[claveHorario]||
+      null;
+
+    let citas;
+
+    if(bloques){
+      citas=await run(
+        'listarCitas',
+        SESION.token,
+        consultorio.id,
+        fecha
+      );
+
+    }else{
+      const respuesta=
+        await Promise.all([
+          run(
+            'generarHorario',
+            SESION.token,
+            consultorio.id
+          ),
+          run(
+            'listarCitas',
+            SESION.token,
+            consultorio.id,
+            fecha
+          )
+        ]);
+
+      bloques=
+        Array.isArray(respuesta[0])
+          ? respuesta[0]
+          : [];
+
+      citas=respuesta[1];
+
+      HORARIOS_CACHE[claveHorario]=
+        bloques;
+    }
+
+    bloquesCache=
+      Array.isArray(bloques)
+        ? bloques
+        : [];
+
+    const cs=citasSeguras(citas);
+
+    firmaCitas=firma(cs);
+
+    return cs;
+  }
+
+  function dibujar(citas){
+    if(miGeneracion!==AUTO_SYNC_GENERACION)return;
+    citas=citasSeguras(citas);
+    const rol=SESION.usuario.rol;
+    const ef=estadoFechaAgenda_(fecha);
+    const pasada=ef==='pasada';
+    const hoy=ef==='hoy';
+
+    const cabecera=h('div',{class:'agenda-toolbar'},
+      h('div',{},h('h2',{},consultorio.nombre),h('div',{class:'mu'},especialidad.nombre+' · '+consultorio.horaInicio+'–'+consultorio.horaFin)),
+      h('div',{class:'fecha-nav'},
+        btn('‹',()=>cambiarDia(-1),'secundario'),
+        h('input',{type:'date',value:fecha,onchange:e=>{fecha=e.target.value;vitalesAbiertos.clear();cargarFecha()}}),
+        btn('›',()=>cambiarDia(1),'secundario'),
+        btn('Hoy',()=>{fecha=isoHoy();vitalesAbiertos.clear();cargarFecha()},'secundario'),
+        rol==='admisionista'
+          ? btn(
+              'Configurar',
+              ()=>mostrarFormularioConsultorio_(
+                document.getElementById('workspace'),
+                especialidad,
+                consultorio
+              ),
+              'secundario'
+            )
+          : null,
+        rol==='admisionista'
+          ? btn(
+              'Eliminar consultorio',
+              ()=>eliminarConsultorioActual_(
+                consultorio,
+                especialidad
+              ),
+              'peligro'
+            )
+          : null
+      )
+    );
+
+    const avisos=[];
+    if(pasada)avisos.push(h('div',{class:'jornada-cerrada'},'Jornada cerrada · Solo lectura.'));
+    else if(ef==='futura'&&rol!=='admisionista')avisos.push(h('div',{class:'jornada-futura'},'Las acciones clínicas estarán disponibles el día de la atención.'));
+
+    const tabla=h('div',{class:'agenda-wrap'},h('div',{class:'agenda-head'},h('div',{},'Horario'),h('div',{},'Paciente'),h('div',{},'Identificación'),h('div',{},'Pertenencia'),h('div',{},'Cobertura'),h('div',{},'Estado / acción')));
+
+    bloquesCache.forEach(b=>{
+      if(b.tipo==='almuerzo'){
+        tabla.append(h('div',{class:'agenda-row almuerzo'},h('span',{},b.hora+' – '+b.horaFin),h('span',{},'ALMUERZO · BLOQUEADO')));
+        return;
+      }
+
+      const d=citas[b.hora]||{};
+      const item=h('div',{class:'agenda-item'});
+      const fila=h('div',{class:'agenda-row '+(d.preparado?'preparado ':'')+(d.estado==='atendido'?'atendido':'')});
+
+      // Debe existir para TODOS los roles.
+      // Admisionista no usa panel de signos vitales, pero al finalizar
+      // la fila el código comprueba si panel existe.
+      let panel=null;
+
+      fila.append(h('div',{class:'hora'},b.hora+' – '+b.horaFin));
+
+      if(rol==='admisionista'){
+        const bloqueadaPorAtencion=
+          d.estado==='atendido';
+
+        /*
+         * Una vez que Medicina marca ATENDIDO, Admisión únicamente ve
+         * los datos. No puede escribir, cambiar selects ni eliminar.
+         */
+        if(pasada||bloqueadaPorAtencion){
+          fila.append(
+            h('div',{},h('b',{},d.nombre||'—')),
+            h('div',{class:'mini'},d.identificacion||'—'),
+            h('div',{class:'mini'},d.pertenencia||'—'),
+            h('div',{class:'mini'},d.cobertura||'—'),
+            h(
+              'div',
+              {class:'acciones'},
+              d.nombre
+                ? h(
+                    'span',
+                    {
+                      class:'badge '+(d.estado||'pendiente_signos'),
+                      title:bloqueadaPorAtencion
+                        ? 'Paciente atendido · bloqueado para Admisión'
+                        : ''
+                    },
+                    bloqueadaPorAtencion
+                      ? 'Atendido · bloqueado'
+                      : (ESTADO_LABEL[d.estado]||d.estado)
+                  )
+                : h('span',{class:'mu'},'Libre')
+            )
+          );
+        }else{
+          const nombre=h('input',{placeholder:'Nombres y apellidos',value:d.nombre||'',autocomplete:'off'});
+          const ident=h('input',{placeholder:'Cédula / identificación',value:d.identificacion||'',class:'identificacion-input',inputmode:'numeric',maxlength:'20',autocomplete:'off'});
+          const per=h('select',{},h('option',{value:''},'Consulta'),...PERTENENCIA.map(p=>h('option',{value:p,selected:p===d.pertenencia},p)));
+          const cob=h('select',{},...COBERTURA.map(c=>h('option',{value:c,selected:c===(d.cobertura||'NO APORTA')},c)));
+          const estadoAuto=h(
+            'span',
+            {class:'autosave'},
+            d.nombre
+              ? 'Sincronizado'
+              : 'Autoguardado'
+          );
+
+          let timer=null;
+          let guardando=false;
+          let guardarPendiente=false;
+
+          function snapshotActual_(){
+            return {
+              pacienteId:
+                d.pacienteId||'',
+              nombre:
+                nombre.value.trim(),
+              identificacion:
+                ident.value.trim(),
+              hc:
+                d.hc||'',
+              pertenencia:
+                per.value,
+              cobertura:
+                cob.value
+            };
+          }
+
+          function sigueIgual_(
+            elemento,
+            valorEnviado,
+            normalizar=false
+          ){
+            const actual=
+              normalizar
+                ? String(elemento.value||'').trim()
+                : String(elemento.value||'');
+
+            return (
+              actual===
+              String(valorEnviado||'')
+            );
+          }
+
+          function filaTieneDirty_(){
+            return (
+              nombre.getAttribute('data-dirty')==='1'||
+              ident.getAttribute('data-dirty')==='1'||
+              per.getAttribute('data-dirty')==='1'||
+              cob.getAttribute('data-dirty')==='1'
+            );
+          }
+
+          async function guardar(){
+            if(timer){
+              clearTimeout(timer);
+              timer=null;
+            }
+
+            if(guardando){
+              guardarPendiente=true;
+              return;
+            }
+
+            const enviado=
+              snapshotActual_();
+
+            if(
+              !enviado.nombre &&
+              !d.nombre
+            ){
+              estadoAuto.textContent=
+                'Escribe el nombre';
+
+              return;
+            }
+
+            guardando=true;
+            guardarPendiente=false;
+            escriturasPendientes++;
+
+            estadoAuto.className=
+              'autosave guardando';
+
+            estadoAuto.textContent=
+              'Guardando…';
+
+            try{
+              const r=await run(
+                'guardarCita',
+                SESION.token,
+                consultorio.id,
+                fecha,
+                b.hora,
+                enviado
+              );
+
+              if(
+                r &&
+                r.pacienteId
+              ){
+                d.pacienteId=
+                  String(r.pacienteId);
+              }
+
+              /*
+               * Solo se limpia el estado dirty si el usuario NO cambió
+               * ese campo mientras el servidor estaba guardando.
+               *
+               * Esto evita el error clásico:
+               * 1. se guarda el nombre;
+               * 2. el usuario empieza a escribir la cédula;
+               * 3. termina la petición anterior;
+               * 4. el redibujado borra la cédula nueva.
+               */
+              if(
+                sigueIgual_(
+                  nombre,
+                  enviado.nombre,
+                  true
+                )
+              ){
+                marcarDirty(
+                  nombre,
+                  false
+                );
+
+                d.nombre=
+                  enviado.nombre;
+              }
+
+              if(
+                sigueIgual_(
+                  ident,
+                  enviado.identificacion,
+                  true
+                )
+              ){
+                marcarDirty(
+                  ident,
+                  false
+                );
+
+                d.identificacion=
+                  enviado.identificacion;
+              }
+
+              if(
+                sigueIgual_(
+                  per,
+                  enviado.pertenencia
+                )
+              ){
+                marcarDirty(
+                  per,
+                  false
+                );
+
+                d.pertenencia=
+                  enviado.pertenencia;
+              }
+
+              if(
+                sigueIgual_(
+                  cob,
+                  enviado.cobertura
+                )
+              ){
+                marcarDirty(
+                  cob,
+                  false
+                );
+
+                d.cobertura=
+                  enviado.cobertura;
+              }
+
+              estadoAuto.className=
+                'autosave guardado';
+
+              estadoAuto.textContent=
+                filaTieneDirty_()
+                  ? 'Cambios pendientes…'
+                  : 'Guardado ✓';
+
+            }catch(e){
+              estadoAuto.className=
+                'autosave error';
+
+              estadoAuto.textContent=
+                'Error';
+
+              notificar(
+                errorTexto(e)
+              );
+
+            }finally{
+              guardando=false;
+
+              escriturasPendientes=
+                Math.max(
+                  0,
+                  escriturasPendientes-1
+                );
+
+              /*
+               * Si se escribió algo durante la petición anterior,
+               * primero se guarda esa versión nueva y recién después
+               * se permite refrescar la agenda.
+               */
+              if(
+                guardarPendiente ||
+                filaTieneDirty_()
+              ){
+                guardarPendiente=false;
+                programar(220);
+
+              }else{
+                programarRefresco();
+              }
+            }
+          }
+
+          function programar(ms){
+            if(timer){
+              clearTimeout(timer);
+            }
+
+            timer=setTimeout(
+              ()=>{
+                timer=null;
+                guardar();
+              },
+              ms
+            );
+          }
+
+          function editarCampo_(
+            elemento,
+            espera
+          ){
+            marcarDirty(
+              elemento,
+              true
+            );
+
+            if(guardando){
+              guardarPendiente=true;
+            }
+
+            programar(espera);
+          }
+
+          nombre.oninput=()=>{
+            editarCampo_(
+              nombre,
+              520
+            );
+          };
+
+          ident.oninput=()=>{
+            editarCampo_(
+              ident,
+              480
+            );
+          };
+
+          nombre.onblur=()=>{
+            if(timer||filaTieneDirty_()){
+              guardar();
+            }
+          };
+
+          ident.onblur=()=>{
+            if(timer||filaTieneDirty_()){
+              guardar();
+            }
+          };
+
+          per.onchange=()=>{
+            editarCampo_(
+              per,
+              0
+            );
+          };
+
+          cob.onchange=()=>{
+            editarCampo_(
+              cob,
+              0
+            );
+          };
+
+          const acc=h('div',{class:'acciones'},estadoAuto);
+          if(d.nombre)acc.append(btn('Quitar',async()=>{
+            if(!confirm('¿Eliminar a '+d.nombre+' de este horario?'))return;
+            try{escriturasPendientes++;await run('eliminarCita',SESION.token,consultorio.id,fecha,b.hora)}catch(e){notificar(errorTexto(e))}
+            finally{escriturasPendientes=Math.max(0,escriturasPendientes-1);programarRefresco()}
+          },'peligro'));
+          fila.append(nombre,ident,per,cob,acc);
+        }
+      }else{
+        const pacienteCell=h('div',{class:'paciente-cell'},h('b',{},d.nombre||'—'));
+        let chk=null;
+
+        if(d.nombre&&rol==='licenciada'){
+          chk=h('input',{type:'checkbox',class:'check',checked:!!d.preparado,disabled:!hoy||d.estado==='atendido',title:'Listo para consulta'});
+          panel=crearPanelVitales(d,b.hora,rol,ef,chk);
+          if(panel)pacienteCell.append(botonVitales(b.hora,panel));
+        }else if(d.nombre&&rol==='medico'){
+          panel=crearPanelVitales(d,b.hora,rol,ef,null);
+          if(panel)pacienteCell.append(botonVitales(b.hora,panel));
+        }
+
+        fila.append(pacienteCell,h('div',{class:'mini'},d.identificacion||'—'),h('div',{class:'mini'},d.pertenencia||'—'),h('div',{class:'mini'},d.cobertura||'—'));
+        const accion=h('div',{class:'acciones'});
+
+        if(!d.nombre){
+          accion.append(h('span',{class:'mu'},'Libre'));
+        }else if(rol==='licenciada'){
+          if(!hoy){
+            accion.append(h('span',{class:'badge '+(d.estado||'pendiente_signos')},pasada?'Jornada cerrada':'Pendiente'));
+          }else if(d.estado==='atendido'){
+            accion.append(h('span',{class:'badge atendido'},'Atendido'));
+          }else{
+            chk.onchange=async()=>{
+              try{
+                escriturasPendientes++;
+                if(chk.checked){
+                  if(!panel)throw new Error('No se encontró el panel de signos vitales.');
+                  await run('guardarPreparacionPaciente',SESION.token,consultorio.id,fecha,b.hora,signosDeInputs(panel));
+                  panel.querySelectorAll('[data-dirty="1"]').forEach(el=>marcarDirty(el,false));
+                }else{
+                  await run('invalidarPreparacionPorEdicion',SESION.token,consultorio.id,fecha,b.hora);
+                }
+              }catch(e){notificar(errorTexto(e));chk.checked=!chk.checked}
+              finally{escriturasPendientes=Math.max(0,escriturasPendientes-1);programarRefresco()}
+            };
+            accion.append(h('div',{class:'check-wrap'},chk,h('span',{class:'check-label'},'Listo')),h('span',{class:'badge '+(d.estado||'pendiente_signos')},ESTADO_LABEL[d.estado]||'Pendiente'));
+          }
+        }else if(rol==='medico'){
+          if(!hoy){
+            accion.append(h('span',{class:'badge '+(d.estado||'pendiente_signos')},pasada?'Jornada cerrada':'Pendiente'));
+          }else if(d.estado==='listo_consulta'&&d.preparado){
+            accion.append(btn('Marcar atendido',async()=>{
+              try{escriturasPendientes++;await run('marcarPacienteAtendido',SESION.token,consultorio.id,fecha,b.hora)}catch(e){notificar(errorTexto(e))}
+              finally{escriturasPendientes=Math.max(0,escriturasPendientes-1);programarRefresco()}
+            }));
+          }else if(d.estado==='atendido')accion.append(h('span',{class:'badge atendido'},'Atendido'));
+          else accion.append(h('span',{class:'estado-pendiente'},'Pendiente de Enfermería'));
+        }
+        fila.append(accion);
+      }
+
+      item.append(fila);if(panel)item.append(panel);tabla.append(item);
+    });
+
+    host.replaceChildren(cabecera,...avisos,tabla);
+  }
+
+  async function cargarFecha(){
+    if(miGeneracion!==AUTO_SYNC_GENERACION)return;
+    try{sincronizando=true;const citas=await cargarDatos();dibujar(citas)}catch(e){notificar(errorTexto(e))}finally{sincronizando=false}
+  }
+
+  async function sincronizar(forzar=false){
+    if(miGeneracion!==AUTO_SYNC_GENERACION||sincronizando||!SESION)return;
+    if(!forzar&&document.hidden)return;
+    sincronizando=true;
+    try{
+      const r=await run('listarCitas',SESION.token,consultorio.id,fecha);
+      if(!r||typeof r!=='object'||Array.isArray(r))return;
+      const nueva=firma(r);
+      if(!forzar&&nueva===firmaCitas){
+        if(citasPendientesSync&&!hayEdicionLocalPendiente()&&escriturasPendientes===0){const p=citasPendientesSync;citasPendientesSync=null;firmaCitas=firma(p);dibujar(p)}
+        return;
+      }
+      if(hayEdicionLocalPendiente()||escriturasPendientes>0){citasPendientesSync=r;return}
+      citasPendientesSync=null;firmaCitas=nueva;dibujar(r);
+    }catch(e){}finally{sincronizando=false}
+  }
+
+  function cambiarDia(n){const d=new Date(fecha+'T12:00:00');d.setDate(d.getDate()+n);fecha=d.toLocaleDateString('sv-SE');vitalesAbiertos.clear();cargarFecha()}
+
+  await cargarFecha();
+  AUTO_SYNC_NOW=(evento)=>{
+    if(evento&&(String(evento.consultorioId||'')!==String(consultorio.id)||String(evento.fecha||'')!==String(fecha)))return;
+    sincronizar(!!evento);
+  };
+  AUTO_SYNC_TIMER=setInterval(()=>sincronizar(false),2400);
+}
+
+
+
+async function pintarNeurodesarrollo_(workspace){
+  detenerAutoSync();
+
+  const esMedico=
+    SESION.usuario.rol==='medico';
+
+  if(!esMedico){
+    NEURO_SUBSECCION='estadistica';
+  }
+
+  workspace.replaceChildren();
+
+  const cabecera=h('div',{class:'section-hero section-hero-neuro'},
+    h('div',{class:'section-icon'},'✦'),
+    h('div',{},
+      h('h2',{},'Neurodesarrollo'),
+      h(
+        'div',
+        {class:'mu'},
+        esMedico
+          ? 'Formulario clínico y estadística mensual.'
+          : 'Estadística mensual de Neurodesarrollo.'
+      )
+    )
+  );
+
+  workspace.append(cabecera);
+
+  if(esMedico){
+    const subnav=h('div',{class:'neuro-subnav'},
+      btn(
+        'Formulario',
+        ()=>{
+          NEURO_SUBSECCION='formulario';
+          pintarNeurodesarrollo_(workspace);
+        },
+        NEURO_SUBSECCION==='formulario'
+          ? 'activo'
+          : ''
+      ),
+      btn(
+        'Estadística',
+        ()=>{
+          NEURO_SUBSECCION='estadistica';
+          pintarNeurodesarrollo_(workspace);
+        },
+        NEURO_SUBSECCION==='estadistica'
+          ? 'activo'
+          : ''
+      )
+    );
+
+    workspace.append(subnav);
+  }
+
+  if(NEURO_SUBSECCION==='estadistica'){
+    await pintarEstadisticaNeuro_(workspace);
+    return;
+  }
+
+  await pintarFormularioNeuro_(workspace);
+}
+
+
+async function pintarFormularioNeuro_(workspace){
+  const shell=h('div',{class:'neuro-shell'});
+
+  const fechaInput=h('input',{
+    type:'date',
+    value:isoHoy()
+  });
+
+  const pacienteSelect=h(
+    'select',
+    {},
+    h(
+      'option',
+      {value:''},
+      'Cargando pacientes…'
+    )
+  );
+
+  const resumen=h(
+    'div',
+    {class:'neuro-summary'},
+    'Cargando pacientes elegibles…'
+  );
+
+  const barra=h('div',{class:'neuro-top'},
+    h('div',{},
+      h('label',{},'Fecha de atención'),
+      fechaInput
+    ),
+    h(
+      'div',
+      {
+        style:
+          'min-width:280px;flex:1'
+      },
+      h('label',{},'Paciente'),
+      pacienteSelect
+    ),
+    resumen
+  );
+
+  const cuerpo=h(
+    'div',
+    {class:'neuro-empty'},
+    'Cargando pacientes atendidos…'
+  );
+
+  shell.append(barra,cuerpo);
+  workspace.append(shell);
+
+  let pacientes=[];
+  let pacienteActual=null;
+
+  fechaInput.addEventListener(
+    'change',
+    ()=>cargarPacientes()
+  );
+
+  pacienteSelect.addEventListener(
+    'change',
+    ()=>seleccionarPaciente(
+      pacienteSelect.value
+    )
+  );
+
+  async function cargarPacientes(){
+    pacienteActual=null;
+
+    pacienteSelect.disabled=true;
+
+    pacienteSelect.replaceChildren(
+      h(
+        'option',
+        {value:''},
+        'Cargando pacientes…'
+      )
+    );
+
+    cuerpo.className='neuro-empty';
+
+    cuerpo.replaceChildren(
+      document.createTextNode(
+        'Cargando pacientes atendidos…'
+      )
+    );
+
+    resumen.textContent=
+      'Consultando agenda…';
+
+    try{
+      const r=await run(
+        'listarPacientesNeurodesarrollo',
+        SESION.token,
+        fechaInput.value
+      );
+
+      pacientes=
+        Array.isArray(r)
+          ? r
+          : [];
+
+      pacienteSelect.replaceChildren(
+        h(
+          'option',
+          {value:''},
+          pacientes.length
+            ? 'Selecciona un paciente'
+            : 'No hay pacientes pendientes'
+        ),
+        ...pacientes.map(p=>
+          h(
+            'option',
+            {value:p.citaId},
+            (p.hora
+              ? p.hora+' · '
+              : '')+
+            p.nombre+
+            (p.cedula
+              ? ' · '+p.cedula
+              : '')+
+            ' · '+
+            p.tipoAtencion
+          )
+        )
+      );
+
+      pacienteSelect.disabled=
+        !pacientes.length;
+
+      resumen.textContent=
+        pacientes.length===1
+          ? '1 formulario pendiente'
+          : pacientes.length+
+            ' formularios pendientes';
+
+      if(!pacientes.length){
+        cuerpo.className=
+          'neuro-empty';
+
+        cuerpo.replaceChildren(
+          document.createTextNode(
+            'No hay pacientes pendientes de Neurodesarrollo para esta fecha. Los formularios ya guardados dejan de aparecer aquí.'
+          )
+        );
+
+        return;
+      }
+
+      cuerpo.className=
+        'neuro-empty';
+
+      cuerpo.replaceChildren(
+        document.createTextNode(
+          'Selecciona un paciente.'
+        )
+      );
+
+    }catch(e){
+      pacienteSelect.replaceChildren(
+        h(
+          'option',
+          {value:''},
+          'No se pudieron cargar los pacientes'
+        )
+      );
+
+      resumen.textContent='';
+
+      cuerpo.className='neuro-empty';
+
+      cuerpo.replaceChildren(
+        document.createTextNode(
+          errorTexto(e)
+        )
+      );
+    }
+  }
+
+  function seleccionarPaciente(citaId){
+    pacienteActual=
+      pacientes.find(
+        p=>
+          String(p.citaId)===
+          String(citaId)
+      )||null;
+
+    if(!pacienteActual){
+      cuerpo.className=
+        'neuro-empty';
+
+      cuerpo.replaceChildren(
+        document.createTextNode(
+          'Selecciona un paciente.'
+        )
+      );
+
+      return;
+    }
+
+    pintarFormularioPaciente();
+  }
+
+  function selectCampo(
+    label,
+    valores,
+    valorActual,
+    key,
+    opcional=false
+  ){
+    const textoLabel=h(
+      'label',
+      {},
+      label
+    );
+
+    if(opcional){
+      textoLabel.append(
+        h(
+          'span',
+          {class:'neuro-optional'},
+          'Opcional'
+        )
+      );
+    }
+
+    return h(
+      'div',
+      {class:'neuro-field'},
+      textoLabel,
+      h(
+        'select',
+        {'data-neuro-key':key},
+        h(
+          'option',
+          {value:''},
+          opcional
+            ? 'Sin registrar'
+            : 'Selecciona'
+        ),
+        ...valores.map(v=>
+          h(
+            'option',
+            {
+              value:v,
+              selected:
+                String(v)===
+                String(
+                  valorActual||''
+                )
+            },
+            v
+          )
+        )
+      )
+    );
+  }
+
+  function pintarFormularioPaciente(){
+    const p=pacienteActual;
+    const reg=p.registro||{};
+
+    cuerpo.className=
+      'neuro-form';
+
+    const form=h('form',{});
+
+    form.append(
+      h('h3',{},p.nombre),
+      h(
+        'div',
+        {class:'mu'},
+        'Atención '+
+        p.tipoAtencion+
+        ' · '+
+        p.fecha+
+        (
+          p.hora
+            ? ' · '+p.hora
+            : ''
+        )
+      )
+    );
+
+    if(p.registro){
+      let mensaje;
+
+      if(p.registroMismoMes){
+        mensaje=
+          'Este paciente ya tiene un registro con este médico durante el mes actual. Se cargaron sus respuestas anteriores y, al guardar, se actualizará la misma fila con la nueva fecha.';
+      }else{
+        mensaje=
+          'Se cargaron las respuestas del último registro conocido'+
+          (
+            p.registroMedico
+              ? ' ('+
+                p.registroMedico+
+                ')'
+              : ''
+          )+
+          '. Al guardar se creará un registro independiente para este médico y este mes.';
+      }
+
+      form.append(
+        h(
+          'div',
+          {class:'neuro-existing'},
+          mensaje
+        )
+      );
+    }
+
+    form.append(
+      h(
+        'div',
+        {class:'neuro-identidad'},
+        h(
+          'div',
+          {},
+          h('label',{},'Paciente'),
+          h(
+            'div',
+            {class:'neuro-read'},
+            p.nombre||'—'
+          )
+        ),
+        h(
+          'div',
+          {},
+          h(
+            'label',
+            {},
+            'Cédula / identificación'
+          ),
+          h(
+            'div',
+            {class:'neuro-read'},
+            p.cedula||
+              'Sin identificación'
+          )
+        ),
+        h(
+          'div',
+          {},
+          h('label',{},'Motivo'),
+          h(
+            'div',
+            {class:'neuro-read'},
+            p.tipoAtencion||'—'
+          )
+        )
+      )
+    );
+
+    const grid=h(
+      'div',
+      {class:'neuro-grid'},
+
+      selectCampo(
+        'Sexo',
+        ['Hombre','Mujer'],
+        reg.sexo,
+        'sexo'
+      ),
+
+      selectCampo(
+        'Tamizaje',
+        [
+          'Primera vez',
+          'Subsecuente'
+        ],
+        reg.consulta,
+        'consulta'
+      ),
+
+      selectCampo(
+        'Grupo etario',
+        [
+          '< 1 A',
+          '1 - 3 A 11 MESES',
+          '4 - 4 A 11 MESES'
+        ],
+        reg.edad,
+        'edad'
+      ),
+
+      selectCampo(
+        'Denver II',
+        [
+          'Normal',
+          'Dudoso',
+          'Retraso'
+        ],
+        reg.resultado,
+        'resultado'
+      ),
+
+      selectCampo(
+        'Referencia a estimulación temprana',
+        ['No','Si'],
+        reg.estimulacion,
+        'estimulacion'
+      ),
+
+      selectCampo(
+        'Referido a tercer nivel',
+        ['No','Si'],
+        reg.tercerNivel,
+        'tercerNivel'
+      ),
+
+      selectCampo(
+        'Persiste el retraso',
+        ['Si'],
+        reg.persiste,
+        'persiste',
+        true
+      ),
+
+      selectCampo(
+        'Normalización del retraso',
+        ['Si'],
+        reg.normalizacion,
+        'normalizacion',
+        true
+      )
+    );
+
+    const estado=h(
+      'span',
+      {class:'autosave'},
+      ''
+    );
+
+    const guardarBtn=btn(
+      p.registroMismoMes
+        ? 'Actualizar Neurodesarrollo'
+        : 'Guardar Neurodesarrollo',
+      async()=>{
+        const payload={
+          citaId:p.citaId,
+          fecha:p.fecha
+        };
+
+        form
+          .querySelectorAll(
+            '[data-neuro-key]'
+          )
+          .forEach(el=>{
+            payload[
+              el.getAttribute(
+                'data-neuro-key'
+              )
+            ]=el.value;
+          });
+
+        guardarBtn.disabled=true;
+
+        estado.className=
+          'autosave guardando';
+
+        estado.textContent=
+          'Guardando…';
+
+        try{
+          const r=await run(
+            'guardarNeurodesarrollo',
+            SESION.token,
+            payload
+          );
+
+          estado.className=
+            'autosave guardado';
+
+          estado.textContent=
+            r&&r.mensaje
+              ? r.mensaje
+              : 'Guardado ✓';
+
+          notificar(
+            r&&r.mensaje
+              ? r.mensaje
+              : 'Neurodesarrollo guardado.',
+            'ok'
+          );
+
+          /*
+           * La cita recién procesada desaparecerá de la lista.
+           */
+          await cargarPacientes();
+
+        }catch(e){
+          estado.className=
+            'autosave error';
+
+          estado.textContent=
+            'No se pudo guardar.';
+
+          notificar(
+            errorTexto(e)
+          );
+
+        }finally{
+          guardarBtn.disabled=false;
+        }
+      }
+    );
+
+    form.append(
+      grid,
+      h(
+        'div',
+        {class:'neuro-actions'},
+        guardarBtn,
+        estado
+      )
+    );
+
+    cuerpo.replaceChildren(form);
+  }
+
+  await cargarPacientes();
+}
+
+
+async function pintarEstadisticaNeuro_(workspace){
+  const esAdmin=
+    SESION.usuario.rol==='admisionista';
+
+  const mes=h(
+    'input',
+    {
+      type:'month',
+      value:nombreMesActual_()
+    }
+  );
+
+  const controles=h(
+    'div',
+    {class:'neuro-stats-controls'}
+  );
+
+  controles.append(
+    h(
+      'div',
+      {},
+      h('label',{},'Mes'),
+      mes
+    )
+  );
+
+  let medicos=[];
+
+  try{
+    medicos=await run(
+      'listarMedicosNeurodesarrollo',
+      SESION.token
+    );
+
+    medicos=
+      Array.isArray(medicos)
+        ? medicos
+        : [];
+
+  }catch(e){
+    workspace.append(
+      h(
+        'div',
+        {class:'neuro-empty'},
+        errorTexto(e)
+      )
+    );
+    return;
+  }
+
+  const checks=[];
+
+  if(esAdmin){
+    const bloqueMedicos=h(
+      'div',
+      {
+        style:
+          'flex:1;min-width:320px'
+      },
+      h(
+        'label',
+        {},
+        'Médicos'
+      )
+    );
+
+    const lista=h(
+      'div',
+      {class:'neuro-doctors'}
+    );
+
+    medicos.forEach(m=>{
+      const chk=h(
+        'input',
+        {
+          type:'checkbox',
+          value:m.id,
+          checked:true
+        }
+      );
+
+      checks.push(chk);
+
+      lista.append(
+        h(
+          'label',
+          {class:'neuro-doctor-check'},
+          chk,
+          document.createTextNode(
+            m.nombre
+          )
+        )
+      );
+    });
+
+    bloqueMedicos.append(
+      h(
+        'div',
+        {class:'toolbar'},
+        btn(
+          'Todos',
+          ()=>{
+            checks.forEach(
+              x=>x.checked=true
+            );
+          },
+          'secundario'
+        ),
+        btn(
+          'Ninguno',
+          ()=>{
+            checks.forEach(
+              x=>x.checked=false
+            );
+          },
+          'secundario'
+        )
+      ),
+      lista
+    );
+
+    controles.append(
+      bloqueMedicos
+    );
+
+  }else{
+    controles.append(
+      h(
+        'div',
+        {},
+        h('label',{},'Médico'),
+        h(
+          'div',
+          {class:'neuro-read'},
+          SESION.usuario.nombre
+        )
+      )
+    );
+  }
+
+  const buscar=btn(
+    'Buscar',
+    buscarRegistros
+  );
+
+  const descargar=btn(
+    'Descargar Excel',
+    descargarExcel,
+    'secundario'
+  );
+
+  descargar.disabled=true;
+
+  controles.append(
+    h(
+      'div',
+      {class:'toolbar'},
+      buscar,
+      descargar
+    )
+  );
+
+  const resultado=h(
+    'div',
+    {},
+    h(
+      'div',
+      {class:'neuro-empty'},
+      'Selecciona el mes y pulsa Buscar. La estadística no se carga automáticamente.'
+    )
+  );
+
+  workspace.append(
+    controles,
+    resultado
+  );
+
+  let ultimaBusqueda=null;
+
+  function idsSeleccionados(){
+    if(!esAdmin){
+      return medicos.length
+        ? [medicos[0].id]
+        : [SESION.usuario.id];
+    }
+
+    return checks
+      .filter(x=>x.checked)
+      .map(x=>x.value);
+  }
+
+  async function buscarRegistros(){
+    const ids=
+      idsSeleccionados();
+
+    if(
+      esAdmin &&
+      !ids.length
+    ){
+      notificar(
+        'Selecciona al menos un médico.'
+      );
+      return;
+    }
+
+    buscar.disabled=true;
+    descargar.disabled=true;
+
+    resultado.replaceChildren(
+      h(
+        'div',
+        {class:'neuro-empty'},
+        'Buscando registros del mes…'
+      )
+    );
+
+    try{
+      const r=await run(
+        'buscarEstadisticaNeurodesarrollo',
+        SESION.token,
+        mes.value,
+        ids
+      );
+
+      ultimaBusqueda=r;
+
+      pintarResultadoEstadistica(
+        r
+      );
+
+      descargar.disabled=false;
+
+    }catch(e){
+      ultimaBusqueda=null;
+
+      resultado.replaceChildren(
+        h(
+          'div',
+          {class:'neuro-empty'},
+          errorTexto(e)
+        )
+      );
+
+    }finally{
+      buscar.disabled=false;
+    }
+  }
+
+  function pintarResultadoEstadistica(r){
+    const registros=
+      r&&Array.isArray(r.registros)
+        ? r.registros
+        : [];
+
+    const kpis=h(
+      'div',
+      {class:'neuro-kpis'},
+      h(
+        'div',
+        {class:'neuro-kpi'},
+        h(
+          'b',
+          {},
+          String(
+            r&&r.total||0
+          )
+        ),
+        h(
+          'span',
+          {},
+          'Tamizajes registrados'
+        )
+      ),
+      h(
+        'div',
+        {class:'neuro-kpi'},
+        h(
+          'b',
+          {},
+          String(
+            r&&Array.isArray(r.medicos)
+              ? r.medicos.length
+              : 0
+          )
+        ),
+        h(
+          'span',
+          {},
+          esAdmin
+            ? 'Médicos consultados'
+            : 'Médico'
+        )
+      )
+    );
+
+    if(!registros.length){
+      resultado.replaceChildren(
+        kpis,
+        h(
+          'div',
+          {class:'neuro-empty'},
+          'No hay registros de Neurodesarrollo para el mes seleccionado.'
+        )
+      );
+      return;
+    }
+
+    const tabla=h(
+      'table',
+      {class:'neuro-table'}
+    );
+
+    const encabezados=[
+      'Fecha',
+      'Paciente',
+      'Cédula'
+    ];
+
+    if(esAdmin){
+      encabezados.push(
+        'Médico'
+      );
+    }
+
+    encabezados.push(
+      'Sexo',
+      'Tamizaje',
+      'Grupo etario',
+      'Denver II',
+      'Estimulación',
+      'Tercer nivel',
+      'Persiste',
+      'Normalización'
+    );
+
+    tabla.append(
+      h(
+        'thead',
+        {},
+        h(
+          'tr',
+          {},
+          ...encabezados.map(
+            x=>h('th',{},x)
+          )
+        )
+      )
+    );
+
+    const tbody=h('tbody',{});
+
+    registros.forEach(r=>{
+      const celdas=[
+        r.fecha||'—',
+        r.paciente||'—',
+        r.cedula||'—'
+      ];
+
+      if(esAdmin){
+        celdas.push(
+          r.medicoNombre||'—'
+        );
+      }
+
+      celdas.push(
+        r.sexo||'—',
+        r.consulta||'—',
+        r.edad||'—',
+        r.resultado||'—',
+        r.estimulacion||'—',
+        r.tercerNivel||'—',
+        r.persiste||'—',
+        r.normalizacion||'—'
+      );
+
+      tbody.append(
+        h(
+          'tr',
+          {},
+          ...celdas.map(
+            x=>h('td',{},x)
+          )
+        )
+      );
+    });
+
+    tabla.append(tbody);
+
+    resultado.replaceChildren(
+      kpis,
+      h(
+        'div',
+        {class:'neuro-table-wrap'},
+        tabla
+      )
+    );
+  }
+
+  async function descargarExcel(){
+    const ids=
+      idsSeleccionados();
+
+    if(
+      esAdmin &&
+      !ids.length
+    ){
+      notificar(
+        'Selecciona al menos un médico.'
+      );
+      return;
+    }
+
+    descargar.disabled=true;
+
+    const textoAnterior=
+      descargar.textContent;
+
+    descargar.textContent=
+      'Generando…';
+
+    try{
+      const r=await run(
+        'exportarEstadisticaNeurodesarrollo',
+        SESION.token,
+        mes.value,
+        ids
+      );
+
+      if(
+        !r ||
+        !r.base64
+      ){
+        throw new Error(
+          'No se recibió el archivo.'
+        );
+      }
+
+      descargarArchivoBase64_(
+        r.base64,
+        r.nombre||
+          'NEURODESARROLLO.xlsx',
+        r.mime||
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      );
+
+      notificar(
+        'Archivo Excel generado.',
+        'ok'
+      );
+
+    }catch(e){
+      notificar(
+        errorTexto(e)
+      );
+
+    }finally{
+      descargar.disabled=
+        !ultimaBusqueda;
+
+      descargar.textContent=
+        textoAnterior;
+    }
+  }
+}
+
+
+function descargarArchivoBase64_(
+  base64,
+  nombre,
+  mime
+){
+  const binario=
+    atob(base64);
+
+  const bytes=
+    new Uint8Array(
+      binario.length
+    );
+
+  for(
+    let i=0;
+    i<binario.length;
+    i++
+  ){
+    bytes[i]=
+      binario.charCodeAt(i);
+  }
+
+  const blob=
+    new Blob(
+      [bytes],
+      {type:mime}
+    );
+
+  const url=
+    URL.createObjectURL(
+      blob
+    );
+
+  const a=
+    document.createElement(
+      'a'
+    );
+
+  a.href=url;
+  a.download=nombre;
+
+  document.body.append(a);
+  a.click();
+  a.remove();
+
+  setTimeout(
+    ()=>URL.revokeObjectURL(url),
+    1500
+  );
+}
+
+
+
+async function pintarPerfilUsuario_(workspace){
+  detenerAutoSync();
+
+  workspace.replaceChildren(
+    h(
+      'div',
+      {class:'section-hero section-hero-profile'},
+      h('div',{class:'section-icon'},'○'),
+      h(
+        'div',
+        {},
+        h('h2',{},'Perfil profesional'),
+        h(
+          'div',
+          {class:'mu'},
+          'Datos personales de tu cuenta.'
+        )
+      )
+    ),
+    h(
+      'div',
+      {class:'neuro-empty'},
+      'Cargando perfil…'
+    )
+  );
+
+  try{
+    const perfil=await run(
+      'obtenerPerfilUsuario',
+      SESION.token
+    );
+
+    const nombre=h(
+      'input',
+      {
+        type:'text',
+        value:perfil.nombre||'',
+        maxlength:'120',
+        autocomplete:'name'
+      }
+    );
+
+    const cedula=h(
+      'input',
+      {
+        type:'text',
+        value:perfil.cedula||'',
+        inputmode:'numeric',
+        maxlength:'10',
+        pattern:'[0-9]{10}',
+        placeholder:'10 dígitos'
+      }
+    );
+
+    const info=h(
+      'div',
+      {class:'profile-card'},
+      h(
+        'h3',
+        {},
+        perfil.nombre||
+          SESION.usuario.nombre
+      ),
+      h(
+        'div',
+        {class:'profile-meta'},
+        perfil.perfilNombre||
+          'Usuario'
+      ),
+      h(
+        'div',
+        {class:'cert-note'},
+        'Puedes modificar tus nombres y cédula. El correo y el rol no se modifican desde esta sección.'
+      )
+    );
+
+    const datosPanel=h(
+      'div',
+      {class:'panel'},
+      h('h3',{},'Datos personales'),
+      h('label',{},'Nombres completos'),
+      nombre,
+      h('label',{},'Cédula'),
+      cedula,
+      h('label',{},'Correo'),
+      h(
+        'div',
+        {class:'cert-read'},
+        perfil.correo||'—'
+      ),
+      h('label',{},'Rol / especialidad'),
+      h(
+        'div',
+        {class:'cert-read'},
+        perfil.perfilNombre||'—'
+      )
+    );
+
+    let firma=null;
+    let sello=null;
+    let imagenesPanel=null;
+
+    /*
+     * Solo los médicos administran firma y sello.
+     * Admisionista y Enfermería ni siquiera reciben los controles.
+     */
+    if(perfil.esMedico){
+      firma=crearEditorImagenPerfil_(
+        'Firma',
+        perfil.firmaDataUrl||''
+      );
+
+      sello=crearEditorImagenPerfil_(
+        'Sello',
+        perfil.selloDataUrl||''
+      );
+
+      imagenesPanel=h(
+        'div',
+        {},
+        h(
+          'div',
+          {class:'cert-note'},
+          'La firma y el sello se utilizan automáticamente en los certificados. El control “Fondo” permite volver transparente el fondo blanco.'
+        ),
+        h(
+          'div',
+          {class:'profile-grid'},
+          firma.root,
+          sello.root
+        )
+      );
+    }
+
+    const estado=h(
+      'span',
+      {class:'autosave'},
+      ''
+    );
+
+    const guardar=btn(
+      'Guardar perfil',
+      async()=>{
+        const nombreValor=
+          String(nombre.value||'')
+            .trim();
+
+        const cedulaValor=
+          String(cedula.value||'')
+            .replace(/\D/g,'');
+
+        if(!nombreValor){
+          notificar(
+            'Escribe tus nombres completos.'
+          );
+          return;
+        }
+
+        if(!/^\d{10}$/.test(cedulaValor)){
+          notificar(
+            'La cédula debe contener exactamente 10 dígitos.'
+          );
+          return;
+        }
+
+        guardar.disabled=true;
+
+        estado.className=
+          'autosave guardando';
+
+        estado.textContent=
+          'Guardando…';
+
+        try{
+          const payload={
+            nombre:nombreValor,
+            cedula:cedulaValor
+          };
+
+          if(perfil.esMedico){
+            payload.eliminarFirma=
+              firma.isRemoved();
+
+            payload.eliminarSello=
+              sello.isRemoved();
+
+            if(
+              firma.isDirty() &&
+              !firma.isRemoved()
+            ){
+              payload.firmaDataUrl=
+                firma.getDataUrl();
+            }
+
+            if(
+              sello.isDirty() &&
+              !sello.isRemoved()
+            ){
+              payload.selloDataUrl=
+                sello.getDataUrl();
+            }
+          }
+
+          const actualizado=await run(
+            'guardarPerfilUsuario',
+            SESION.token,
+            payload
+          );
+
+          if(actualizado){
+            SESION.usuario.nombre=
+              actualizado.nombre||
+              SESION.usuario.nombre;
+
+            SESION.usuario.cedula=
+              actualizado.cedula||'';
+
+            hUsuario.textContent=
+              SESION.usuario.nombre;
+
+            info.querySelector('h3')
+              .textContent=
+              SESION.usuario.nombre;
+          }
+
+          estado.className=
+            'autosave guardado';
+
+          estado.textContent=
+            'Guardado ✓';
+
+          notificar(
+            'Perfil actualizado.',
+            'ok'
+          );
+
+        }catch(e){
+          estado.className=
+            'autosave error';
+
+          estado.textContent=
+            'No se pudo guardar.';
+
+          notificar(
+            errorTexto(e)
+          );
+
+        }finally{
+          guardar.disabled=false;
+        }
+      }
+    );
+
+    const contenido=[
+      h(
+        'div',
+        {class:'section-hero section-hero-profile'},
+        h('div',{class:'section-icon'},'○'),
+        h(
+          'div',
+          {},
+          h('h2',{},'Perfil profesional'),
+          h(
+            'div',
+            {class:'mu'},
+            perfil.esMedico
+              ? 'Datos personales, firma y sello.'
+              : 'Datos personales de tu cuenta.'
+          )
+        )
+      ),
+      info,
+      datosPanel
+    ];
+
+    if(imagenesPanel){
+      contenido.push(
+        imagenesPanel
+      );
+    }
+
+    contenido.push(
+      h(
+        'div',
+        {class:'profile-savebar'},
+        guardar,
+        estado
+      )
+    );
+
+    workspace.replaceChildren(
+      ...contenido
+    );
+
+  }catch(e){
+    workspace.replaceChildren(
+      h(
+        'div',
+        {class:'neuro-empty'},
+        errorTexto(e)
+      )
+    );
+  }
+}
+
+
+
+const CIE10_CLIENT_CACHE=new Map();
+
+function claveCie10Cliente_(texto){
+  return String(texto||'')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'')
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g,' ');
+}
+
+
+async function buscarCIE10Cliente_(texto){
+  const clave=
+    claveCie10Cliente_(texto);
+
+  if(clave.length<2){
+    return [];
+  }
+
+  if(CIE10_CLIENT_CACHE.has(clave)){
+    return CIE10_CLIENT_CACHE.get(clave);
+  }
+
+  const r=await run(
+    'buscarCIE10',
+    SESION.token,
+    texto,
+    14
+  );
+
+  const lista=
+    Array.isArray(r)
+      ? r
+      : [];
+
+  CIE10_CLIENT_CACHE.set(
+    clave,
+    lista
+  );
+
+  /*
+   * Caché pequeña para no dejar crecer memoria indefinidamente
+   * durante una jornada larga.
+   */
+  if(CIE10_CLIENT_CACHE.size>120){
+    const primero=
+      CIE10_CLIENT_CACHE
+        .keys()
+        .next()
+        .value;
+
+    CIE10_CLIENT_CACHE.delete(
+      primero
+    );
+  }
+
+  return lista;
+}
+
+
+/**
+ * Componente único utilizado por:
+ * - Certificado médico general
+ * - Certificado PCD
+ * - Certificado cuidador PCD
+ *
+ * Es posible buscar escribiendo tanto en CIE-10 como en la descripción.
+ */
+function crearBuscadorDiagnosticoCIE10_(
+  placeholderDescripcion,
+  onQuitar=null
+){
+  const cie=h(
+    'input',
+    {
+      placeholder:
+        'Código CIE-10',
+      autocomplete:'off',
+      spellcheck:'false'
+    }
+  );
+
+  const desc=h(
+    'input',
+    {
+      placeholder:
+        placeholderDescripcion||
+        'Descripción del diagnóstico',
+      autocomplete:'off',
+      spellcheck:'false'
+    }
+  );
+
+  const sugerencias=h(
+    'div',
+    {
+      class:'cie-suggestions'
+    }
+  );
+
+  let timer=null;
+  let secuencia=0;
+  let resultadosActuales=[];
+
+  function ocultar_(){
+    sugerencias.classList.remove(
+      'visible'
+    );
+
+    sugerencias.replaceChildren();
+
+    resultadosActuales=[];
+  }
+
+  function seleccionar_(dx){
+    if(!dx)return;
+
+    cie.value=
+      dx.codigo||'';
+
+    desc.value=
+      dx.descripcion||'';
+
+    cie.dataset.cieSeleccionado=
+      dx.codigo||'';
+
+    desc.dataset.cieSeleccionado=
+      dx.codigo||'';
+
+    ocultar_();
+  }
+
+  function pintarResultados_(lista){
+    resultadosActuales=
+      Array.isArray(lista)
+        ? lista
+        : [];
+
+    if(!resultadosActuales.length){
+      sugerencias.replaceChildren(
+        h(
+          'div',
+          {
+            class:'cert-note',
+            style:'padding:8px 10px'
+          },
+          'No se encontraron diagnósticos.'
+        )
+      );
+
+      sugerencias.classList.add(
+        'visible'
+      );
+
+      return;
+    }
+
+    sugerencias.replaceChildren(
+      ...resultadosActuales.map(dx=>
+        h(
+          'button',
+          {
+            type:'button',
+            class:'cie-option',
+            onclick:e=>{
+              e.preventDefault();
+              seleccionar_(dx);
+            }
+          },
+          h(
+            'span',
+            {
+              class:'cie-option-code'
+            },
+            dx.codigo||''
+          ),
+          h(
+            'span',
+            {
+              class:'cie-option-desc'
+            },
+            dx.descripcion||''
+          )
+        )
+      )
+    );
+
+    sugerencias.classList.add(
+      'visible'
+    );
+  }
+
+  function buscarDesde_(elemento){
+    const texto=
+      String(
+        elemento.value||''
+      ).trim();
+
+    if(timer){
+      clearTimeout(timer);
+    }
+
+    const miSecuencia=
+      ++secuencia;
+
+    if(texto.length<2){
+      ocultar_();
+      return;
+    }
+
+    timer=setTimeout(
+      async()=>{
+        timer=null;
+
+        try{
+          const lista=
+            await buscarCIE10Cliente_(
+              texto
+            );
+
+          if(miSecuencia!==secuencia){
+            return;
+          }
+
+          pintarResultados_(
+            lista
+          );
+
+        }catch(e){
+          if(miSecuencia!==secuencia){
+            return;
+          }
+
+          ocultar_();
+        }
+      },
+      180
+    );
+  }
+
+  [cie,desc].forEach(input=>{
+    input.addEventListener(
+      'input',
+      ()=>{
+        delete cie.dataset.cieSeleccionado;
+        delete desc.dataset.cieSeleccionado;
+        buscarDesde_(input);
+      }
+    );
+
+    input.addEventListener(
+      'keydown',
+      e=>{
+        if(
+          e.key==='Enter' &&
+          resultadosActuales.length
+        ){
+          e.preventDefault();
+          seleccionar_(
+            resultadosActuales[0]
+          );
+        }
+
+        if(e.key==='Escape'){
+          ocultar_();
+        }
+      }
+    );
+
+    input.addEventListener(
+      'focus',
+      ()=>{
+        if(
+          String(input.value||'')
+            .trim()
+            .length>=2
+        ){
+          buscarDesde_(input);
+        }
+      }
+    );
+  });
+
+  const hijos=[
+    cie,
+    desc
+  ];
+
+  if(typeof onQuitar==='function'){
+    const quitar=btn(
+      '×',
+      ()=>{
+        onQuitar(api);
+      },
+      'secundario'
+    );
+
+    quitar.title=
+      'Quitar diagnóstico';
+
+    hijos.push(
+      quitar
+    );
+  }
+
+  hijos.push(
+    sugerencias,
+    h(
+      'div',
+      {class:'cie-search-hint'},
+      'Escribe el código o parte de la descripción y selecciona un resultado del catálogo.'
+    )
+  );
+
+  const root=h(
+    'div',
+    {class:'cie-dx-row'},
+    ...hijos
+  );
+
+  root.addEventListener(
+    'focusout',
+    ()=>{
+      setTimeout(
+        ()=>{
+          if(
+            !root.contains(
+              document.activeElement
+            )
+          ){
+            ocultar_();
+          }
+        },
+        160
+      );
+    }
+  );
+
+  const api={
+    root:root,
+    cie:cie,
+    desc:desc,
+    obtener:()=>({
+      cie10:
+        cie.value.trim(),
+      descripcion:
+        desc.value.trim()
+    }),
+    limpiar:()=>{
+      cie.value='';
+      desc.value='';
+      delete cie.dataset.cieSeleccionado;
+      delete desc.dataset.cieSeleccionado;
+      ocultar_();
+    }
+  };
+
+  return api;
+}
+
+
+async function pintarCertificadosMedico_(workspace){
+  detenerAutoSync();
+
+  const shell=
+    h(
+      'div',
+      {class:'cert-shell'}
+    );
+
+  workspace.replaceChildren(
+    h(
+      'div',
+      {
+        class:
+          'section-hero section-hero-cert'
+      },
+      h(
+        'div',
+        {class:'section-icon'},
+        '▤'
+      ),
+      h(
+        'div',
+        {},
+        h(
+          'h2',
+          {},
+          'Certificados'
+        ),
+        h(
+          'div',
+          {class:'mu'},
+          'Pacientes atendidos hoy y búsqueda histórica únicamente cuando la necesites.'
+        )
+      )
+    ),
+    shell
+  );
+
+  const tipo=
+    h(
+      'select',
+      {}
+    );
+
+  /*
+   * BUSCADOR ÚNICO:
+   * - vacío: muestra SOLO pacientes atendidos hoy.
+   * - con texto: filtra los de hoy y busca atenciones anteriores.
+   */
+  const pacienteInput=
+    h(
+      'input',
+      {
+        class:'cert-patient-search',
+        type:'text',
+        autocomplete:'off',
+        spellcheck:'false',
+        placeholder:
+          'Buscar por nombre o cédula…'
+      }
+    );
+
+  const menuPacientes=
+    h(
+      'div',
+      {
+        class:'cert-patient-menu'
+      }
+    );
+
+  const picker=
+    h(
+      'div',
+      {
+        class:'cert-patient-picker'
+      },
+      h(
+        'div',
+        {
+          class:
+            'cert-patient-search-wrap'
+        },
+        pacienteInput,
+        h(
+          'span',
+          {
+            class:
+              'cert-patient-search-icon'
+          },
+          '⌕'
+        )
+      ),
+      menuPacientes
+    );
+
+  const perfilStatus=
+    h(
+      'div',
+      {class:'cert-status'},
+      'Comprobando firma y sello…'
+    );
+
+  const barra=
+    h(
+      'div',
+      {class:'cert-toolbar'},
+      h(
+        'div',
+        {},
+        h(
+          'label',
+          {},
+          'Tipo de certificado'
+        ),
+        tipo
+      ),
+      h(
+        'div',
+        {
+          style:
+            'min-width:340px;flex:1'
+        },
+        h(
+          'label',
+          {},
+          'Paciente'
+        ),
+        picker,
+        h(
+          'div',
+          {class:'cert-note'},
+          'Al abrir la lista solo aparecen tus pacientes atendidos hoy. Escribe nombre o cédula para buscar atenciones anteriores.'
+        )
+      )
+    );
+
+  const cuerpo=
+    h(
+      'div',
+      {class:'neuro-empty'},
+      'Selecciona un paciente.'
+    );
+
+  shell.append(
+    barra,
+    perfilStatus,
+    cuerpo
+  );
+
+  let pacientesHoy=[];
+  let pacienteActual=null;
+  let perfil=null;
+  let esGeneral=false;
+
+  let timerBusqueda=null;
+  let secuenciaBusqueda=0;
+  let resultadoHistorico=[];
+
+  try{
+    const [tipos,p]=
+      await Promise.all([
+        run(
+          'listarTiposCertificado',
+          SESION.token
+        ),
+        run(
+          'obtenerPerfilMedico',
+          SESION.token
+        )
+      ]);
+
+    perfil=p;
+
+    tipo.replaceChildren(
+      ...(
+        Array.isArray(tipos)
+          ? tipos
+          : []
+      ).map(t=>
+        h(
+          'option',
+          {value:t.id},
+          t.nombre
+        )
+      )
+    );
+
+    CERTIFICADO_TIPO_ACTIVO=
+      tipo.value||
+      'certificado_general';
+
+    esGeneral=
+      String(
+        SESION.usuario.perfilNombre||''
+      )
+        .normalize('NFD')
+        .replace(
+          /[\u0300-\u036f]/g,
+          ''
+        )
+        .toLowerCase()===
+      'medicina general';
+
+    actualizarEstadoPerfil();
+
+  }catch(e){
+    perfilStatus.className=
+      'cert-status warn';
+
+    perfilStatus.textContent=
+      errorTexto(e);
+  }
+
+
+  tipo.addEventListener(
+    'change',
+    async()=>{
+      CERTIFICADO_TIPO_ACTIVO=
+        tipo.value;
+
+      limpiarSeleccionPaciente_();
+
+      await cargarPacientesHoy();
+    }
+  );
+
+
+  pacienteInput.addEventListener(
+    'focus',
+    ()=>{
+      if(
+        pacienteInput.value
+          .trim()
+      ){
+        buscarDesdeTexto_();
+      }else{
+        pintarListaHoy_();
+      }
+    }
+  );
+
+
+  pacienteInput.addEventListener(
+    'input',
+    ()=>{
+      /*
+       * Si el médico modifica el texto después de seleccionar
+       * un paciente, se anula la selección hasta que elija
+       * nuevamente una atención concreta.
+       */
+      pacienteActual=null;
+      renderFormulario();
+
+      if(timerBusqueda){
+        clearTimeout(
+          timerBusqueda
+        );
+      }
+
+      const texto=
+        pacienteInput.value
+          .trim();
+
+      if(!texto){
+        resultadoHistorico=[];
+        pintarListaHoy_();
+        return;
+      }
+
+      /*
+       * Se filtran instantáneamente los pacientes de hoy.
+       * El histórico se consulta solo con 2+ caracteres.
+       */
+      pintarResultadosBusqueda_(
+        texto,
+        []
+      );
+
+      if(texto.length<2){
+        return;
+      }
+
+      timerBusqueda=
+        setTimeout(
+          buscarDesdeTexto_,
+          240
+        );
+    }
+  );
+
+
+  pacienteInput.addEventListener(
+    'keydown',
+    e=>{
+      if(e.key==='Escape'){
+        ocultarMenuPacientes_();
+      }
+    }
+  );
+
+
+  picker.addEventListener(
+    'focusout',
+    ()=>{
+      setTimeout(
+        ()=>{
+          if(
+            !picker.contains(
+              document.activeElement
+            )
+          ){
+            ocultarMenuPacientes_();
+          }
+        },
+        160
+      );
+    }
+  );
+
+
+  function limpiarSeleccionPaciente_(){
+    pacienteActual=null;
+    pacienteInput.value='';
+    resultadoHistorico=[];
+    secuenciaBusqueda++;
+
+    if(timerBusqueda){
+      clearTimeout(
+        timerBusqueda
+      );
+      timerBusqueda=null;
+    }
+
+    renderFormulario();
+  }
+
+
+  function ocultarMenuPacientes_(){
+    menuPacientes.classList.remove(
+      'visible'
+    );
+  }
+
+
+  function abrirMenuPacientes_(){
+    menuPacientes.classList.add(
+      'visible'
+    );
+  }
+
+
+  function fechaCortaCert_(iso){
+    const s=
+      String(iso||'');
+
+    const m=
+      s.match(
+        /^(\d{4})-(\d{2})-(\d{2})$/
+      );
+
+    if(!m){
+      return s;
+    }
+
+    return (
+      m[3]+'/'+
+      m[2]+'/'+
+      m[1]
+    );
+  }
+
+
+  function normalizarBusquedaPaciente_(valor){
+    return String(valor||'')
+      .normalize('NFD')
+      .replace(
+        /[\u0300-\u036f]/g,
+        ''
+      )
+      .toUpperCase()
+      .replace(
+        /\s+/g,
+        ' '
+      )
+      .trim();
+  }
+
+
+  function coincidePaciente_(
+    p,
+    texto
+  ){
+    const q=
+      normalizarBusquedaPaciente_(
+        texto
+      );
+
+    if(!q){
+      return true;
+    }
+
+    return (
+      normalizarBusquedaPaciente_(
+        p.nombre
+      ).includes(q) ||
+      normalizarBusquedaPaciente_(
+        p.cedula
+      ).includes(q)
+    );
+  }
+
+
+  function opcionPaciente_(
+    p,
+    esHistorico
+  ){
+    const izquierda=
+      esHistorico
+        ? (
+            fechaCortaCert_(
+              p.fecha
+            )+
+            ' · '+
+            (p.hora||'')
+          )
+        : (
+            p.hora||''
+          );
+
+    return h(
+      'button',
+      {
+        type:'button',
+        class:'cert-patient-option',
+        onclick:e=>{
+          e.preventDefault();
+
+          seleccionarPaciente_(
+            p
+          );
+        }
+      },
+      h(
+        'span',
+        {
+          class:
+            'cert-patient-time'
+        },
+        izquierda
+      ),
+      h(
+        'span',
+        {
+          class:
+            'cert-patient-main'
+        },
+        h(
+          'b',
+          {},
+          p.nombre||'Paciente'
+        ),
+        p.cedula
+          ? h(
+              'span',
+              {
+                class:
+                  'cert-patient-meta'
+              },
+              p.cedula
+            )
+          : null
+      )
+    );
+  }
+
+
+  function seleccionarPaciente_(p){
+    pacienteActual=p;
+
+    pacienteInput.value=
+      (p.nombre||'')+
+      (
+        p.cedula
+          ? ' · '+p.cedula
+          : ''
+      );
+
+    ocultarMenuPacientes_();
+
+    renderFormulario();
+  }
+
+
+  function pintarListaHoy_(){
+    menuPacientes.replaceChildren();
+
+    menuPacientes.append(
+      h(
+        'div',
+        {
+          class:
+            'cert-patient-group'
+        },
+        'Atendidos hoy'
+      )
+    );
+
+    if(!pacientesHoy.length){
+      menuPacientes.append(
+        h(
+          'div',
+          {
+            class:
+              'cert-patient-empty'
+          },
+          textoSinPacientes_()
+        )
+      );
+
+    }else{
+      pacientesHoy.forEach(
+        p=>
+          menuPacientes.append(
+            opcionPaciente_(
+              p,
+              false
+            )
+          )
+      );
+    }
+
+    abrirMenuPacientes_();
+  }
+
+
+  function pintarResultadosBusqueda_(
+    texto,
+    historicos
+  ){
+    const hoyFiltrados=
+      pacientesHoy.filter(
+        p=>
+          coincidePaciente_(
+            p,
+            texto
+          )
+      );
+
+    menuPacientes.replaceChildren();
+
+    if(hoyFiltrados.length){
+      menuPacientes.append(
+        h(
+          'div',
+          {
+            class:
+              'cert-patient-group'
+          },
+          'Hoy'
+        )
+      );
+
+      hoyFiltrados.forEach(
+        p=>
+          menuPacientes.append(
+            opcionPaciente_(
+              p,
+              false
+            )
+          )
+      );
+    }
+
+    if(
+      Array.isArray(historicos) &&
+      historicos.length
+    ){
+      menuPacientes.append(
+        h(
+          'div',
+          {
+            class:
+              'cert-patient-group'
+          },
+          'Atenciones anteriores'
+        )
+      );
+
+      historicos.forEach(
+        p=>
+          menuPacientes.append(
+            opcionPaciente_(
+              p,
+              true
+            )
+          )
+      );
+    }
+
+    if(
+      !hoyFiltrados.length &&
+      (
+        !Array.isArray(
+          historicos
+        ) ||
+        !historicos.length
+      )
+    ){
+      menuPacientes.append(
+        h(
+          'div',
+          {
+            class:
+              'cert-patient-empty'
+          },
+          texto.length<2
+            ? 'Escribe al menos 2 caracteres para buscar atenciones anteriores.'
+            : 'No se encontraron pacientes.'
+        )
+      );
+    }
+
+    abrirMenuPacientes_();
+  }
+
+
+  async function buscarDesdeTexto_(){
+    if(timerBusqueda){
+      clearTimeout(
+        timerBusqueda
+      );
+      timerBusqueda=null;
+    }
+
+    const texto=
+      pacienteInput.value
+        .trim();
+
+    if(!texto){
+      pintarListaHoy_();
+      return;
+    }
+
+    /*
+     * Con un solo carácter todavía no consultamos historial.
+     */
+    if(texto.length<2){
+      pintarResultadosBusqueda_(
+        texto,
+        []
+      );
+      return;
+    }
+
+    const miSecuencia=
+      ++secuenciaBusqueda;
+
+    /*
+     * Mostrar inmediatamente coincidencias de hoy
+     * mientras llega la respuesta histórica.
+     */
+    const hoyFiltrados=
+      pacientesHoy.filter(
+        p=>
+          coincidePaciente_(
+            p,
+            texto
+          )
+      );
+
+    menuPacientes.replaceChildren();
+
+    if(hoyFiltrados.length){
+      menuPacientes.append(
+        h(
+          'div',
+          {
+            class:
+              'cert-patient-group'
+          },
+          'Hoy'
+        )
+      );
+
+      hoyFiltrados.forEach(
+        p=>
+          menuPacientes.append(
+            opcionPaciente_(
+              p,
+              false
+            )
+          )
+      );
+    }
+
+    menuPacientes.append(
+      h(
+        'div',
+        {
+          class:
+            'cert-patient-loading'
+        },
+        'Buscando atenciones anteriores…'
+      )
+    );
+
+    abrirMenuPacientes_();
+
+    try{
+      const r=
+        await run(
+          'buscarPacientesCertificadoHistorico',
+          SESION.token,
+          texto,
+          tipo.value
+        );
+
+      if(
+        miSecuencia!==
+        secuenciaBusqueda
+      ){
+        return;
+      }
+
+      resultadoHistorico=
+        Array.isArray(r)
+          ? r
+          : [];
+
+      pintarResultadosBusqueda_(
+        texto,
+        resultadoHistorico
+      );
+
+    }catch(e){
+      if(
+        miSecuencia!==
+        secuenciaBusqueda
+      ){
+        return;
+      }
+
+      resultadoHistorico=[];
+
+      pintarResultadosBusqueda_(
+        texto,
+        []
+      );
+
+      notificar(
+        errorTexto(e)
+      );
+    }
+  }
+
+
+  function textoSinPacientes_(){
+    if(
+      tipo.value===
+      'certificado_pcd'
+    ){
+      return (
+        'No tienes pacientes atendidos hoy con CONTROL PCD.'
+      );
+    }
+
+    if(
+      tipo.value===
+      'certificado_cuidador'
+    ){
+      return (
+        'No tienes pacientes atendidos hoy con CUIDADOR PCD.'
+      );
+    }
+
+    return (
+      'No tienes pacientes atendidos hoy.'
+    );
+  }
+
+
+  async function cargarPacientesHoy(){
+    pacienteInput.disabled=true;
+
+    pacienteInput.placeholder=
+      'Cargando pacientes de hoy…';
+
+    cuerpo.className=
+      'neuro-empty';
+
+    cuerpo.replaceChildren(
+      document.createTextNode(
+        'Cargando pacientes atendidos hoy…'
+      )
+    );
+
+    try{
+      const r=
+        await run(
+          'listarPacientesCertificado',
+          SESION.token,
+          tipo.value
+        );
+
+      pacientesHoy=
+        Array.isArray(r)
+          ? r
+          : [];
+
+      pacienteActual=null;
+      resultadoHistorico=[];
+
+      pacienteInput.disabled=false;
+
+      pacienteInput.placeholder=
+        pacientesHoy.length
+          ? 'Buscar por nombre o cédula…'
+          : 'Buscar atención anterior por nombre o cédula…';
+
+      cuerpo.replaceChildren(
+        document.createTextNode(
+          pacientesHoy.length
+            ? 'Selecciona un paciente atendido hoy o escribe para buscar una atención anterior.'
+            : 'No tienes pacientes atendidos hoy. Escribe un nombre o cédula para buscar una atención anterior.'
+        )
+      );
+
+    }catch(e){
+      pacientesHoy=[];
+      pacienteInput.disabled=false;
+
+      pacienteInput.placeholder=
+        'Buscar por nombre o cédula…';
+
+      cuerpo.replaceChildren(
+        document.createTextNode(
+          errorTexto(e)
+        )
+      );
+    }
+  }
+
+
+  function actualizarEstadoPerfil(){
+    if(!perfil)return;
+
+    const faltan=[];
+
+    if(!perfil.tieneFirma){
+      faltan.push('firma');
+    }
+
+    if(!perfil.tieneSello){
+      faltan.push('sello');
+    }
+
+    if(faltan.length){
+      perfilStatus.className=
+        'cert-status warn';
+
+      perfilStatus.textContent=
+        'Perfil incompleto: falta '+
+        faltan.join(' y ')+
+        '. El PDF se generará sin esos elementos hasta que los cargues en Perfil.';
+
+    }else{
+      perfilStatus.className=
+        'cert-status';
+
+      perfilStatus.textContent=
+        'Firma y sello configurados ✓';
+    }
+  }
+
+
+
+  function pintarResumenPaciente_(p){
+    return h(
+      'div',
+      {class:'cert-patient'},
+      h(
+        'div',
+        {},
+        h('label',{},'Paciente'),
+        h(
+          'div',
+          {class:'cert-read'},
+          p.nombre||'—'
+        )
+      ),
+      h(
+        'div',
+        {},
+        h('label',{},'Cédula'),
+        h(
+          'div',
+          {class:'cert-read'},
+          p.cedula||'—'
+        )
+      ),
+      h(
+        'div',
+        {},
+        h('label',{},'Fecha de atención'),
+        h(
+          'div',
+          {class:'cert-read'},
+          fechaCortaCert_(p.fecha)||'—'
+        )
+      ),
+      h(
+        'div',
+        {},
+        h('label',{},'Hora'),
+        h(
+          'div',
+          {class:'cert-read'},
+          (p.hora||'—')+
+          (
+            p.horaFin
+              ? ' – '+p.horaFin
+              : ''
+          )
+        )
+      ),
+      h(
+        'div',
+        {},
+        h('label',{},'Especialidad'),
+        h(
+          'div',
+          {class:'cert-read'},
+          p.especialidad||'—'
+        )
+      )
+    );
+  }
+
+
+  function crearDiagnosticosDinamicos_(){
+    const filas=[];
+    const host=h(
+      'div',
+      {class:'dx-list'}
+    );
+
+    function agregar(){
+      let buscador=null;
+
+      buscador=
+        crearBuscadorDiagnosticoCIE10_(
+          filas.length===0
+            ? 'Diagnóstico (obligatorio)'
+            : 'Diagnóstico',
+          actual=>{
+            if(filas.length<=1){
+              actual.limpiar();
+              return;
+            }
+
+            const idxFila=
+              filas.indexOf(actual);
+
+            if(idxFila>=0){
+              filas.splice(
+                idxFila,
+                1
+              );
+            }
+
+            actual.root.remove();
+          }
+        );
+
+      filas.push(
+        buscador
+      );
+
+      host.append(
+        buscador.root
+      );
+    }
+
+    agregar();
+
+    const agregarBtn=btn(
+      '+ Agregar diagnóstico',
+      agregar,
+      'secundario'
+    );
+
+    return {
+      host:host,
+      agregarBtn:agregarBtn,
+      obtener:()=>
+        filas.map(
+          x=>x.obtener()
+        )
+    };
+  }
+
+
+  function crearDiscapacidades_(){
+    const filas=[];
+    const host=h(
+      'div',
+      {class:'dx-list'}
+    );
+
+    function agregar(){
+      const tipoDiscapacidad=h(
+        'input',
+        {
+          placeholder:
+            'Tipo de discapacidad'
+        }
+      );
+
+      const porcentaje=h(
+        'input',
+        {
+          type:'number',
+          min:'1',
+          max:'100',
+          step:'0.01',
+          placeholder:'%'
+        }
+      );
+
+      const quitar=btn(
+        '×',
+        ()=>{
+          if(filas.length<=1){
+            tipoDiscapacidad.value='';
+            porcentaje.value='';
+            return;
+          }
+
+          const idx=
+            filas.findIndex(
+              x=>
+                x.tipo===
+                tipoDiscapacidad
+            );
+
+          if(idx>=0){
+            filas.splice(idx,1);
+          }
+
+          fila.remove();
+        },
+        'secundario'
+      );
+
+      quitar.title=
+        'Quitar discapacidad';
+
+      const fila=h(
+        'div',
+        {class:'dx-row'},
+        tipoDiscapacidad,
+        porcentaje,
+        quitar
+      );
+
+      filas.push({
+        tipo:tipoDiscapacidad,
+        porcentaje:porcentaje
+      });
+
+      host.append(fila);
+    }
+
+    agregar();
+
+    const agregarBtn=btn(
+      '+ Agregar discapacidad',
+      agregar,
+      'secundario'
+    );
+
+    return {
+      host:host,
+      agregarBtn:agregarBtn,
+      obtener:()=>
+        filas.map(x=>({
+          tipo:x.tipo.value,
+          porcentaje:x.porcentaje.value
+        }))
+    };
+  }
+
+
+  function renderFormulario(){
+    const p=pacienteActual;
+
+    if(!p){
+      cuerpo.className=
+        'neuro-empty';
+
+      cuerpo.replaceChildren(
+        document.createTextNode(
+          'Selecciona un paciente.'
+        )
+      );
+
+      return;
+    }
+
+    if(
+      tipo.value===
+      'certificado_general'
+    ){
+      renderCertificadoGeneral_(p);
+      return;
+    }
+
+    renderCertificadoDocumento_(p);
+  }
+
+
+  function renderCertificadoGeneral_(p){
+    cuerpo.className=
+      'cert-form';
+
+    const sexo=h(
+      'select',
+      {},
+      h(
+        'option',
+        {value:''},
+        'Selecciona'
+      ),
+      h(
+        'option',
+        {value:'Hombre'},
+        'Hombre'
+      ),
+      h(
+        'option',
+        {value:'Mujer'},
+        'Mujer'
+      )
+    );
+
+    const edad=h(
+      'input',
+      {
+        type:'number',
+        min:'0',
+        max:'130',
+        step:'1',
+        placeholder:'Edad'
+      }
+    );
+
+    const tipoEdad=h(
+      'select',
+      {},
+      ...[
+        'AÑOS',
+        'MESES',
+        'DIAS',
+        'HORAS'
+      ].map(x=>
+        h(
+          'option',
+          {value:x},
+          x
+        )
+      )
+    );
+
+    const reposo=h(
+      'select',
+      {},
+      h(
+        'option',
+        {value:'NO'},
+        'No'
+      ),
+      h(
+        'option',
+        {value:'SI'},
+        'Sí'
+      )
+    );
+
+    const dias=h(
+      'input',
+      {
+        type:'number',
+        min:'1',
+        max:
+          esGeneral
+            ? '3'
+            : '365',
+        step:'1',
+        value:'1',
+        disabled:true
+      }
+    );
+
+    const diasWrap=h(
+      'div',
+      {},
+      h(
+        'label',
+        {},
+        'Días de descanso'
+      ),
+      dias,
+      h(
+        'div',
+        {class:'cert-note'},
+        esGeneral
+          ? 'Medicina General: máximo 3 días. El día de la atención cuenta como día 1.'
+          : 'El día de la atención cuenta como día 1.'
+      )
+    );
+
+    reposo.addEventListener(
+      'change',
+      ()=>{
+        dias.disabled=
+          reposo.value!=='SI';
+      }
+    );
+
+    const dxRows=[];
+    const dxList=h(
+      'div',
+      {class:'dx-list'}
+    );
+
+    for(let i=0;i<4;i++){
+      const buscador=
+        crearBuscadorDiagnosticoCIE10_(
+          i===0
+            ? 'Diagnóstico (obligatorio)'
+            : 'Diagnóstico opcional'
+        );
+
+      dxRows.push(
+        buscador
+      );
+
+      dxList.append(
+        buscador.root
+      );
+    }
+
+    const estado=h(
+      'span',
+      {class:'autosave'},
+      ''
+    );
+
+    const generar=btn(
+      'Generar y descargar PDF',
+      async()=>{
+        const diagnosticos=
+          dxRows.map(
+            x=>x.obtener()
+          );
+
+        const payload={
+          tipoCertificado:
+            tipo.value,
+          citaId:p.citaId,
+          fecha:p.fecha,
+          sexo:sexo.value,
+          edad:edad.value,
+          tipoEdad:
+            tipoEdad.value,
+          reposo:
+            reposo.value,
+          diasReposo:
+            reposo.value==='SI'
+              ? dias.value
+              : 0,
+          diagnosticos:
+            diagnosticos
+        };
+
+        await generarPdf_(
+          generar,
+          estado,
+          payload
+        );
+      }
+    );
+
+    cuerpo.replaceChildren(
+      pintarResumenPaciente_(p),
+      h(
+        'div',
+        {class:'cert-grid'},
+        h(
+          'div',
+          {},
+          h('label',{},'Sexo'),
+          sexo
+        ),
+        h(
+          'div',
+          {},
+          h('label',{},'Edad'),
+          edad
+        ),
+        h(
+          'div',
+          {},
+          h(
+            'label',
+            {},
+            'Tipo de edad'
+          ),
+          tipoEdad
+        ),
+        h(
+          'div',
+          {},
+          h(
+            'label',
+            {},
+            'Descanso médico'
+          ),
+          reposo
+        ),
+        diasWrap
+      ),
+      h(
+        'h3',
+        {
+          style:
+            'margin:16px 0 6px'
+        },
+        'Diagnósticos'
+      ),
+      h(
+        'div',
+        {class:'cert-note'},
+        'Hasta 4 diagnósticos. Puedes buscar escribiendo el código CIE-10 o parte de la descripción.'
+      ),
+      dxList,
+      h(
+        'div',
+        {class:'cert-actions'},
+        generar,
+        estado
+      )
+    );
+  }
+
+
+  function renderCertificadoDocumento_(p){
+    cuerpo.className=
+      'cert-form';
+
+    const esPCD=
+      tipo.value===
+      'certificado_pcd';
+
+    const edad=h(
+      'input',
+      {
+        type:'text',
+        maxlength:'40',
+        placeholder:
+          'Ej. 8 AÑOS'
+      }
+    );
+
+    const motivo=h(
+      'textarea',
+      {
+        rows:'3',
+        maxlength:'400',
+        placeholder:
+          'Motivo de consulta'
+      }
+    );
+
+    motivo.value=
+      p.pertenencia||
+      (
+        esPCD
+          ? 'CONTROL PCD'
+          : 'CUIDADOR PCD'
+      );
+
+    const dx=
+      crearDiagnosticosDinamicos_();
+
+    const discapacidades=
+      esPCD
+        ? crearDiscapacidades_()
+        : null;
+
+    const estado=h(
+      'span',
+      {class:'autosave'},
+      ''
+    );
+
+    const generar=btn(
+      'Generar y descargar PDF',
+      async()=>{
+        const payload={
+          tipoCertificado:
+            tipo.value,
+          citaId:p.citaId,
+          fecha:p.fecha,
+          edadDocumento:
+            edad.value,
+          motivoConsulta:
+            motivo.value,
+          diagnosticos:
+            dx.obtener(),
+          discapacidades:
+            discapacidades
+              ? discapacidades.obtener()
+              : []
+        };
+
+        await generarPdf_(
+          generar,
+          estado,
+          payload
+        );
+      }
+    );
+
+    const elementos=[
+      pintarResumenPaciente_(p),
+
+      h(
+        'div',
+        {class:'cert-grid'},
+        h(
+          'div',
+          {},
+          h(
+            'label',
+            {},
+            'Edad'
+          ),
+          edad
+        ),
+        h(
+          'div',
+          {
+            style:
+              'grid-column:1/-1'
+          },
+          h(
+            'label',
+            {},
+            'Motivo de consulta'
+          ),
+          motivo
+        )
+      )
+    ];
+
+    if(esPCD){
+      elementos.push(
+        h(
+          'h3',
+          {
+            style:
+              'margin:16px 0 6px'
+          },
+          'Tipo de discapacidad'
+        ),
+        h(
+          'div',
+          {class:'cert-note'},
+          'Registra el tipo de discapacidad y su porcentaje. Puedes agregar más de una.'
+        ),
+        discapacidades.host,
+        h(
+          'div',
+          {
+            class:'cert-actions',
+            style:'margin-top:6px'
+          },
+          discapacidades.agregarBtn
+        )
+      );
+    }
+
+    elementos.push(
+      h(
+        'h3',
+        {
+          style:
+            'margin:16px 0 6px'
+        },
+        'CIE-10 y diagnósticos'
+      ),
+      h(
+        'div',
+        {class:'cert-note'},
+        'Agrega al menos un diagnóstico. Busca por código CIE-10 o por descripción y selecciona el resultado correspondiente.'
+      ),
+      dx.host,
+      h(
+        'div',
+        {
+          class:'cert-actions',
+          style:'margin-top:6px'
+        },
+        dx.agregarBtn
+      ),
+      h(
+        'div',
+        {class:'cert-actions'},
+        generar,
+        estado
+      )
+    );
+
+    cuerpo.replaceChildren(
+      ...elementos
+    );
+  }
+
+
+  async function generarPdf_(
+    boton,
+    estado,
+    payload
+  ){
+    boton.disabled=true;
+
+    estado.className=
+      'autosave guardando';
+
+    estado.textContent=
+      'Generando PDF…';
+
+    try{
+      const r=await run(
+        'generarCertificado',
+        SESION.token,
+        payload
+      );
+
+      if(
+        !r ||
+        !r.base64
+      ){
+        throw new Error(
+          'No se recibió el PDF.'
+        );
+      }
+
+      descargarArchivoBase64_(
+        r.base64,
+        r.nombre||
+          'certificado.pdf',
+        r.mime||
+          'application/pdf'
+      );
+
+      estado.className=
+        'autosave guardado';
+
+      estado.textContent=
+        'PDF descargado ✓';
+
+      notificar(
+        'Certificado generado correctamente.',
+        'ok'
+      );
+
+    }catch(e){
+      estado.className=
+        'autosave error';
+
+      estado.textContent=
+        'No se pudo generar.';
+
+      notificar(
+        errorTexto(e)
+      );
+
+    }finally{
+      boton.disabled=false;
+    }
+  }
+
+
+  await cargarPacientesHoy();
+}
+
+function nombreMesActual_(){return isoHoy().slice(0,7)}
+
+function pintarListadoMensual_(workspace){
+  const rol=SESION.usuario.rol;
+  const titulo=rol==='admisionista'?'Pacientes atendidos de todos los profesionales':rol==='licenciada'?'Pacientes a quienes tomé signos vitales':'Pacientes atendidos por mí';
+  workspace.append(
+    h(
+      'div',
+      {class:'section-hero section-hero-patients'},
+      h('div',{class:'section-icon'},'◎'),
+      h(
+        'div',
+        {},
+        h('h2',{},titulo),
+        h(
+          'div',
+          {class:'mu'},
+          'Consulta mensual de atenciones registradas'
+        )
+      )
+    )
+  );
+
+  const filtro=h('div',{class:'history-filter'},
+    h('div',{},h('label',{},'Mes'),h('input',{id:'mesHistorial',type:'month',value:nombreMesActual_()})),
+    btn('Buscar',()=>buscarMes_())
+  );
+  const resultado=h('div',{id:'resultadoMensual'},h('p',{class:'vacio'},'Selecciona un mes y pulsa Buscar. La consulta no se ejecuta automáticamente.'));
+  workspace.append(filtro,resultado);
+
+  async function buscarMes_(){
+    const mes=document.getElementById('mesHistorial').value;
+    if(!mes)return notificar('Selecciona un mes.');
+    resultado.replaceChildren(h('p',{class:'vacio'},'Buscando…'));
+    try{
+      const filas=await run('listarPacientesAtendidosMes',SESION.token,mes);
+      renderTablaMensual_(resultado,Array.isArray(filas)?filas:[],rol);
+    }catch(e){resultado.replaceChildren(h('p',{class:'vacio'},errorTexto(e)))}
+  }
+}
+
+function renderTablaMensual_(host,filas,rol){
+  if(!filas.length){host.replaceChildren(h('p',{class:'vacio'},'No hay pacientes atendidos para el mes seleccionado.'));return}
+  const tabla=h('table',{class:'history-table'});
+  const head=h('tr',{},h('th',{},'Fecha'),h('th',{},'Hora'),h('th',{},'Paciente'),h('th',{},'Identificación'),h('th',{},'Especialidad'),h('th',{},'Consultorio'),h('th',{},'Enfermería'),h('th',{},'Médico'));
+  if(rol!=='admisionista')head.append(h('th',{},'Signos vitales'));
+  tabla.append(h('thead',{},head));
+  const body=h('tbody',{});
+
+  filas.forEach((r,idx)=>{
+    const tr=h('tr',{},h('td',{},r.fecha||''),h('td',{},r.hora||''),h('td',{},r.nombre||''),h('td',{},r.identificacion||''),h('td',{},r.especialidad||''),h('td',{},r.consultorio||''),h('td',{},r.enfermeria||'—'),h('td',{},r.medico||'—'));
+    let detalle=null;
+    if(rol!=='admisionista'){
+      const id='sg_'+idx;
+      const b=btn('Ver signos',()=>{detalle.classList.toggle('visible');b.textContent=detalle.classList.contains('visible')?'Ocultar':'Ver signos'},'secundario');
+      tr.append(h('td',{},b));
+      const signos=r.signos||{};
+      const labels=[
+        ['frecuenciaCardiaca','Frecuencia cardiaca'],
+        ['presionSistolica','Presión sistólica'],
+        ['presionDiastolica','Presión diastólica'],
+        ['temperatura','Temperatura'],
+        ['frecuenciaRespiratoria','Frecuencia respiratoria'],
+        ['altura','Altura'],
+        ['peso','Peso'],
+        ['perimetroCefalico','Perímetro cefálico'],
+        ['perimetroAbdominal','Perímetro abdominal']
+      ];
+
+      const linea=h(
+        'div',
+        {class:'signos-linea'},
+        ...labels.map(x=>
+          h(
+            'div',
+            {class:'signo-chip'},
+            h('b',{},x[1]),
+            (
+              signos[x[0]]===null||
+              signos[x[0]]===undefined||
+              signos[x[0]]===''
+            )
+              ? '—'
+              : String(signos[x[0]])
+          )
+        )
+      );
+      detalle=h('tr',{class:'history-signos',id},h('td',{colspan:'9'},linea));
+    }
+    body.append(tr);if(detalle)body.append(detalle);
+  });
+
+  tabla.append(body);host.replaceChildren(h('div',{class:'history-table-wrap'},tabla));
+}
+
+inicializarExtrasRegistroMedico_();
+cargarPerfilesRegistro();
+if(RESET_TOKEN)irA('vRestablecer');
+(async()=>{if(RESET_TOKEN)return;const token=sessionStorage.getItem(TOKEN_KEY);if(!token)return;try{const usuario=await run('validarSesion',token);if(usuario)await entrarApp(token,usuario);else sessionStorage.removeItem(TOKEN_KEY)}catch(e){sessionStorage.removeItem(TOKEN_KEY)}})();
+</script>
+</body>
+</html>

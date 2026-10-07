@@ -17,7 +17,7 @@ const modules = [
     description: "Atenciones, antecedentes, diagnosticos, recetas y seguimiento.",
     icon: Stethoscope,
     color: "blue",
-    href: null,
+    href: "/consulta-externa/atenciones-diarias",
   },
   {
     name: "Emergencia",
